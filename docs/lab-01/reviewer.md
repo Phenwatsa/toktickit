@@ -9,7 +9,7 @@
 | PR #1 | feature/1-project-foundation | Approved |
 | PR #2 | feature/2-health-check | Approved |
 | PR #3 | feature/3-category-seed | Approved |
-|      | feature/4-category-list |  |
+| PR #4 | feature/4-category-list | Request Changes → Approved |
 
 **Reviewer comment I received (PR #1):**
 > I reviewed this PR against the Acceptance Criteria for Issue 1, and overall everything is implemented as expected. The frontend and backend can build and start successfully, Bootstrap is installed and used in the frontend, the Prisma/PostgreSQL foundation is set up, and Vitest/Supertest are configured for testing.
@@ -35,7 +35,13 @@
 > Reviewed against the Issue 3 acceptance criteria. The Category model, migration, and seed script are implemented correctly. The seed includes all four required categories and uses upsert to prevent duplicates when run multiple times. Database credentials are also excluded from Git through .gitignore. CI is passing. All acceptance criteria are met. Approved.
 
 **How I responded (PR #3):**
-> Thank you for the review and approval! I have updated `docs/lab-01/reviewer.md` with your review record and I am merging this PR into `lab1-staging` now.
+> Thank you for the review and approval! I have updated `docs/lab-01/reviewer.md` with your review record and you can merging this PR into `lab1-staging` now.
+
+**Reviewer comment I received (PR #4):**
+> The /api/categories endpoint and Supertest coverage are implemented correctly, and the React UI uses categories returned from the API with success/error states covered by Vitest. However, I don't see a test verifying that the loading state is displayed while waiting for the API response. Please add a Vitest test for the loading state before approval.
+
+**How I responded (PR #4):**
+> Thank you for the review! I have added a Vitest test to verify the loading state (asserting that the button displays "Loading…" and is disabled while waiting for the API response). All 4 Vitest UI tests are passing now.
 
 ## Pull Requests I reviewed for my partner
 **My comment:** <...>
