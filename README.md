@@ -1,4 +1,4 @@
-# TokTickIT (ตอกติ๊กกิต) — IT Service Desk Application
+# TokTickIT (ตอกติ๊กไอที) — IT Service Desk Application
 
 TokTickIT is an IT service desk web application for handling Account & Access, Hardware, Software, and Network support requests. This repository contains the **Lab 1: Full-Stack Hello World Starter** vertical slice.
 
