@@ -10,6 +10,29 @@ describe("App", () => {
     expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
   });
 
+  it("displays loading state while waiting for the API response", async () => {
+    let resolvePromise: (value: api.SystemStatus) => void;
+    const promise = new Promise<api.SystemStatus>((resolve) => {
+      resolvePromise = resolve;
+    });
+    vi.spyOn(api, "checkSystem").mockReturnValue(promise);
+
+    render(<App />);
+    const button = screen.getByRole("button", { name: /Check System/i });
+    fireEvent.click(button);
+
+    expect(screen.getByRole("button", { name: /Loading…/i })).toBeDisabled();
+
+    resolvePromise!({
+      online: true,
+      categories: [{ id: 1, name: "Account and Access" }],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/System Status: Online/i)).toBeInTheDocument();
+    });
+  });
+
   it("shows Online and the seeded categories on success", async () => {
     vi.spyOn(api, "checkSystem").mockResolvedValue({
       online: true,
