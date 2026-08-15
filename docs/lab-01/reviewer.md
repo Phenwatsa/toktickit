@@ -1,15 +1,15 @@
 # Lab 1 — Peer Review Record
 
-**Author:** Penwatsa Saengyenpan — 67070503431 — GitHub: @Phenwatsa
-**Peer reviewer:** Phirada Lekpaeng — 67070503491 — GitHub: @lephilara
+**Author:** Penwatsa Saengyenpan — 67070503431 — GitHub: @Phenwatsa  
+**Peer reviewer:** Phirada Lekpaeng — 67070503491 — GitHub: @lephilara  
 
 ## Pull Requests I authored (reviewed by my partner)
 | PR | Branch | Reviewer verdict |
 |----|--------|------------------|
-| PR #1 | feature/1-project-foundation | Approved |
-| PR #2 | feature/2-health-check | Approved |
-| PR #3 | feature/3-category-seed | Approved |
-| PR #4 | feature/4-category-list | Request Changes → Approved |
+| PR #10 | feature/1-project-foundation | Approved |
+| PR #11 | feature/2-health-check | Approved |
+| PR #12 | feature/3-category-seed | Approved |
+| PR #13 | feature/4-category-list | Request Changes → Approved |
 
 **Reviewer comment I received (PR #1):**
 > I reviewed this PR against the Acceptance Criteria for Issue 1, and overall everything is implemented as expected. The frontend and backend can build and start successfully, Bootstrap is installed and used in the frontend, the Prisma/PostgreSQL foundation is set up, and Vitest/Supertest are configured for testing.
@@ -44,5 +44,38 @@
 > Thank you for the review! I have added a Vitest test to verify the loading state (asserting that the button displays "Loading…" and is disabled while waiting for the API response). All 4 Vitest UI tests are passing now.
 
 ## Pull Requests I reviewed for my partner
-**My comment:** <...>
-**Partner's response:** <...>
+| PR | Partner Branch | My verdict |
+|----|----------------|------------|
+| PR #5 | feature/1-project-foundation | Approved |
+| PR #6 | feature/2-health-check | Request Changes → Approved |
+| PR #8 | feature/3-category-seed | Approved |
+|      | feature/4-category-list | Pending |
+
+**My review comment (PR #5):**
+> The PR against the acceptance criteria. The client and server builds are passing in CI, and the main setup looks good. React, TypeScript, Vite, Bootstrap, Express, Prisma, Vitest, and Supertest are all configured. The .gitignore and .env.example files are also included, and the README has the basic setup instructions.
+> 
+> One small suggestion for a next update in the next issue: it would be nice to run npm test and check the PostgreSQL/Prisma connection in CI as well.
+> 
+> Looks good to me. Nice work!
+
+**Partner's response (PR #5):**
+> Thank you for approving! I will make sure to add npm test and PostgreSQL/Prisma connection checks to CI in the upcoming issues.
+
+**My review comment (PR #6):**
+> Overall, the implementation looks good. The health endpoint and the frontend status/error handling are working as expected based on the acceptance criteria.
+> 
+> One thing is still missing: a Supertest test for GET /api/health. I can see the React tests were added, but I don't see a server-side test that actually verifies the endpoint returns 200 with the expected status and service values.
+> 
+> Please add the Supertest test for this endpoint, and I think this should be ready for approval.
+
+**Partner's response (PR #6):**
+> Added the Supertest test for GET /api/health as requested. Ready for another review.
+
+**My follow-up comment (PR #6):**
+> All acceptance criteria are covered. I Approve.
+
+**My review comment (PR #8):**
+> Checked the PR against the acceptance criteria, and everything looks good. Everything looks good. Approve!!
+
+**Partner's response (PR #8):**
+> Thank you for your review and I have updated issue 3 of docs/lab-01/reviewer.md ,you can merging this PR into lab1-staging
