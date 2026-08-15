@@ -3,25 +3,12 @@ import { getPrisma } from "../src/prisma.js";
 // Issue 3 — seed the four supported categories.
 // The four names are: Account and Access, Hardware, Software, Network.
 // Requirement: running the seed twice must NOT create duplicates.
-// Uses prisma.category.upsert({ where: { name }, update: {}, create: { name } }) for idempotency.
+// Hint: prisma.category.upsert({ where:{name}, update:{}, create:{name} }).
 async function main() {
   const prisma = getPrisma();
-  const categories = [
-    "Account and Access",
-    "Hardware",
-    "Software",
-    "Network",
-  ];
-
-  for (const name of categories) {
-    await prisma.category.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    });
-  }
-
-  console.log("Seeded 4 categories successfully.");
+  void prisma;
+  // TODO(Issue 3): upsert each category so the seed is idempotent.
+  console.log("TODO: implement the category seed.");
 }
 
 main()

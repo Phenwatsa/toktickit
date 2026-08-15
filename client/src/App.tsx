@@ -1,24 +1,19 @@
 import { useState } from "react";
-import { checkSystem, Category } from "./api";
+import { checkSystem, Category } from "./api.js";
 
+// UI states you must handle for Issue 4: idle, loading, success, error.
 type UiState = "idle" | "loading" | "success" | "error";
 
 export default function App() {
   const [state, setState] = useState<UiState>("idle");
   const [categories, setCategories] = useState<Category[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  void categories;
 
   async function handleCheck() {
+    // TODO(Issue 4): set loading, call checkSystem(), then either
+    //   - success: store categories and show Online + the list, or
+    //   - error: show Offline + a useful message.
     setState("loading");
-    setErrorMessage("");
-    try {
-      const res = await checkSystem();
-      setCategories(res.categories);
-      setState("success");
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Unable to connect to TokTickIT API");
-      setState("error");
-    }
   }
 
   return (
@@ -31,30 +26,7 @@ export default function App() {
         {state === "loading" ? "Loading…" : "Check System"}
       </button>
 
-      {state === "success" && (
-        <div className="mt-4">
-          <p className="fw-bold text-success mb-2">System Status: Online</p>
-          {categories.length > 0 && (
-            <div>
-              <p className="fw-semibold mb-1">Supported Request Categories:</p>
-              <ul className="list-group">
-                {categories.map((cat) => (
-                  <li key={cat.id} className="list-group-item">
-                    {cat.name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {state === "error" && (
-        <div className="mt-4 alert alert-danger">
-          <p className="fw-bold mb-1">System Status: Offline</p>
-          <p className="mb-0">{errorMessage || "Unable to connect to TokTickIT API"}</p>
-        </div>
-      )}
+      {/* TODO(Issue 4): render loading / success (Online + categories) / error (Offline) states. */}
     </div>
   );
 }
