@@ -1,7 +1,7 @@
 # Lab 1 — Peer Review Record
 
 **Author:** Penwatsa Saengyenpan — 67070503431 — GitHub: @Phenwatsa  
-**Peer reviewer:** Phirada Lekpaeng — 67070503491 — GitHub: @lephilara  
+**Peer reviewer:** Phirada Lekpaeng — 67070503491 — GitHub: @lephirada  
 
 ## Pull Requests I authored (reviewed by my partner)
 | PR | Branch | Reviewer verdict |
