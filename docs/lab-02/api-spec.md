@@ -127,6 +127,7 @@ All error responses adhere to a consistent error schema:
   - `search` (optional): Case-insensitive search on `ticketNumber` or `summary`.
   - `categoryId` (optional): Filter by category ID.
   - `priority` (optional): Filter by `requestedPriority`.
+  - `itPriority` (optional): Filter by `itPriority`.
   - `status` (optional): Filter by `currentStatus`.
   - `sortBy` (optional): `createdAt` (default), `updatedAt`, or `ticketNumber`.
   - `sortOrder` (optional): `desc` (default) or `asc`.

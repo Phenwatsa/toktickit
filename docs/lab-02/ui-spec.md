@@ -88,6 +88,7 @@ TokTickIT adopts the **Zen Green** design language, delivering a clean, modern, 
   - Search input (searches Ticket Number & Summary).
   - Category dropdown filter.
   - Requested Priority dropdown filter.
+  - IT Priority dropdown filter.
   - Status dropdown filter.
 - Data Table (Desktop) / Cards (Mobile):
   - Columns: Ticket No, Created Date, Summary, Category, Requested Priority, IT Priority, Current Status, Ticket Owner, Last Updated.

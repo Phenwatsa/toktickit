@@ -8,10 +8,10 @@ This document establishes the collaboration agreement, core engineering rules, a
 
 ### Rule 1: Always Spec-First & Re-read Requirements
 * Before beginning any task or issue, the AI must strictly consult the documentation in `docs/lab-02/`:
-  - [`specification.md`](file:///Users/penwatsasaengyenpan/%5B3%5D%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-02/specification.md) (Sprint Goals, Scope, FRs, BRs, ACs, DoD)
-  - [`ui-spec.md`](file:///Users/penwatsasaengyenpan/%5B3%5D%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-02/ui-spec.md) (Zen Green design tokens, responsive breakpoints, visual checklist)
-  - [`api-spec.md`](file:///Users/penwatsasaengyenpan/%5B3%5D%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-02/api-spec.md) (REST contracts, JSON payloads, HTTP status codes)
-  - [`tests.md`](file:///Users/penwatsasaengyenpan/%5B3%5D%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-02/tests.md) (Planned test table and AC traceability matrix)
+  - [`specification.md`](./specification.md) (Sprint Goals, Scope, FRs, BRs, ACs, DoD)
+  - [`ui-spec.md`](./ui-spec.md) (Zen Green design tokens, responsive breakpoints, visual checklist)
+  - [`api-spec.md`](./api-spec.md) (REST contracts, JSON payloads, HTTP status codes)
+  - [`tests.md`](./tests.md) (Planned test table and AC traceability matrix)
 * **Never invent business rules or assume behaviors** without explicit user confirmation when ambiguities arise.
 
 ### Rule 2: Code Style & Architecture Consistency
@@ -31,7 +31,7 @@ This document establishes the collaboration agreement, core engineering rules, a
 * Complete one issue at a time. Do not jump across issues or combine multiple issues into a single branch.
 
 ### Rule 4: Real-time Prompt Logging (`ai-use.md`)
-* For every key user instruction and architectural prompt, the AI will assist in summarizing and appending entries to [`docs/lab-02/ai-use.md`](file:///Users/penwatsasaengyenpan/%5B3%5D%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-02/ai-use.md) in real time to capture 6–10 representative prompts for the final reflection.
+* For every key user instruction and architectural prompt, the AI will assist in summarizing and appending entries to [`docs/lab-02/ai-use.md`](./ai-use.md) in real time to capture 6–10 representative prompts for the final reflection.
 
 ### Rule 5: Peer Review Protocol (`reviewer.md`)
 * The review workflow operates as follows:
@@ -39,7 +39,7 @@ This document establishes the collaboration agreement, core engineering rules, a
   2. The developer pushes the feature branch to GitHub and opens a Pull Request against `lab2-staging`.
   3. The peer reviewer (@lephirada) inspects the PR and leaves review comments/requests for changes.
   4. The developer forwards the reviewer's feedback to the AI.
-  5. The AI assists in addressing the feedback, making required code/test adjustments, and formulating formal response records in [`docs/lab-02/reviewer.md`](file:///Users/penwatsasaengyenpan/%5B3%5D%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-02/reviewer.md).
+  5. The AI assists in addressing the feedback, making required code/test adjustments, and formulating formal response records in [`docs/lab-02/reviewer.md`](./reviewer.md).
   6. The developer pushes the revisions, obtains the peer approval, and merges the PR into `lab2-staging`.
 
 ---
