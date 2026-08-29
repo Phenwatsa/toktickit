@@ -24,8 +24,8 @@ Testing in Lab 2 adheres to Test-Driven Development (TDD) across four integrated
 | **API-09** | API | AC-03, BR-09 | Reject oversized attachment (> 5MB) or invalid format | HTTP 413 / 415 rejection | `server/tests/lab-02/attachments.api.test.ts` | Planned |
 | **API-10** | API | AC-08, BR-10 | Soft-remove attachment with valid reason | HTTP 200; `isRemoved: true`; reason saved; metadata retained | `server/tests/lab-02/attachments.api.test.ts` | Planned |
 | **API-11** | API | AC-08, BR-10 | Block download of soft-removed attachment | HTTP 410 Gone; file stream blocked | `server/tests/lab-02/attachments.api.test.ts` | Planned |
-| **API-12** | API | AC-04, BR-04 | Retrieve active requesters list | HTTP 200; only `isActive: true` requesters returned | `server/tests/lab-02/requesters.api.test.ts` | Planned |
-| **UI-01** | UI | AC-04, FR-01 | Render Requester Selector & persist context | Active user displayed; changing user updates context | `client/tests/lab-02/RequesterSelector.test.tsx` | Planned |
+| **API-12** | API | AC-04, BR-04 | Retrieve active requesters list | HTTP 200; only `isActive: true` requesters returned | `server/tests/lab-02/requesters.api.test.ts` | Passed |
+| **UI-01** | UI | AC-04, FR-01 | Render Requester Selector & persist context | Active user displayed; changing user updates context | `client/tests/lab-02/RequesterSelector.test.tsx` | Passed |
 | **UI-02** | UI | AC-01, FR-03 | Populate reference dropdowns on Create Ticket | Categories and Related Systems loaded from API | `client/tests/lab-02/CreateTicket.test.tsx` | Planned |
 | **UI-03** | UI | AC-02, BR-06 | Trigger client-side validation on empty submission | Field error messages displayed below inputs; API not called | `client/tests/lab-02/CreateTicket.test.tsx` | Planned |
 | **UI-04** | UI | AC-09, BR-07 | Display busy state & disable button on submit | Submit button disabled with loading spinner during in-flight request | `client/tests/lab-02/CreateTicket.test.tsx` | Planned |
@@ -80,5 +80,24 @@ npx playwright test
 
 ---
 
-## 6. Final Results
-*(To be populated upon completion of all feature implementation PRs on main)*
+## 6. Passing Terminal Output
+
+### Server Tests (Supertest)
+```text
+ ✓ tests/lab-01/health.test.ts (1 test)
+ ✓ tests/lab-01/categories.test.ts (1 test)
+ ✓ tests/lab-02/requesters.api.test.ts (2 tests)
+
+ Test Files  3 passed (3)
+      Tests  4 passed (4)
+```
+
+### Client Tests (Vitest)
+```text
+ ✓ tests/lab-02/RequesterSelector.test.tsx (3 tests)
+ ✓ tests/lab-01/App.test.tsx (4 tests)
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+```
+

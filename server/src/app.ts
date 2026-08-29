@@ -41,4 +41,35 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Lab 2 — Issue 6: Active Development Requesters
+// GET /api/requesters/active
+//   -> read only active requesters (isActive: true) from PostgreSQL
+//   -> return array of { id, name, email, department, isActive } in predictable (id) order
+//   -> on failure, respond 500 with a safe error message
+// ---------------------------------------------------------------------------
+app.get("/api/requesters/active", async (_req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const requesters = await prisma.requesterUser.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        department: true,
+        isActive: true,
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+    res.status(200).json(requesters);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch active development requesters" });
+  }
+});
+
 export default app;
