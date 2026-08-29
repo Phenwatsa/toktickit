@@ -1,10 +1,35 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import React from "react";
 import App from "../../src/App";
 import * as api from "../../src/api";
 
-describe("App", () => {
-  // WORKED EXAMPLE — provided for you.
+describe("App (Lab 1 Legacy Compatibility)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Provide a mocked selected development requester to bypass the selector screen
+    localStorage.setItem(
+      "toktickit_selected_requester",
+      JSON.stringify({
+        id: 1,
+        name: "Jennifer Anderson",
+        email: "jennifer.a@toktickit.local",
+        department: "Human Resources",
+        isActive: true,
+      })
+    );
+    // Mock active requesters call
+    vi.spyOn(api, "fetchActiveRequesters").mockResolvedValue([
+      {
+        id: 1,
+        name: "Jennifer Anderson",
+        email: "jennifer.a@toktickit.local",
+        department: "Human Resources",
+        isActive: true,
+      },
+    ]);
+  });
+
   it("renders the TokTickIT heading", () => {
     render(<App />);
     expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
@@ -18,6 +43,10 @@ describe("App", () => {
     vi.spyOn(api, "checkSystem").mockReturnValue(promise);
 
     render(<App />);
+
+    // Switch to Health Check tab
+    fireEvent.click(screen.getByRole("button", { name: /Health Check/i }));
+
     const button = screen.getByRole("button", { name: /Check System/i });
     fireEvent.click(button);
 
@@ -45,6 +74,10 @@ describe("App", () => {
     });
 
     render(<App />);
+
+    // Switch to Health Check tab
+    fireEvent.click(screen.getByRole("button", { name: /Health Check/i }));
+
     fireEvent.click(screen.getByRole("button", { name: /Check System/i }));
 
     await waitFor(() => {
@@ -62,6 +95,10 @@ describe("App", () => {
     );
 
     render(<App />);
+
+    // Switch to Health Check tab
+    fireEvent.click(screen.getByRole("button", { name: /Health Check/i }));
+
     fireEvent.click(screen.getByRole("button", { name: /Check System/i }));
 
     await waitFor(() => {
