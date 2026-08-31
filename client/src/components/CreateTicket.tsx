@@ -39,7 +39,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   // Form State
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [relatedSystemId, setRelatedSystemId] = useState<number | "">("");
-  const [requestedPriority, setRequestedPriority] = useState<Priority>("MEDIUM");
+  const [requestedPriority, setRequestedPriority] = useState<Priority | "">("");
   const [summary, setSummary] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -182,7 +182,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
         requesterId: currentRequester.id,
         categoryId: Number(categoryId),
         relatedSystemId: Number(relatedSystemId),
-        requestedPriority,
+        requestedPriority: requestedPriority as Priority,
         summary: summary.trim(),
         description: description.trim(),
       });
@@ -203,7 +203,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   function handleResetForm() {
     setCategoryId("");
     setRelatedSystemId("");
-    setRequestedPriority("MEDIUM");
+    setRequestedPriority("");
     setSummary("");
     setDescription("");
     setSelectedFiles([]);
@@ -421,6 +421,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
               }}
               required
             >
+              <option value="">-- Select Priority --</option>
               <option value="LOW">Low</option>
               <option value="MEDIUM">Medium</option>
               <option value="HIGH">High</option>

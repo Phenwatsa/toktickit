@@ -82,6 +82,9 @@ describe("CreateTicket Component", () => {
 
     const systemSelect = screen.getByLabelText(/Related System/i) as HTMLSelectElement;
     expect(systemSelect.options.length).toBe(4); // 1 placeholder + 3 systems
+
+    const prioritySelect = screen.getByLabelText(/Requested Priority/i) as HTMLSelectElement;
+    expect(prioritySelect.options.length).toBe(5); // 1 placeholder + 4 priorities
   });
 
   it("triggers client-side validation on empty submission and blocks API call", async () => {
@@ -98,9 +101,10 @@ describe("CreateTicket Component", () => {
     const submitBtn = screen.getByTestId("submit-ticket-button");
     fireEvent.click(submitBtn);
 
-    // Expect field-level validation errors
+    // Expect field-level validation errors for ALL required fields including priority
     expect(screen.getByText(/Please select a ticket category/i)).toBeInTheDocument();
     expect(screen.getByText(/Please select an affected system/i)).toBeInTheDocument();
+    expect(screen.getByText(/Please select a priority level/i)).toBeInTheDocument();
     expect(screen.getByText(/Ticket summary is required/i)).toBeInTheDocument();
     expect(screen.getByText(/Description is required/i)).toBeInTheDocument();
 
@@ -243,6 +247,7 @@ describe("CreateTicket Component", () => {
     // Fill inputs
     fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText(/Requested Priority/i), { target: { value: "HIGH" } });
     fireEvent.change(screen.getByLabelText(/Ticket Summary/i), {
       target: { value: "Preserved Summary Content" },
     });
@@ -265,5 +270,6 @@ describe("CreateTicket Component", () => {
     );
     expect((screen.getByLabelText(/Category/i) as HTMLSelectElement).value).toBe("2");
     expect((screen.getByLabelText(/Related System/i) as HTMLSelectElement).value).toBe("1");
+    expect((screen.getByLabelText(/Requested Priority/i) as HTMLSelectElement).value).toBe("HIGH");
   });
 });

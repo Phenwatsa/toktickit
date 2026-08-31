@@ -168,6 +168,15 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
       });
     }
 
+    // Verify requester header matches body if provided
+    const headerRequesterId = req.headers["x-requester-id"];
+    if (headerRequesterId && Number(headerRequesterId) !== parsedRequesterId) {
+      return res.status(400).json({
+        error: "Requester mismatch",
+        message: "The requester specified in the request does not match the active session.",
+      });
+    }
+
     // Check entity existence and active status
     const requester = await prisma.requesterUser.findUnique({
       where: { id: parsedRequesterId },
