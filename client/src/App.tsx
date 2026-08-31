@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { RequesterProvider, useRequester } from "./context/RequesterContext";
 import { Header } from "./components/Header";
 import { RequesterSelector } from "./components/RequesterSelector";
+import { CreateTicket } from "./components/CreateTicket";
 import { checkSystem, Category } from "./api";
 import "./styles/zen-green.css";
 
@@ -59,7 +60,7 @@ function MainApp() {
       />
 
       {/* Main Content Area */}
-      <main className="container-fluid px-md-5 flex-grow-1 py-3">
+      <main className="container-fluid px-md-5 flex-grow-1 py-3" style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
         {currentView === "my-tickets" && (
           <div className="zen-card">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -85,26 +86,13 @@ function MainApp() {
         )}
 
         {currentView === "create-ticket" && (
-          <div className="zen-card">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <h2 className="h4 fw-bold text-dark mb-0">Create IT Support Ticket</h2>
-              <button
-                className="zen-btn-secondary btn-sm"
-                onClick={() => setCurrentView("my-tickets")}
-              >
-                Back to My Tickets
-              </button>
-            </div>
-
-            <div className="zen-callout-info">
-              <strong>Issue 7 (Ticket Creation Screen)</strong> will implement the Zen Green form,
-              dynamic reference data, and file attachments here.
-            </div>
-          </div>
+          <CreateTicket
+            onCancel={() => setCurrentView("my-tickets")}
+          />
         )}
 
         {currentView === "legacy-check" && (
-          <div className="zen-card" style={{ maxWidth: 640 }}>
+          <div className="zen-card" style={{ maxWidth: 640, margin: "0 auto" }}>
             <h2 className="h5 fw-bold mb-3">Lab 1 Health Check Diagnostic</h2>
             <button
               className="zen-btn-primary mb-3"
