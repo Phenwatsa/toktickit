@@ -96,6 +96,33 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
       expect(response.body.relatedSystemId).toBe(relatedSystemId);
     });
 
+    it("handles concurrent ticket creation requests without duplicate ticket numbers", async () => {
+      const payloads = Array.from({ length: 5 }, (_, i) => ({
+        requesterId: activeRequesterId,
+        categoryId: categoryId,
+        relatedSystemId: relatedSystemId,
+        requestedPriority: "MEDIUM",
+        summary: `Concurrent ticket request #${i + 1}`,
+        description: `Detailed description for concurrent ticket request test #${i + 1}.`,
+      }));
+
+      // Fire 5 concurrent requests simultaneously
+      const responses = await Promise.all(
+        payloads.map((p) => request(app).post("/api/tickets").send(p))
+      );
+
+      // Verify all 5 were created successfully with 201
+      responses.forEach((res) => {
+        expect(res.status).toBe(201);
+        expect(res.body.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
+      });
+
+      // Verify all 5 generated ticket numbers are strictly unique
+      const ticketNumbers = responses.map((res) => res.body.ticketNumber);
+      const uniqueNumbers = new Set(ticketNumbers);
+      expect(uniqueNumbers.size).toBe(5);
+    });
+
     it("rejects ticket creation when summary is less than 5 characters (HTTP 400)", async () => {
       const payload = {
         requesterId: activeRequesterId,

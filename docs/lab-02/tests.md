@@ -87,18 +87,18 @@ npx playwright test
  ✓ tests/lab-01/health.test.ts (1 test)
  ✓ tests/lab-01/categories.test.ts (1 test)
  ✓ tests/lab-02/requesters.api.test.ts (2 tests)
- ✓ tests/lab-02/create-ticket.api.test.ts (7 tests)
+ ✓ tests/lab-02/create-ticket.api.test.ts (8 tests)
 
  Test Files  4 passed (4)
-      Tests  11 passed (11)
+      Tests  12 passed (12)
 ```
 
 ### Client Tests (Vitest)
 ```text
  ✓ tests/lab-02/RequesterSelector.test.tsx (3 tests)
  ✓ tests/lab-01/App.test.tsx (4 tests)
- ✓ tests/lab-02/CreateTicket.test.tsx (5 tests)
+ ✓ tests/lab-02/CreateTicket.test.tsx (7 tests)
 
  Test Files  3 passed (3)
-      Tests  12 passed (12)
+      Tests  14 passed (14)
 ```

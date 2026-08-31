@@ -1,33 +1,50 @@
 import { getPrisma } from "../prisma.js";
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Official Ticket Number Generator
+// Lab 2 — Official Ticket Number Generator (Atomic & Concurrency-Safe)
 // Format: TKT-YYYY-NNNNNN (e.g. TKT-2026-000001)
-// Guaranteed unique across all tickets.
+// Uses PostgreSQL sequences to guarantee atomic, non-colliding sequential numbers.
 // ---------------------------------------------------------------------------
 
 export async function generateUniqueTicketNumber(): Promise<string> {
   const prisma = getPrisma();
   const currentYear = new Date().getFullYear();
-  const yearPrefix = `TKT-${currentYear}-`;
+  const sequenceName = `ticket_seq_${currentYear}`;
 
-  // Count existing tickets for this year to determine the next sequential number
-  const count = await prisma.ticket.count({
+  // 1. Ensure the PostgreSQL sequence exists for the current year
+  await prisma.$executeRawUnsafe(`CREATE SEQUENCE IF NOT EXISTS "${sequenceName}" START 1`);
+
+  // 2. Fetch the max existing sequence for the current year to sync the sequence if needed
+  const maxTicket = await prisma.ticket.findFirst({
     where: {
       ticketNumber: {
-        startsWith: yearPrefix,
+        startsWith: `TKT-${currentYear}-`,
       },
+    },
+    orderBy: {
+      ticketNumber: "desc",
+    },
+    select: {
+      ticketNumber: true,
     },
   });
 
-  let nextSeq = count + 1;
-  let candidateNumber = `${yearPrefix}${String(nextSeq).padStart(6, "0")}`;
-
-  // Double check uniqueness in case of race condition or deletions
-  while (await prisma.ticket.findUnique({ where: { ticketNumber: candidateNumber } })) {
-    nextSeq += 1;
-    candidateNumber = `${yearPrefix}${String(nextSeq).padStart(6, "0")}`;
+  if (maxTicket) {
+    const parts = maxTicket.ticketNumber.split("-");
+    const currentMax = parseInt(parts[2], 10);
+    if (!isNaN(currentMax) && currentMax > 0) {
+      // Ensure sequence is at least currentMax so nextval will be currentMax + 1
+      await prisma.$executeRawUnsafe(
+        `SELECT setval('"${sequenceName}"', GREATEST((SELECT last_value FROM "${sequenceName}"), ${currentMax}), true)`
+      );
+    }
   }
 
-  return candidateNumber;
+  // 3. Atomically advance and fetch the next sequence value
+  const result = await prisma.$queryRawUnsafe<{ nextval: bigint }[]>(
+    `SELECT nextval('"${sequenceName}"') as nextval`
+  );
+
+  const nextVal = Number(result[0].nextval);
+  return `TKT-${currentYear}-${String(nextVal).padStart(6, "0")}`;
 }

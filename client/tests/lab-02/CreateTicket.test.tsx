@@ -130,6 +130,57 @@ describe("CreateTicket Component", () => {
     expect(screen.getByText(/exceeds maximum allowed size of 5 MB/i)).toBeInTheDocument();
   });
 
+  it("rejects invalid attachment file types with immediate feedback", async () => {
+    render(
+      <RequesterProvider>
+        <CreateTicket />
+      </RequesterProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Category/i)).toBeInTheDocument();
+    });
+
+    const fileInput = document.getElementById("ticketAttachments") as HTMLInputElement;
+
+    // Create a dummy unsupported file (.exe / .zip)
+    const invalidFile = new File(["dummy content"], "executable_script.exe", {
+      type: "application/x-msdownload",
+    });
+
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
+
+    expect(
+      screen.getByText(/has unsupported type\. Allowed: JPG, PNG, WEBP, PDF\./i)
+    ).toBeInTheDocument();
+  });
+
+  it("enforces maximum 5 attachments limit", async () => {
+    render(
+      <RequesterProvider>
+        <CreateTicket />
+      </RequesterProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Category/i)).toBeInTheDocument();
+    });
+
+    const fileInput = document.getElementById("ticketAttachments") as HTMLInputElement;
+
+    // Attempt to attach 6 valid files at once
+    const sixFiles = Array.from(
+      { length: 6 },
+      (_, i) => new File(["sample"], `image_${i + 1}.png`, { type: "image/png" })
+    );
+
+    fireEvent.change(fileInput, { target: { files: sixFiles } });
+
+    expect(
+      screen.getByText(/Maximum 5 attachments allowed per ticket\./i)
+    ).toBeInTheDocument();
+  });
+
   it("displays busy state and disables submit button during in-flight submission", async () => {
     let resolveSubmission: (value: Ticket) => void;
     const submissionPromise = new Promise<Ticket>((resolve) => {
