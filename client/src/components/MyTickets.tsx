@@ -33,6 +33,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [priority, setPriority] = useState<string>("ALL");
   const [status, setStatus] = useState<string>("ALL");
+  const [sortOption, setSortOption] = useState<string>("createdAt_desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Status & Error State
@@ -43,7 +44,8 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     (search && search.trim() !== "") ||
       categoryId !== "" ||
       priority !== "ALL" ||
-      status !== "ALL"
+      status !== "ALL" ||
+      sortOption !== "createdAt_desc"
   );
 
   // Load Categories on mount
@@ -66,6 +68,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     setIsLoading(true);
     setError(null);
     try {
+      const [sortByField, sortOrderField] = sortOption.split("_");
       const response = await fetchMyTickets({
         requesterId: currentRequester.id,
         search: search.trim() || undefined,
@@ -74,8 +77,8 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
         status: status !== "ALL" ? status : undefined,
         page: currentPage,
         pageSize: 10,
-        sortBy: "createdAt",
-        sortOrder: "desc",
+        sortBy: sortByField,
+        sortOrder: sortOrderField as "asc" | "desc",
       });
 
       setTickets(response.data);
@@ -87,7 +90,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     } finally {
       setIsLoading(false);
     }
-  }, [currentRequester, search, categoryId, priority, status, currentPage]);
+  }, [currentRequester, search, categoryId, priority, status, sortOption, currentPage]);
 
   useEffect(() => {
     loadTickets();
@@ -99,6 +102,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     setCategoryId("");
     setPriority("ALL");
     setStatus("ALL");
+    setSortOption("createdAt_desc");
     setCurrentPage(1);
   }
 
@@ -233,6 +237,25 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
             <option value="RESOLVED">Resolved</option>
             <option value="CLOSED">Closed</option>
             <option value="CANCELLED">Cancelled</option>
+          </select>
+
+          {/* Sort By Control */}
+          <select
+            id="filterSort"
+            className="zen-filter-select"
+            value={sortOption}
+            onChange={(e) => {
+              setSortOption(e.target.value);
+              setCurrentPage(1);
+            }}
+            aria-label="Sort tickets"
+            data-testid="sort-select"
+          >
+            <option value="createdAt_desc">Date (Newest First)</option>
+            <option value="createdAt_asc">Date (Oldest First)</option>
+            <option value="ticketNumber_asc">Ticket # (Ascending)</option>
+            <option value="ticketNumber_desc">Ticket # (Descending)</option>
+            <option value="updatedAt_desc">Recently Updated</option>
           </select>
 
           {/* Reset / Clear Button */}

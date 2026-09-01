@@ -191,6 +191,22 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
     const firstDescDate = new Date(resDesc.body.data[0].createdAt).getTime();
     const lastDescDate = new Date(resDesc.body.data[resDesc.body.data.length - 1].createdAt).getTime();
     expect(firstDescDate).toBeGreaterThanOrEqual(lastDescDate);
+
+    const firstAscDate = new Date(resAsc.body.data[0].createdAt).getTime();
+    const lastAscDate = new Date(resAsc.body.data[resAsc.body.data.length - 1].createdAt).getTime();
+    expect(firstAscDate).toBeLessThanOrEqual(lastAscDate);
+  });
+
+  it("rejects unauthorized access when session header mismatches query requesterId (HTTP 403)", async () => {
+    // Current session is Requester A, but request tries to query Requester B
+    const res = await request(app)
+      .get("/api/tickets")
+      .set("x-requester-id", String(requesterAId))
+      .query({ requesterId: requesterBId });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toHaveProperty("error", "Forbidden");
+    expect(res.body.message).toContain("cannot access tickets belonging to another requester");
   });
 
   it("rejects request when requesterId is missing (HTTP 400)", async () => {

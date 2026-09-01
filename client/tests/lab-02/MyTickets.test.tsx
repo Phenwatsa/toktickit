@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
-import { RequesterProvider } from "../../src/context/RequesterContext";
+import { RequesterProvider, useRequester } from "../../src/context/RequesterContext";
 import { MyTickets } from "../../src/components/MyTickets";
 import * as api from "../../src/api";
 import { Category, RequesterUser, Ticket, TicketsResponse } from "../../src/types";
@@ -16,11 +16,19 @@ vi.mock("../../src/api", () => ({
   checkSystem: vi.fn(),
 }));
 
-const mockRequester: RequesterUser = {
+const mockRequesterA: RequesterUser = {
   id: 1,
   name: "Jennifer Anderson",
   email: "jennifer.a@toktickit.local",
   department: "Human Resources",
+  isActive: true,
+};
+
+const mockRequesterB: RequesterUser = {
+  id: 2,
+  name: "David Lee",
+  email: "david.l@toktickit.local",
+  department: "Finance",
   isActive: true,
 };
 
@@ -30,7 +38,7 @@ const mockCategories: Category[] = [
   { id: 3, name: "Software", isActive: true },
 ];
 
-const mockTickets: Ticket[] = [
+const mockTicketsA: Ticket[] = [
   {
     id: 101,
     ticketNumber: "TKT-2026-000001",
@@ -67,8 +75,28 @@ const mockTickets: Ticket[] = [
   },
 ];
 
-const mockTicketsResponse: TicketsResponse = {
-  data: mockTickets,
+const mockTicketsB: Ticket[] = [
+  {
+    id: 201,
+    ticketNumber: "TKT-2026-000003",
+    summary: "David Finance ERP Report Error",
+    description: "Cannot generate month-end report.",
+    requestedPriority: "URGENT",
+    itPriority: null,
+    currentStatus: "NEW",
+    requesterId: 2,
+    categoryId: 3,
+    category: { id: 3, name: "Software" },
+    relatedSystemId: 1,
+    relatedSystem: { id: 1, name: "Corporate Laptop" },
+    createdAt: "2026-08-31T12:00:00.000Z",
+    updatedAt: "2026-08-31T12:00:00.000Z",
+    attachmentsCount: 0,
+  },
+];
+
+const mockTicketsResponseA: TicketsResponse = {
+  data: mockTicketsA,
   pagination: {
     page: 1,
     pageSize: 10,
@@ -79,14 +107,26 @@ const mockTicketsResponse: TicketsResponse = {
   },
 };
 
+const mockTicketsResponseB: TicketsResponse = {
+  data: mockTicketsB,
+  pagination: {
+    page: 1,
+    pageSize: 10,
+    totalItems: 1,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  },
+};
+
 describe("MyTickets Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    localStorage.setItem("toktickit_selected_requester", JSON.stringify(mockRequester));
-    vi.mocked(api.fetchActiveRequesters).mockResolvedValue([mockRequester]);
+    localStorage.setItem("toktickit_selected_requester", JSON.stringify(mockRequesterA));
+    vi.mocked(api.fetchActiveRequesters).mockResolvedValue([mockRequesterA, mockRequesterB]);
     vi.mocked(api.fetchActiveCategories).mockResolvedValue(mockCategories);
-    vi.mocked(api.fetchMyTickets).mockResolvedValue(mockTicketsResponse);
+    vi.mocked(api.fetchMyTickets).mockResolvedValue(mockTicketsResponseA);
   });
 
   it("renders ticket table with summary, category, priority badge, and status badge", async () => {
@@ -147,6 +187,30 @@ describe("MyTickets Component", () => {
       expect(api.fetchMyTickets).toHaveBeenCalledWith(
         expect.objectContaining({
           categoryId: 2,
+        })
+      );
+    });
+  });
+
+  it("supports sorting dropdown and calls API with sortBy and sortOrder", async () => {
+    render(
+      <RequesterProvider>
+        <MyTickets onNavigateToCreate={() => {}} />
+      </RequesterProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("sort-select")).toBeInTheDocument();
+    });
+
+    const sortSelect = screen.getByTestId("sort-select");
+    fireEvent.change(sortSelect, { target: { value: "ticketNumber_asc" } });
+
+    await waitFor(() => {
+      expect(api.fetchMyTickets).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sortBy: "ticketNumber",
+          sortOrder: "asc",
         })
       );
     });
@@ -227,7 +291,7 @@ describe("MyTickets Component", () => {
 
   it("supports pagination controls and displays accurate pagination metadata", async () => {
     vi.mocked(api.fetchMyTickets).mockResolvedValueOnce({
-      data: mockTickets,
+      data: mockTicketsA,
       pagination: {
         page: 1,
         pageSize: 10,
@@ -260,6 +324,53 @@ describe("MyTickets Component", () => {
           page: 2,
         })
       );
+    });
+  });
+
+  it("refreshes ticket list when active requester is switched", async () => {
+    // Helper test component that allows triggering a requester switch
+    function TestApp() {
+      const { selectRequester } = useRequester();
+      return (
+        <div>
+          <button
+            type="button"
+            data-testid="switch-to-david"
+            onClick={() => selectRequester(mockRequesterB)}
+          >
+            Switch to David
+          </button>
+          <MyTickets onNavigateToCreate={() => {}} />
+        </div>
+      );
+    }
+
+    render(
+      <RequesterProvider>
+        <TestApp />
+      </RequesterProvider>
+    );
+
+    // Initial render displays Jennifer's tickets
+    await waitFor(() => {
+      expect(screen.getByText("Laptop battery drains quickly")).toBeInTheDocument();
+    });
+
+    // Mock API response for David
+    vi.mocked(api.fetchMyTickets).mockResolvedValueOnce(mockTicketsResponseB);
+
+    // Switch requester to David
+    const switchBtn = screen.getByTestId("switch-to-david");
+    fireEvent.click(switchBtn);
+
+    // Verify David's tickets are loaded and displayed
+    await waitFor(() => {
+      expect(api.fetchMyTickets).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requesterId: 2,
+        })
+      );
+      expect(screen.getByText("David Finance ERP Report Error")).toBeInTheDocument();
     });
   });
 });

@@ -257,13 +257,34 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
       pageSize = "10",
     } = req.query;
 
-    const rawRequesterId = requesterId || req.headers["x-requester-id"];
-    const parsedRequesterId = Number(rawRequesterId);
+    const headerRequesterId = req.headers["x-requester-id"];
+    const queryRequesterId = req.query.requesterId;
 
-    if (!parsedRequesterId || isNaN(parsedRequesterId)) {
+    if (!headerRequesterId && !queryRequesterId) {
       return res.status(400).json({
         error: "Missing requesterId",
         message: "A valid requesterId query parameter or x-requester-id header is required.",
+      });
+    }
+
+    // Security check: reject if session header does not match requested query ID
+    if (
+      headerRequesterId &&
+      queryRequesterId &&
+      Number(headerRequesterId) !== Number(queryRequesterId)
+    ) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "You cannot access tickets belonging to another requester.",
+      });
+    }
+
+    const parsedRequesterId = Number(headerRequesterId || queryRequesterId);
+
+    if (!parsedRequesterId || isNaN(parsedRequesterId)) {
+      return res.status(400).json({
+        error: "Invalid requesterId",
+        message: "The specified requesterId is invalid.",
       });
     }
 
