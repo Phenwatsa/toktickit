@@ -3,6 +3,7 @@ import { RequesterProvider, useRequester } from "./context/RequesterContext";
 import { Header } from "./components/Header";
 import { RequesterSelector } from "./components/RequesterSelector";
 import { CreateTicket } from "./components/CreateTicket";
+import { MyTickets } from "./components/MyTickets";
 import { checkSystem, Category } from "./api";
 import "./styles/zen-green.css";
 
@@ -62,32 +63,18 @@ function MainApp() {
       {/* Main Content Area */}
       <main className="container-fluid px-md-5 flex-grow-1 py-3" style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
         {currentView === "my-tickets" && (
-          <div className="zen-card">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <div>
-                <h2 className="h4 fw-bold text-dark mb-1">My Tickets</h2>
-                <p className="text-muted small mb-0">
-                  Viewing tickets for <strong>{currentRequester.name}</strong> ({currentRequester.department})
-                </p>
-              </div>
-              <button
-                className="zen-btn-primary"
-                onClick={() => setCurrentView("create-ticket")}
-              >
-                ➕ Create Ticket
-              </button>
-            </div>
-
-            <div className="zen-callout-info">
-              <strong>Issue 8 (My Tickets Screen)</strong> will implement the full ticket table,
-              search, category/priority/status filters, and pagination here.
-            </div>
-          </div>
+          <MyTickets
+            onNavigateToCreate={() => setCurrentView("create-ticket")}
+            onSelectTicket={(ticketId) => {
+              console.log("View ticket details:", ticketId);
+            }}
+          />
         )}
 
         {currentView === "create-ticket" && (
           <CreateTicket
             onCancel={() => setCurrentView("my-tickets")}
+            onSuccess={() => setCurrentView("my-tickets")}
           />
         )}
 

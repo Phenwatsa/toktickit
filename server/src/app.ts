@@ -237,4 +237,153 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Lab 2 — Issue 8: My Tickets List & Filtering
+// GET /api/tickets
+// ---------------------------------------------------------------------------
+app.get("/api/tickets", async (req: Request, res: Response) => {
+  try {
+    const prisma = getPrisma();
+    const {
+      requesterId,
+      search,
+      categoryId,
+      priority,
+      itPriority,
+      status,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = "1",
+      pageSize = "10",
+    } = req.query;
+
+    const rawRequesterId = requesterId || req.headers["x-requester-id"];
+    const parsedRequesterId = Number(rawRequesterId);
+
+    if (!parsedRequesterId || isNaN(parsedRequesterId)) {
+      return res.status(400).json({
+        error: "Missing requesterId",
+        message: "A valid requesterId query parameter or x-requester-id header is required.",
+      });
+    }
+
+    // Build Prisma where clause with strict tenant ownership
+    const where: any = {
+      requesterId: parsedRequesterId,
+    };
+
+    // Keyword search (case-insensitive across ticketNumber and summary)
+    if (search && typeof search === "string" && search.trim() !== "") {
+      const term = search.trim();
+      where.OR = [
+        { ticketNumber: { contains: term, mode: "insensitive" } },
+        { summary: { contains: term, mode: "insensitive" } },
+      ];
+    }
+
+    // Category filter
+    if (categoryId) {
+      const parsedCatId = Number(categoryId);
+      if (!isNaN(parsedCatId)) {
+        where.categoryId = parsedCatId;
+      }
+    }
+
+    // Requested Priority filter
+    if (priority && typeof priority === "string" && priority !== "ALL") {
+      where.requestedPriority = priority;
+    }
+
+    // IT Priority filter
+    if (itPriority && typeof itPriority === "string" && itPriority !== "ALL") {
+      where.itPriority = itPriority;
+    }
+
+    // Status filter
+    if (status && typeof status === "string" && status !== "ALL") {
+      where.currentStatus = status;
+    }
+
+    // Pagination calculations
+    const parsedPage = Math.max(1, parseInt(String(page), 10) || 1);
+    const parsedPageSize = Math.min(50, Math.max(1, parseInt(String(pageSize), 10) || 10));
+    const skip = (parsedPage - 1) * parsedPageSize;
+
+    // Sorting
+    const validSortFields = ["createdAt", "updatedAt", "ticketNumber"];
+    const orderField = validSortFields.includes(String(sortBy)) ? String(sortBy) : "createdAt";
+    const orderDirection = String(sortOrder).toLowerCase() === "asc" ? "asc" : "desc";
+
+    // Query total count and items concurrently
+    const [totalItems, tickets] = await Promise.all([
+      prisma.ticket.count({ where }),
+      prisma.ticket.findMany({
+        where,
+        select: {
+          id: true,
+          ticketNumber: true,
+          summary: true,
+          requestedPriority: true,
+          itPriority: true,
+          currentStatus: true,
+          ticketOwner: true,
+          createdAt: true,
+          updatedAt: true,
+          category: {
+            select: { id: true, name: true },
+          },
+          relatedSystem: {
+            select: { id: true, name: true },
+          },
+          _count: {
+            select: {
+              attachments: {
+                where: { isRemoved: false },
+              },
+            },
+          },
+        },
+        orderBy: {
+          [orderField]: orderDirection,
+        },
+        skip,
+        take: parsedPageSize,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / parsedPageSize) || 1;
+
+    // Format response items to include attachmentsCount
+    const data = tickets.map((t) => ({
+      id: t.id,
+      ticketNumber: t.ticketNumber,
+      summary: t.summary,
+      requestedPriority: t.requestedPriority,
+      itPriority: t.itPriority,
+      currentStatus: t.currentStatus,
+      ticketOwner: t.ticketOwner,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+      category: t.category,
+      relatedSystem: t.relatedSystem,
+      attachmentsCount: t._count.attachments,
+    }));
+
+    return res.status(200).json({
+      data,
+      pagination: {
+        page: parsedPage,
+        pageSize: parsedPageSize,
+        totalItems,
+        totalPages,
+        hasNextPage: parsedPage < totalPages,
+        hasPrevPage: parsedPage > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Fetch my tickets error:", error);
+    return res.status(500).json({ error: "Failed to fetch tickets." });
+  }
+});
+
 export default app;

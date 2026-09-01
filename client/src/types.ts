@@ -66,3 +66,30 @@ export interface Ticket {
   attachments?: Attachment[];
   attachmentsCount?: number;
 }
+
+export interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface TicketsResponse {
+  data: Ticket[];
+  pagination: PaginationMeta;
+}
+
+export interface TicketFilterParams {
+  requesterId: number;
+  search?: string;
+  categoryId?: number | "";
+  priority?: string;
+  itPriority?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
