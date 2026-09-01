@@ -10,7 +10,7 @@
 | 2 | Decompose the sprint into a disciplined sequence of GitHub Issues (#5 to #11) with clear branch names and testable Acceptance Criteria. | Created and structured GitHub Issues #5 to #11 on the project Kanban board and planned the feature branches. |
 | 3 | Apply Spec-Driven Development (Spec DD) to author `specification.md`, `ui-spec.md`, `api-spec.md`, and `tests.md` before writing code. | Established a complete engineering contract covering FRs, BRs, Zen Green design tokens, REST API contracts, and AC traceability. |
 | 4 | Implement Development Requester Context, Prisma schema/migrations, idempotent seed data, active requesters API with Supertest, and React RequesterSelector with Vitest. | Built multi-model Prisma schema, seeded 5 users (4 active, 1 inactive), implemented GET /api/requesters/active, and created the Zen Green simulated login context. |
-| 5 | *(To be added during Issue 7)* | |
+| 5 | Implement Ticket Creation API (POST /api/tickets) with unique ticket number generator, field validation, Supertest suite, and Zen Green CreateTicket UI form with Vitest. | Developed TKT-YYYY-NNNNNN generator, reference data endpoints, client-side validation, busy states, safe error retention, and file attachment constraints. |
 | 6 | *(To be added during Issue 8)* | |
 | 7 | *(To be added during Issue 9)* | |
 | 8 | *(To be added during Issue 10)* | |

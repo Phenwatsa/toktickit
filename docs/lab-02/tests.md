@@ -13,8 +13,8 @@ Testing in Lab 2 adheres to Test-Driven Development (TDD) across four integrated
 
 | Test ID | Type | Requirement / AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **API-01** | API | AC-01, FR-04 | Create valid ticket with all required fields | HTTP 201; generated unique ticketNumber returned; saved in DB | `server/tests/lab-02/create-ticket.api.test.ts` | Planned |
-| **API-02** | API | AC-02, BR-06 | Reject ticket creation with missing summary/description | HTTP 400 with field-level validation error details | `server/tests/lab-02/create-ticket.api.test.ts` | Planned |
+| **API-01** | API | AC-01, FR-04 | Create valid ticket with all required fields | HTTP 201; generated unique ticketNumber returned; saved in DB | `server/tests/lab-02/create-ticket.api.test.ts` | Passed |
+| **API-02** | API | AC-02, BR-06 | Reject ticket creation with missing summary/description | HTTP 400 with field-level validation error details | `server/tests/lab-02/create-ticket.api.test.ts` | Passed |
 | **API-03** | API | AC-05, FR-06 | Retrieve paginated tickets owned by Requester A | HTTP 200; only Requester A's tickets returned; correct pagination meta | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
 | **API-04** | API | AC-05, BR-05 | Isolate data between Requester A and Requester B | HTTP 200; Requester B cannot see tickets belonging to Requester A | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
 | **API-05** | API | AC-07, FR-07 | Filter and search tickets by keyword and category | HTTP 200; returns only matching subset of owned tickets | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
@@ -26,10 +26,10 @@ Testing in Lab 2 adheres to Test-Driven Development (TDD) across four integrated
 | **API-11** | API | AC-08, BR-10 | Block download of soft-removed attachment | HTTP 410 Gone; file stream blocked | `server/tests/lab-02/attachments.api.test.ts` | Planned |
 | **API-12** | API | AC-04, BR-04 | Retrieve active requesters list | HTTP 200; only `isActive: true` requesters returned | `server/tests/lab-02/requesters.api.test.ts` | Passed |
 | **UI-01** | UI | AC-04, FR-01 | Render Requester Selector & persist context | Active user displayed; changing user updates context | `client/tests/lab-02/RequesterSelector.test.tsx` | Passed |
-| **UI-02** | UI | AC-01, FR-03 | Populate reference dropdowns on Create Ticket | Categories and Related Systems loaded from API | `client/tests/lab-02/CreateTicket.test.tsx` | Planned |
-| **UI-03** | UI | AC-02, BR-06 | Trigger client-side validation on empty submission | Field error messages displayed below inputs; API not called | `client/tests/lab-02/CreateTicket.test.tsx` | Planned |
-| **UI-04** | UI | AC-09, BR-07 | Display busy state & disable button on submit | Submit button disabled with loading spinner during in-flight request | `client/tests/lab-02/CreateTicket.test.tsx` | Planned |
-| **UI-05** | UI | AC-10, BR-08 | Handle API failure safely on ticket creation | Error banner displayed; user input values preserved in form | `client/tests/lab-02/CreateTicket.test.tsx` | Planned |
+| **UI-02** | UI | AC-01, FR-03 | Populate reference dropdowns on Create Ticket | Categories and Related Systems loaded from API | `client/tests/lab-02/CreateTicket.test.tsx` | Passed |
+| **UI-03** | UI | AC-02, BR-06 | Trigger client-side validation on empty submission | Field error messages displayed below inputs; API not called | `client/tests/lab-02/CreateTicket.test.tsx` | Passed |
+| **UI-04** | UI | AC-09, BR-07 | Display busy state & disable button on submit | Submit button disabled with loading spinner during in-flight request | `client/tests/lab-02/CreateTicket.test.tsx` | Passed |
+| **UI-05** | UI | AC-10, BR-08 | Handle API failure safely on ticket creation | Error banner displayed; user input values preserved in form | `client/tests/lab-02/CreateTicket.test.tsx` | Passed |
 | **UI-06** | UI | AC-05, FR-06 | Render My Tickets table with priority & status badges | Table columns render correctly with designated Zen Green styling | `client/tests/lab-02/MyTickets.test.tsx` | Planned |
 | **UI-07** | UI | AC-07, BR-11 | Display empty state & no-results state | Distinct empty illustration for 0 tickets and no-results banner for filter | `client/tests/lab-02/MyTickets.test.tsx` | Planned |
 | **UI-08** | UI | AC-08, FR-12 | Soft removal modal validation and UI update | Requires reason; updates attachment list to soft-removed state | `client/tests/lab-02/AttachmentSection.test.tsx` | Planned |
@@ -87,17 +87,18 @@ npx playwright test
  ✓ tests/lab-01/health.test.ts (1 test)
  ✓ tests/lab-01/categories.test.ts (1 test)
  ✓ tests/lab-02/requesters.api.test.ts (2 tests)
+ ✓ tests/lab-02/create-ticket.api.test.ts (8 tests)
 
- Test Files  3 passed (3)
-      Tests  4 passed (4)
+ Test Files  4 passed (4)
+      Tests  12 passed (12)
 ```
 
 ### Client Tests (Vitest)
 ```text
  ✓ tests/lab-02/RequesterSelector.test.tsx (3 tests)
  ✓ tests/lab-01/App.test.tsx (4 tests)
+ ✓ tests/lab-02/CreateTicket.test.tsx (7 tests)
 
- Test Files  2 passed (2)
-      Tests  7 passed (7)
+ Test Files  3 passed (3)
+      Tests  14 passed (14)
 ```
-
