@@ -8,7 +8,7 @@
 |----|--------|------------------|
 | PR #26 | docs/lab2-spec-and-test-plan | Approved |
 | PR #27 | feature/1-requester-context | Approved |
-| PR #... | feature/2-ticket-creation | Pending |
+| PR #28 | feature/2-ticket-creation | Approved |
 | PR #... | feature/3-my-tickets | Pending |
 | PR #... | feature/4-ticket-detail-attachments | Pending |
 | PR #... | feature/5-e2e-and-responsive | Pending |
@@ -34,6 +34,15 @@
 
 **How I responded:**
 > Thank you for the review and approval! I have updated `docs/lab-02/tests.md` and `docs/lab-02/reviewer.md` with the peer review record. You can merge this PR into `lab2-staging` now.
+
+---
+
+## PR #28 — Issue 7: Ticket Creation & Zen Green Form Foundation
+**Reviewer comment I received:**
+> Reviewed against all acceptance criteria. The API, Create Ticket UI, validation, attachment constraints, loading/error handling, and requester context are all implemented as expected. The required Supertest and Vitest tests are included and passing.
+
+**How I responded:**
+> Thank you for the review and approval! I have updated the peer review record. PR #28 is ready to be merged into `lab2-staging`.
 
 ---
 
