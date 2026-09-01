@@ -92,4 +92,5 @@ export interface TicketFilterParams {
   sortOrder?: "asc" | "desc";
   page?: number;
   pageSize?: number;
+  signal?: AbortSignal;
 }

@@ -148,6 +148,7 @@ export async function fetchMyTickets(params: TicketFilterParams): Promise<Ticket
     headers: {
       "x-requester-id": String(params.requesterId),
     },
+    signal: params.signal,
   });
 
   if (!res.ok) {

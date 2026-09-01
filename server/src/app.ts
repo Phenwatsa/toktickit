@@ -260,37 +260,38 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
     const headerRequesterId = req.headers["x-requester-id"];
     const queryRequesterId = req.query.requesterId;
 
-    if (!headerRequesterId && !queryRequesterId) {
+    // Strict session enforcement: x-requester-id header is mandatory
+    if (!headerRequesterId || isNaN(Number(headerRequesterId))) {
       return res.status(400).json({
-        error: "Missing requesterId",
-        message: "A valid requesterId query parameter or x-requester-id header is required.",
+        error: "Missing requester session",
+        message: "A valid x-requester-id session header is required to identify the current requester.",
       });
     }
 
-    // Security check: reject if session header does not match requested query ID
-    if (
-      headerRequesterId &&
-      queryRequesterId &&
-      Number(headerRequesterId) !== Number(queryRequesterId)
-    ) {
+    const sessionRequesterId = Number(headerRequesterId);
+
+    // Security check: reject if query parameter attempts to query another requester's tickets
+    if (queryRequesterId && Number(queryRequesterId) !== sessionRequesterId) {
       return res.status(403).json({
         error: "Forbidden",
         message: "You cannot access tickets belonging to another requester.",
       });
     }
 
-    const parsedRequesterId = Number(headerRequesterId || queryRequesterId);
-
-    if (!parsedRequesterId || isNaN(parsedRequesterId)) {
+    // Check that the session requester exists and is active
+    const requester = await prisma.requesterUser.findUnique({
+      where: { id: sessionRequesterId },
+    });
+    if (!requester || !requester.isActive) {
       return res.status(400).json({
-        error: "Invalid requesterId",
-        message: "The specified requesterId is invalid.",
+        error: "Invalid requester session",
+        message: "The session requester is inactive or does not exist.",
       });
     }
 
-    // Build Prisma where clause with strict tenant ownership
+    // Build Prisma where clause with strict tenant ownership derived from session
     const where: any = {
-      requesterId: parsedRequesterId,
+      requesterId: sessionRequesterId,
     };
 
     // Keyword search (case-insensitive across ticketNumber and summary)

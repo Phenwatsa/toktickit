@@ -107,6 +107,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("returns HTTP 200 with paginated tickets owned strictly by Requester A", async () => {
     const res = await request(app)
       .get("/api/tickets")
+      .set("x-requester-id", String(requesterAId))
       .query({ requesterId: requesterAId });
 
     expect(res.status).toBe(200);
@@ -140,9 +141,10 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   });
 
   it("enforces strict tenant-like data isolation between Requester A and Requester B", async () => {
-    // Requester B query
+    // Requester B query with valid Requester B session header
     const resB = await request(app)
       .get("/api/tickets")
+      .set("x-requester-id", String(requesterBId))
       .query({ requesterId: requesterBId });
 
     expect(resB.status).toBe(200);
@@ -154,6 +156,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("filters tickets by search query across ticketNumber and summary (case-insensitive)", async () => {
     const res = await request(app)
       .get("/api/tickets")
+      .set("x-requester-id", String(requesterAId))
       .query({ requesterId: requesterAId, search: "Overheating" });
 
     expect(res.status).toBe(200);
@@ -164,6 +167,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("filters tickets by categoryId, priority, and currentStatus", async () => {
     const res = await request(app)
       .get("/api/tickets")
+      .set("x-requester-id", String(requesterAId))
       .query({
         requesterId: requesterAId,
         categoryId: categorySoftwareId,
@@ -179,10 +183,12 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("supports sorting by createdAt in ascending and descending order", async () => {
     const resDesc = await request(app)
       .get("/api/tickets")
+      .set("x-requester-id", String(requesterAId))
       .query({ requesterId: requesterAId, sortBy: "createdAt", sortOrder: "desc" });
 
     const resAsc = await request(app)
       .get("/api/tickets")
+      .set("x-requester-id", String(requesterAId))
       .query({ requesterId: requesterAId, sortBy: "createdAt", sortOrder: "asc" });
 
     expect(resDesc.status).toBe(200);
@@ -209,9 +215,12 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
     expect(res.body.message).toContain("cannot access tickets belonging to another requester");
   });
 
-  it("rejects request when requesterId is missing (HTTP 400)", async () => {
-    const res = await request(app).get("/api/tickets");
+  it("rejects request when x-requester-id session header is missing even if query requesterId is provided (HTTP 400)", async () => {
+    const res = await request(app)
+      .get("/api/tickets")
+      .query({ requesterId: requesterAId });
+
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty("error");
+    expect(res.body).toHaveProperty("error", "Missing requester session");
   });
 });

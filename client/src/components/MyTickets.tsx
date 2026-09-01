@@ -30,6 +30,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
 
   // Filter & Search State
   const [search, setSearch] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [priority, setPriority] = useState<string>("ALL");
   const [status, setStatus] = useState<string>("ALL");
@@ -48,6 +49,14 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
       sortOption !== "createdAt_desc"
   );
 
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   // Load Categories on mount
   useEffect(() => {
     async function loadCategories() {
@@ -61,44 +70,55 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     loadCategories();
   }, []);
 
-  // Fetch Tickets
-  const loadTickets = useCallback(async () => {
+  // Fetch Tickets with AbortController for race condition protection
+  useEffect(() => {
     if (!currentRequester) return;
 
+    const controller = new AbortController();
     setIsLoading(true);
     setError(null);
-    try {
-      const [sortByField, sortOrderField] = sortOption.split("_");
-      const response = await fetchMyTickets({
-        requesterId: currentRequester.id,
-        search: search.trim() || undefined,
-        categoryId: categoryId !== "" ? Number(categoryId) : undefined,
-        priority: priority !== "ALL" ? priority : undefined,
-        status: status !== "ALL" ? status : undefined,
-        page: currentPage,
-        pageSize: 10,
-        sortBy: sortByField,
-        sortOrder: sortOrderField as "asc" | "desc",
-      });
 
-      setTickets(response.data);
-      setPagination(response.pagination);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load tickets from server."
-      );
-    } finally {
-      setIsLoading(false);
+    async function executeFetch() {
+      try {
+        const [sortByField, sortOrderField] = sortOption.split("_");
+        const response = await fetchMyTickets({
+          requesterId: currentRequester.id,
+          search: debouncedSearch.trim() || undefined,
+          categoryId: categoryId !== "" ? Number(categoryId) : undefined,
+          priority: priority !== "ALL" ? priority : undefined,
+          status: status !== "ALL" ? status : undefined,
+          page: currentPage,
+          pageSize: 10,
+          sortBy: sortByField,
+          sortOrder: sortOrderField as "asc" | "desc",
+          signal: controller.signal,
+        });
+
+        setTickets(response.data);
+        setPagination(response.pagination);
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+          return; // Ignore aborted requests
+        }
+        setError(
+          err instanceof Error ? err.message : "Failed to load tickets from server."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [currentRequester, search, categoryId, priority, status, sortOption, currentPage]);
 
-  useEffect(() => {
-    loadTickets();
-  }, [loadTickets]);
+    executeFetch();
+
+    return () => {
+      controller.abort();
+    };
+  }, [currentRequester, debouncedSearch, categoryId, priority, status, sortOption, currentPage]);
 
   // Reset all filters
   function handleClearFilters() {
     setSearch("");
+    setDebouncedSearch("");
     setCategoryId("");
     setPriority("ALL");
     setStatus("ALL");
