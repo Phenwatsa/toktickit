@@ -12,7 +12,7 @@
 | 4 | Implement Development Requester Context, Prisma schema/migrations, idempotent seed data, active requesters API with Supertest, and React RequesterSelector with Vitest. | Built multi-model Prisma schema, seeded 5 users (4 active, 1 inactive), implemented GET /api/requesters/active, and created the Zen Green simulated login context. |
 | 5 | Implement Ticket Creation API (POST /api/tickets) with unique ticket number generator, field validation, Supertest suite, and Zen Green CreateTicket UI form with Vitest. | Developed TKT-YYYY-NNNNNN generator, reference data endpoints, client-side validation, busy states, safe error retention, and file attachment constraints. |
 | 6 | Implement My Tickets list and filtering API (GET /api/tickets) with multi-tenant data isolation, Supertest suite, and Zen Green MyTickets UI table with search, filters, pagination, and Vitest. | Developed multi-parameter query builder, tenant isolation rules, empty/no-results states, pagination controls, and automated tests. |
-| 7 | *(To be added during Issue 9)* | |
+| 7 | Implement Ticket Detail inspection API (GET /api/tickets/:id), Attachment Binary Upload (POST /api/tickets/:id/attachments), Download restriction (GET /api/attachments/:id/download), Soft-Removal (DELETE /api/tickets/:id/attachments/:attachmentId), Supertest suites, and Zen Green RequesterTicketDetail & AttachmentSection UI with Vitest. | Developed read-only detail view, multipart upload storage, BR-10 soft-removal retention with audit reason, 410 Gone download blocking, and full client/server test suites. |
 | 8 | *(To be added during Issue 10)* | |
 | 9 | *(To be added during Issue 11)* | |
 

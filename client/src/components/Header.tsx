@@ -1,9 +1,11 @@
 import React from "react";
 import { useRequester } from "../context/RequesterContext";
 
+export type AppView = "my-tickets" | "create-ticket" | "legacy-check" | "ticket-detail";
+
 interface HeaderProps {
-  currentView: "my-tickets" | "create-ticket" | "legacy-check";
-  onNavigate: (view: "my-tickets" | "create-ticket" | "legacy-check") => void;
+  currentView: AppView;
+  onNavigate: (view: AppView) => void;
   onChangeRequester: () => void;
 }
 
