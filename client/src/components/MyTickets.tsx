@@ -71,9 +71,10 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
   }, []);
 
   // Fetch Tickets with AbortController for race condition protection
-  useEffect(() => {
-    if (!currentRequester) return;
+  const loadTickets = useCallback(() => {
+    if (!currentRequester) return () => {};
 
+    const requesterId = currentRequester.id;
     const controller = new AbortController();
     setIsLoading(true);
     setError(null);
@@ -82,7 +83,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
       try {
         const [sortByField, sortOrderField] = sortOption.split("_");
         const response = await fetchMyTickets({
-          requesterId: currentRequester.id,
+          requesterId,
           search: debouncedSearch.trim() || undefined,
           categoryId: categoryId !== "" ? Number(categoryId) : undefined,
           priority: priority !== "ALL" ? priority : undefined,
@@ -114,6 +115,11 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
       controller.abort();
     };
   }, [currentRequester, debouncedSearch, categoryId, priority, status, sortOption, currentPage]);
+
+  useEffect(() => {
+    const cleanup = loadTickets();
+    return cleanup;
+  }, [loadTickets]);
 
   // Reset all filters
   function handleClearFilters() {
