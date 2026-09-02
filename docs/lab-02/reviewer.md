@@ -9,7 +9,7 @@
 | PR #26 | docs/lab2-spec-and-test-plan | Approved |
 | PR #27 | feature/1-requester-context | Approved |
 | PR #28 | feature/2-ticket-creation | Approved |
-| PR #... | feature/3-my-tickets | Pending |
+| PR #29 | feature/3-my-tickets | Approved |
 | PR #... | feature/4-ticket-detail-attachments | Pending |
 | PR #... | feature/5-e2e-and-responsive | Pending |
 | PR #... | docs/lab2-documentation | Pending |
@@ -43,6 +43,15 @@
 
 **How I responded:**
 > Thank you for the review and approval! I have updated the peer review record. PR #28 is ready to be merged into `lab2-staging`.
+
+---
+
+## PR #29 — Issue 8: My Tickets List Screen & Filtering
+**Reviewer comment I received:**
+> Reviewed the changes against the acceptance criteria. Everything looks good requester isolation, filtering, sorting, pagination, My Tickets UI, and the different UI states are all implemented correctly. The Supertest and Vitest tests are also included and passing, including the multi-user isolation and requester switching cases. So approved ka.
+
+**How I responded:**
+> Thank you for the review and approval! I have updated the peer review record in `reviewer.md`. PR #29 is ready to be merged into `lab2-staging`.
 
 ---
 

@@ -1,5 +1,23 @@
-import { Category, RelatedSystem, RequesterUser, Priority, Ticket } from "./types";
-export type { Category, RelatedSystem, RequesterUser, Priority, Ticket };
+import {
+  Category,
+  RelatedSystem,
+  RequesterUser,
+  Priority,
+  Ticket,
+  TicketsResponse,
+  TicketFilterParams,
+  PaginationMeta,
+} from "./types";
+export type {
+  Category,
+  RelatedSystem,
+  RequesterUser,
+  Priority,
+  Ticket,
+  TicketsResponse,
+  TicketFilterParams,
+  PaginationMeta,
+};
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -88,4 +106,55 @@ export async function createTicket(payload: CreateTicketPayload): Promise<Ticket
     throw new Error(data.message || data.error || "Failed to create support ticket");
   }
   return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 2 — Issue 8: Fetch My Tickets (Paginated & Filtered)
+// GET /api/tickets
+// ---------------------------------------------------------------------------
+export async function fetchMyTickets(params: TicketFilterParams): Promise<TicketsResponse> {
+  const query = new URLSearchParams();
+  query.set("requesterId", String(params.requesterId));
+
+  if (params.search && params.search.trim() !== "") {
+    query.set("search", params.search.trim());
+  }
+  if (params.categoryId) {
+    query.set("categoryId", String(params.categoryId));
+  }
+  if (params.priority && params.priority !== "ALL") {
+    query.set("priority", params.priority);
+  }
+  if (params.itPriority && params.itPriority !== "ALL") {
+    query.set("itPriority", params.itPriority);
+  }
+  if (params.status && params.status !== "ALL") {
+    query.set("status", params.status);
+  }
+  if (params.sortBy) {
+    query.set("sortBy", params.sortBy);
+  }
+  if (params.sortOrder) {
+    query.set("sortOrder", params.sortOrder);
+  }
+  if (params.page) {
+    query.set("page", String(params.page));
+  }
+  if (params.pageSize) {
+    query.set("pageSize", String(params.pageSize));
+  }
+
+  const res = await fetch(`${API_URL}/api/tickets?${query.toString()}`, {
+    headers: {
+      "x-requester-id": String(params.requesterId),
+    },
+    signal: params.signal,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || "Failed to fetch tickets from server");
+  }
+
+  return res.json();
 }

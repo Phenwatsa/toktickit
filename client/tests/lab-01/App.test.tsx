@@ -28,6 +28,18 @@ describe("App (Lab 1 Legacy Compatibility)", () => {
         isActive: true,
       },
     ]);
+    vi.spyOn(api, "fetchActiveCategories").mockResolvedValue([]);
+    vi.spyOn(api, "fetchMyTickets").mockResolvedValue({
+      data: [],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        totalItems: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    });
   });
 
   it("renders the TokTickIT heading", () => {

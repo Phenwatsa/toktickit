@@ -1,23 +1,26 @@
-# Lab 2 Test Plan and Traceability
+# Lab 2 Test Strategy & Specification Traceability Matrix
 
-## 1. Test Strategy
-Testing in Lab 2 adheres to Test-Driven Development (TDD) across four integrated test levels:
-1. **Unit Tests**: Verify isolated business logic functions such as official Ticket Number formatting and validation helper rules.
-2. **Server API Tests (Supertest & Vitest)**: Test every REST endpoint for correct HTTP status codes, JSON response schemas, validation errors, soft-removal rules, and multi-tenant requester data isolation.
-3. **Client UI Component Tests (Vitest & React Testing Library)**: Test user interface components, form validation feedback, loading/busy states, dropdown population, and empty/no-results states.
-4. **End-to-End Tests (Playwright)**: Test full browser workflows across Desktop, Tablet, and Mobile viewports, capturing visual screenshots and verifying complete lifecycle actions.
+This document maps all Functional Requirements (FRs), Business Rules (BRs), and Acceptance Criteria (ACs) defined in `docs/lab-02/specification.md` to concrete automated test cases.
+
+---
+
+## 1. Test Execution Overview
+
+- **Unit & Component Testing (Client)**: Vitest + React Testing Library.
+- **Integration & API Testing (Server)**: Vitest + Supertest targeting PostgreSQL.
+- **End-to-End Testing**: Playwright multi-role browser scenarios.
 
 ---
 
 ## 2. Planned-Test Table
 
-| Test ID | Type | Requirement / AC | What It Tests | Expected Result | Automated Test File | Final Status |
+| Test ID | Level | Traced AC / Rule | Scenario & Objective | Expected Outcome | Target Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **API-01** | API | AC-01, FR-04 | Create valid ticket with all required fields | HTTP 201; generated unique ticketNumber returned; saved in DB | `server/tests/lab-02/create-ticket.api.test.ts` | Passed |
 | **API-02** | API | AC-02, BR-06 | Reject ticket creation with missing summary/description | HTTP 400 with field-level validation error details | `server/tests/lab-02/create-ticket.api.test.ts` | Passed |
-| **API-03** | API | AC-05, FR-06 | Retrieve paginated tickets owned by Requester A | HTTP 200; only Requester A's tickets returned; correct pagination meta | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
-| **API-04** | API | AC-05, BR-05 | Isolate data between Requester A and Requester B | HTTP 200; Requester B cannot see tickets belonging to Requester A | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
-| **API-05** | API | AC-07, FR-07 | Filter and search tickets by keyword and category | HTTP 200; returns only matching subset of owned tickets | `server/tests/lab-02/my-tickets.api.test.ts` | Planned |
+| **API-03** | API | AC-05, FR-06 | Retrieve paginated tickets owned by Requester A | HTTP 200; only Requester A's tickets returned; correct pagination meta | `server/tests/lab-02/my-tickets.api.test.ts` | Passed |
+| **API-04** | API | AC-05, BR-05 | Isolate data between Requester A and Requester B | HTTP 200; Requester B cannot see tickets belonging to Requester A | `server/tests/lab-02/my-tickets.api.test.ts` | Passed |
+| **API-05** | API | AC-07, FR-07 | Filter and search tickets by keyword and category | HTTP 200; returns only matching subset of owned tickets | `server/tests/lab-02/my-tickets.api.test.ts` | Passed |
 | **API-06** | API | AC-06, BR-05 | Retrieve single owned ticket detail | HTTP 200 with full ticket & attachments data | `server/tests/lab-02/ticket-detail.api.test.ts` | Planned |
 | **API-07** | API | AC-06, BR-05 | Reject unauthorized access to another requester's ticket | HTTP 403 Forbidden or 404 Not Found | `server/tests/lab-02/ticket-detail.api.test.ts` | Planned |
 | **API-08** | API | AC-03, FR-10 | Upload valid attachment (PNG <= 5MB) | HTTP 201; attachment linked to ticket | `server/tests/lab-02/attachments.api.test.ts` | Planned |
@@ -30,8 +33,8 @@ Testing in Lab 2 adheres to Test-Driven Development (TDD) across four integrated
 | **UI-03** | UI | AC-02, BR-06 | Trigger client-side validation on empty submission | Field error messages displayed below inputs; API not called | `client/tests/lab-02/CreateTicket.test.tsx` | Passed |
 | **UI-04** | UI | AC-09, BR-07 | Display busy state & disable button on submit | Submit button disabled with loading spinner during in-flight request | `client/tests/lab-02/CreateTicket.test.tsx` | Passed |
 | **UI-05** | UI | AC-10, BR-08 | Handle API failure safely on ticket creation | Error banner displayed; user input values preserved in form | `client/tests/lab-02/CreateTicket.test.tsx` | Passed |
-| **UI-06** | UI | AC-05, FR-06 | Render My Tickets table with priority & status badges | Table columns render correctly with designated Zen Green styling | `client/tests/lab-02/MyTickets.test.tsx` | Planned |
-| **UI-07** | UI | AC-07, BR-11 | Display empty state & no-results state | Distinct empty illustration for 0 tickets and no-results banner for filter | `client/tests/lab-02/MyTickets.test.tsx` | Planned |
+| **UI-06** | UI | AC-05, FR-06 | Render My Tickets table with priority & status badges | Table columns render correctly with designated Zen Green styling | `client/tests/lab-02/MyTickets.test.tsx` | Passed |
+| **UI-07** | UI | AC-07, BR-11 | Display empty state & no-results state | Distinct empty illustration for 0 tickets and no-results banner for filter | `client/tests/lab-02/MyTickets.test.tsx` | Passed |
 | **UI-08** | UI | AC-08, FR-12 | Soft removal modal validation and UI update | Requires reason; updates attachment list to soft-removed state | `client/tests/lab-02/AttachmentSection.test.tsx` | Planned |
 | **E2E-01** | E2E | AC-01..AC-08 | Full ticket lifecycle E2E flow | Select requester $\rightarrow$ Create ticket $\rightarrow$ View in My Tickets $\rightarrow$ Detail $\rightarrow$ Soft-remove | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
 | **E2E-02** | E2E | AC-05, AC-06 | Multi-user ownership & switching E2E | Switching requester A to B isolates ticket lists and blocks cross-access | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
@@ -87,18 +90,20 @@ npx playwright test
  ✓ tests/lab-01/health.test.ts (1 test)
  ✓ tests/lab-01/categories.test.ts (1 test)
  ✓ tests/lab-02/requesters.api.test.ts (2 tests)
+ ✓ tests/lab-02/my-tickets.api.test.ts (7 tests)
  ✓ tests/lab-02/create-ticket.api.test.ts (8 tests)
 
- Test Files  4 passed (4)
-      Tests  12 passed (12)
+ Test Files  5 passed (5)
+      Tests  19 passed (19)
 ```
 
 ### Client Tests (Vitest)
 ```text
  ✓ tests/lab-02/RequesterSelector.test.tsx (3 tests)
+ ✓ tests/lab-02/MyTickets.test.tsx (7 tests)
  ✓ tests/lab-01/App.test.tsx (4 tests)
  ✓ tests/lab-02/CreateTicket.test.tsx (7 tests)
 
- Test Files  3 passed (3)
-      Tests  14 passed (14)
+ Test Files  4 passed (4)
+      Tests  21 passed (21)
 ```
