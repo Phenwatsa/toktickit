@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { RequesterProvider, useRequester } from "./context/RequesterContext";
-import { Header } from "./components/Header";
+import { Header, AppView } from "./components/Header";
 import { RequesterSelector } from "./components/RequesterSelector";
 import { CreateTicket } from "./components/CreateTicket";
 import { MyTickets } from "./components/MyTickets";
+import { RequesterTicketDetail } from "./components/RequesterTicketDetail";
 import { checkSystem, Category } from "./api";
 import "./styles/zen-green.css";
 
-type View = "my-tickets" | "create-ticket" | "legacy-check";
-
 function MainApp() {
   const { currentRequester } = useRequester();
-  const [currentView, setCurrentView] = useState<View>("my-tickets");
+  const [currentView, setCurrentView] = useState<AppView>("my-tickets");
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [isChangingRequester, setIsChangingRequester] = useState<boolean>(false);
 
   // Legacy Lab 1 state
@@ -66,8 +66,16 @@ function MainApp() {
           <MyTickets
             onNavigateToCreate={() => setCurrentView("create-ticket")}
             onSelectTicket={(ticketId) => {
-              console.log("View ticket details:", ticketId);
+              setSelectedTicketId(ticketId);
+              setCurrentView("ticket-detail");
             }}
+          />
+        )}
+
+        {currentView === "ticket-detail" && selectedTicketId !== null && (
+          <RequesterTicketDetail
+            ticketId={selectedTicketId}
+            onBack={() => setCurrentView("my-tickets")}
           />
         )}
 

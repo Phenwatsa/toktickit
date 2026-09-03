@@ -6,3 +6,5 @@ dist/
 build/
 *.log
 .DS_Store
+server/uploads/*
+!server/uploads/.gitkeep

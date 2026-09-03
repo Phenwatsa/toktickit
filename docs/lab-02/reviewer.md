@@ -10,7 +10,7 @@
 | PR #27 | feature/1-requester-context | Approved |
 | PR #28 | feature/2-ticket-creation | Approved |
 | PR #29 | feature/3-my-tickets | Approved |
-| PR #... | feature/4-ticket-detail-attachments | Pending |
+| PR #30 | feature/4-ticket-detail-attachments | Approved |
 | PR #... | feature/5-e2e-and-responsive | Pending |
 | PR #... | docs/lab2-documentation | Pending |
 
@@ -52,6 +52,15 @@
 
 **How I responded:**
 > Thank you for the review and approval! I have updated the peer review record in `reviewer.md`. PR #29 is ready to be merged into `lab2-staging`.
+
+---
+
+## PR #30 — Issue 9: Ticket Detail, Attachment Upload API & Soft-Removal
+**Reviewer comment I received:**
+> Reviewed the changes against all acceptance criteria. Everything looks good, ticket detail ownership, attachment upload/download, 5-file limit, and soft-removal are implemented as expected. The Requester Ticket Detail and Attachment UI also cover the required actions and states, and the Supertest/Vitest tests are included and passing. So approved ka.
+
+**How I responded:**
+> Thank you for the thorough review and approval! I have recorded the peer review in `reviewer.md`. PR #30 is ready to be merged into `lab2-staging`.
 
 ---
 
