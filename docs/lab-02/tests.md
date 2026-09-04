@@ -37,8 +37,9 @@ This document maps all Functional Requirements (FRs), Business Rules (BRs), and 
 | **UI-07** | UI | AC-07, BR-11 | Display empty state & no-results state | Distinct empty illustration for 0 tickets and no-results banner for filter | `client/tests/lab-02/MyTickets.test.tsx` | Passed |
 | **UI-08** | UI | AC-08, FR-12 | Soft removal modal validation and UI update | Requires reason; updates attachment list to soft-removed state | `client/tests/lab-02/AttachmentSection.test.tsx` | Passed |
 | **UI-09** | UI | AC-06, FR-09 | Render Ticket Detail screen in read-only mode | Header badges, metadata cards, description, and back action work | `client/tests/lab-02/RequesterTicketDetail.test.tsx` | Passed |
-| **E2E-01** | E2E | AC-01..AC-08 | Full ticket lifecycle E2E flow | Select requester $\rightarrow$ Create ticket $\rightarrow$ View in My Tickets $\rightarrow$ Detail $\rightarrow$ Soft-remove | `e2e/lab-02/requester-ticket-flow.spec.ts` | Passed |
+| **E2E-01** | E2E | AC-01..AC-08 | Full ticket lifecycle E2E flow with initial attachment | Select requester $\rightarrow$ Create ticket with attachment $\rightarrow$ View in My Tickets $\rightarrow$ Detail $\rightarrow$ Soft-remove | `e2e/lab-02/requester-ticket-flow.spec.ts` | Passed |
 | **E2E-02** | E2E | AC-05, AC-06 | Multi-user ownership & switching E2E | Switching requester A to B isolates ticket lists and blocks cross-access | `e2e/lab-02/requester-ticket-flow.spec.ts` | Passed |
+| **E2E-03** | E2E | AC-01..AC-10 | Cross-viewport responsive verification (Desktop, Tablet, Mobile) | Zero horizontal overflow assertion (`scrollWidth <= clientWidth`), Sidebar Drawer, Filter Modal, & captures across all 3 viewports | `e2e/lab-02/requester-ticket-flow.spec.ts` | Passed |
 
 ---
 
