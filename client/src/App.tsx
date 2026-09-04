@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { RequesterProvider, useRequester } from "./context/RequesterContext";
 import { Header, AppView } from "./components/Header";
 import { RequesterSelector } from "./components/RequesterSelector";
@@ -13,11 +13,55 @@ function MainApp() {
   const [currentView, setCurrentView] = useState<AppView>("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [isChangingRequester, setIsChangingRequester] = useState<boolean>(false);
+  const [showConfirmChangeModal, setShowConfirmChangeModal] = useState<boolean>(false);
 
   // Legacy Lab 1 state
   const [legacyState, setLegacyState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [categories, setCategories] = useState<Category[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // Hash-based Browser Back/Forward Navigation Handler
+  const syncViewFromHash = useCallback(() => {
+    const hash = window.location.hash || "#/my-tickets";
+    if (hash.startsWith("#/ticket/")) {
+      const idStr = hash.replace("#/ticket/", "");
+      const id = parseInt(idStr, 10);
+      if (!isNaN(id)) {
+        setSelectedTicketId(id);
+        setCurrentView("ticket-detail");
+        return;
+      }
+    }
+    if (hash === "#/create-ticket") {
+      setCurrentView("create-ticket");
+      return;
+    }
+    if (hash === "#/legacy-check") {
+      setCurrentView("legacy-check");
+      return;
+    }
+    setCurrentView("my-tickets");
+  }, []);
+
+  useEffect(() => {
+    syncViewFromHash();
+    window.addEventListener("hashchange", syncViewFromHash);
+    return () => window.removeEventListener("hashchange", syncViewFromHash);
+  }, [syncViewFromHash]);
+
+  function navigateTo(view: AppView, ticketId?: number) {
+    setCurrentView(view);
+    if (view === "ticket-detail" && ticketId) {
+      setSelectedTicketId(ticketId);
+      window.location.hash = `#/ticket/${ticketId}`;
+    } else if (view === "create-ticket") {
+      window.location.hash = "#/create-ticket";
+    } else if (view === "legacy-check") {
+      window.location.hash = "#/legacy-check";
+    } else {
+      window.location.hash = "#/my-tickets";
+    }
+  }
 
   async function handleCheckLegacy() {
     setLegacyState("loading");
@@ -32,7 +76,7 @@ function MainApp() {
     }
   }
 
-  // If no user is selected or changing user modal is triggered
+  // If no user is selected or changing user screen is active
   if (!currentRequester || isChangingRequester) {
     return (
       <div className="min-vh-100 d-flex flex-column bg-light">
@@ -56,33 +100,88 @@ function MainApp() {
       {/* Zen Green Navigation Header */}
       <Header
         currentView={currentView}
-        onNavigate={(view) => setCurrentView(view)}
-        onChangeRequester={() => setIsChangingRequester(true)}
+        onNavigate={(view) => navigateTo(view)}
+        onChangeRequester={() => setShowConfirmChangeModal(true)}
       />
 
-      {/* Main Content Area */}
-      <main className="container-fluid px-md-5 flex-grow-1 py-3" style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
+      {/* Confirmation Modal for Changing Requester */}
+      {showConfirmChangeModal && (
+        <div className="zen-modal-backdrop" data-testid="confirm-change-requester-modal">
+          <div className="zen-modal-content" style={{ maxWidth: 440 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  backgroundColor: "var(--color-warning-bg)",
+                  color: "var(--color-warning)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--color-text-main)" }}>
+                Switch Development Requester?
+              </h3>
+            </div>
+
+            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem", lineHeight: 1.5, marginBottom: "1.5rem" }}>
+              Are you sure you want to switch to another requester account? Any unsaved form entries will be lost.
+            </p>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <button
+                type="button"
+                className="zen-btn-secondary"
+                onClick={() => setShowConfirmChangeModal(false)}
+                data-testid="cancel-change-requester-btn"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="zen-btn-primary"
+                onClick={() => {
+                  setShowConfirmChangeModal(false);
+                  setIsChangingRequester(true);
+                }}
+                data-testid="confirm-change-requester-btn"
+              >
+                Yes, Switch Requester
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area - Wide & Responsive */}
+      <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1400, margin: "0 auto", width: "100%" }}>
         {currentView === "my-tickets" && (
           <MyTickets
-            onNavigateToCreate={() => setCurrentView("create-ticket")}
-            onSelectTicket={(ticketId) => {
-              setSelectedTicketId(ticketId);
-              setCurrentView("ticket-detail");
-            }}
+            onNavigateToCreate={() => navigateTo("create-ticket")}
+            onSelectTicket={(ticketId) => navigateTo("ticket-detail", ticketId)}
           />
         )}
 
         {currentView === "ticket-detail" && selectedTicketId !== null && (
           <RequesterTicketDetail
             ticketId={selectedTicketId}
-            onBack={() => setCurrentView("my-tickets")}
+            onBack={() => navigateTo("my-tickets")}
           />
         )}
 
         {currentView === "create-ticket" && (
           <CreateTicket
-            onCancel={() => setCurrentView("my-tickets")}
-            onSuccess={() => setCurrentView("my-tickets")}
+            onCancel={() => navigateTo("my-tickets")}
+            onSuccess={() => navigateTo("my-tickets")}
           />
         )}
 

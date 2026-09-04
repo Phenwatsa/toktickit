@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useRequester } from "../context/RequesterContext";
-import { RequesterUser } from "../types";
 
 interface RequesterSelectorProps {
   onContinue: () => void;
@@ -33,48 +32,60 @@ export function RequesterSelector({ onContinue, onCancel }: RequesterSelectorPro
   }
 
   return (
-    <div className="container py-5" style={{ maxWidth: 560 }}>
-      <div className="zen-card shadow-sm border">
+    <div style={{ maxWidth: 540, margin: "2rem auto", padding: "0 1rem" }}>
+      <div className="zen-card" style={{ padding: "2rem" }}>
         {/* Header Icon & Title */}
-        <div className="text-center mb-4">
+        <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
           <div
-            className="d-inline-flex align-items-center justify-content-center mb-3"
             style={{
-              width: 56,
-              height: 56,
+              width: 52,
+              height: 52,
               backgroundColor: "var(--color-pale-green)",
+              color: "var(--color-primary)",
               borderRadius: "50%",
-              fontSize: "1.75rem",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "1rem",
+              boxShadow: "0 2px 6px rgba(0, 107, 60, 0.15)",
             }}
           >
-            👥
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
           </div>
-          <h2 className="h4 fw-bold text-dark mb-2">Select Development Requester</h2>
-          <p className="text-muted small mb-0">
-            Choose a development requester to simulate the current requester context for Lab 2.
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-text-main)", margin: "0 0 0.35rem" }}>
+            Select Development Requester
+          </h2>
+          <p style={{ color: "var(--color-text-muted)", fontSize: "0.85rem", margin: 0, lineHeight: 1.45 }}>
+            Choose a development requester to simulate the current user context.
             <br />
-            <strong>This is for testing only and is not a login screen.</strong>
+            <span style={{ fontSize: "0.785rem", color: "#64748B" }}>This is for testing only and is not a login screen.</span>
           </p>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="text-center py-4">
-            <div className="spinner-border text-success" role="status">
-              <span className="visually-hidden">Loading requesters...</span>
-            </div>
-            <p className="text-muted mt-2 small">Loading active development requesters...</p>
+          <div style={{ textAlign: "center", padding: "2rem 0" }}>
+            <div style={{ display: "inline-block", width: "24px", height: "24px", border: "3px solid #CBD5E1", borderTopColor: "var(--color-primary)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+            <p style={{ color: "var(--color-text-muted)", marginTop: "0.5rem", fontSize: "0.85rem" }}>
+              Loading active requesters...
+            </p>
           </div>
         )}
 
         {/* Error State */}
         {!isLoading && error && (
-          <div className="alert alert-danger mb-4" role="alert">
-            <h6 className="alert-heading fw-bold mb-1">Failed to load requesters</h6>
-            <p className="small mb-2">{error}</p>
+          <div style={{ padding: "0.85rem 1rem", backgroundColor: "var(--color-error-bg)", border: "1px solid #FECACA", borderRadius: "8px", color: "var(--color-error)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+            <div style={{ fontWeight: 700, marginBottom: "0.25rem" }}>Failed to load requesters</div>
+            <p style={{ margin: "0 0 0.5rem" }}>{error}</p>
             <button
               type="button"
-              className="btn btn-outline-danger btn-sm"
+              className="zen-btn-secondary"
+              style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
               onClick={refreshRequesters}
             >
               Retry
@@ -84,18 +95,15 @@ export function RequesterSelector({ onContinue, onCancel }: RequesterSelectorPro
 
         {/* Empty State */}
         {!isLoading && !error && activeRequesters.length === 0 && (
-          <div className="alert alert-warning mb-4" role="alert">
-            <p className="mb-0 small">
-              No active development requesters found in the database. Please run the seed script:{" "}
-              <code>npm run prisma:seed</code>.
-            </p>
+          <div style={{ padding: "0.85rem 1rem", backgroundColor: "var(--color-warning-bg)", border: "1px solid #FDE68A", borderRadius: "8px", color: "#92400E", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+            No active development requesters found in the database. Please run the seed script: <code>npm run prisma:seed</code>.
           </div>
         )}
 
         {/* Main Selection Form */}
         {!isLoading && !error && activeRequesters.length > 0 && (
           <form onSubmit={handleContinue}>
-            <div className="mb-3">
+            <div style={{ marginBottom: "1rem" }}>
               <label htmlFor="requesterSelect" className="zen-form-label">
                 Development Requester <span className="zen-required">*</span>
               </label>
@@ -117,27 +125,25 @@ export function RequesterSelector({ onContinue, onCancel }: RequesterSelectorPro
               </select>
             </div>
 
-            <div className="zen-callout-info mb-3 d-flex gap-2 align-items-center">
-              <span>ℹ️</span>
-              <span className="small">
-                Only active development requesters are shown. Inactive accounts are excluded.
-              </span>
+            <div style={{ padding: "0.65rem 0.85rem", backgroundColor: "#F8FAF8", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "0.8rem", color: "#475569", marginBottom: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)", flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <span>Showing active development accounts only. Inactive profiles are excluded.</span>
             </div>
 
-            <div className="p-3 bg-light rounded border mb-4">
-              <div className="d-flex gap-2">
-                <span>🛡️</span>
-                <div>
-                  <strong className="d-block text-dark small">Authentication coming in Lab 3</strong>
-                  <p className="text-muted small mb-0">
-                    In Lab 3, this selection will be replaced with secure authentication so you can
-                    access the system with your own account.
-                  </p>
-                </div>
+            <div style={{ padding: "0.65rem 0.85rem", backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", fontSize: "0.8rem", color: "#475569", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-secondary)", flexShrink: 0 }}>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <div>
+                <strong style={{ color: "#0F172A" }}>Authentication coming in Lab 3</strong> &mdash; Simulated context for development testing.
               </div>
             </div>
 
-            <div className="d-flex justify-content-end gap-2">
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
               {onCancel && (
                 <button
                   type="button"
@@ -151,8 +157,13 @@ export function RequesterSelector({ onContinue, onCancel }: RequesterSelectorPro
                 type="submit"
                 className="zen-btn-primary"
                 disabled={!selectedId}
+                data-testid="continue-requester-btn"
               >
-                ➔ Continue
+                <span>Continue</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
               </button>
             </div>
           </form>

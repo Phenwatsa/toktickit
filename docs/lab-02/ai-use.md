@@ -13,8 +13,9 @@
 | 5 | Implement Ticket Creation API (POST /api/tickets) with unique ticket number generator, field validation, Supertest suite, and Zen Green CreateTicket UI form with Vitest. | Developed TKT-YYYY-NNNNNN generator, reference data endpoints, client-side validation, busy states, safe error retention, and file attachment constraints. |
 | 6 | Implement My Tickets list and filtering API (GET /api/tickets) with multi-tenant data isolation, Supertest suite, and Zen Green MyTickets UI table with search, filters, pagination, and Vitest. | Developed multi-parameter query builder, tenant isolation rules, empty/no-results states, pagination controls, and automated tests. |
 | 7 | Implement Ticket Detail inspection API (GET /api/tickets/:id), Attachment Binary Upload (POST /api/tickets/:id/attachments), Download restriction (GET /api/attachments/:id/download), Soft-Removal (DELETE /api/tickets/:id/attachments/:attachmentId), Supertest suites, and Zen Green RequesterTicketDetail & AttachmentSection UI with Vitest. | Developed read-only detail view, multipart upload storage, BR-10 soft-removal retention with audit reason, 410 Gone download blocking, and full client/server test suites. |
-| 8 | *(To be added during Issue 10)* | |
-| 9 | *(To be added during Issue 11)* | |
+| 8 | Implement Playwright End-to-End Test Suite (`e2e/lab-02/requester-ticket-flow.spec.ts`), Responsive Design across Desktop/Tablet/Mobile (`zen-green.css`), and automate capture of all deliverable screenshots under `artifacts/lab-02/screenshots/`. | Built full E2E lifecycle and data isolation suites, polished mobile/tablet styling with no horizontal scroll, and captured 11 screenshot artifacts for PDF report. |
+| 9 | Refine UI with Apple-style Zen Green design system: high-contrast header, single-row filter bar, prominent Clear Filters button, deduplicated Cancel action, browser Back/Forward hash navigation, Change Requester confirmation modal, and concise readable copy. | Enhanced visual clarity, typography, responsive single-row filtering, and intuitive navigation ergonomics across all views while preserving 100% test coverage. |
+| 10 | *(To be added during Issue 11)* | |
 
 ## Reflection
 

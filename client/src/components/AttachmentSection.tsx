@@ -435,48 +435,92 @@ export function AttachmentSection({
       {/* Soft-Remove Confirmation Modal */}
       {targetAttachment && (
         <div
+          className="zen-modal-backdrop"
           data-testid="removal-modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: "1rem",
-          }}
         >
           <div
-            className="zen-card"
+            className="zen-modal-content"
             data-testid="removal-modal"
-            style={{
-              maxWidth: "480px",
-              width: "100%",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-            }}
+            style={{ maxWidth: "480px" }}
           >
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--color-primary-dark)", fontSize: "1.1rem" }}>
-              Confirm Attachment Removal
-            </h3>
-            <p style={{ margin: "0 0 0.75rem", fontSize: "0.875rem", color: "var(--color-text-main)" }}>
-              Are you sure you want to remove <strong>{targetAttachment.originalName}</strong>?
-            </p>
-            <p style={{ margin: "0 0 1rem", fontSize: "0.8rem", color: "var(--color-text-muted)", lineHeight: 1.4 }}>
-              In compliance with audit retention policies, the attachment metadata will be retained and marked as removed. File download will be permanently disabled.
-            </p>
+            {/* Modal Header with Danger Icon */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "50%",
+                  backgroundColor: "#FEE2E2",
+                  color: "#DC2626",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "var(--color-text-main)" }}>
+                  Remove File Attachment?
+                </h3>
+                <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+                  This action marks the attachment as soft-removed.
+                </p>
+              </div>
+            </div>
+
+            {/* Target File Card */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.6rem",
+                padding: "0.65rem 0.85rem",
+                backgroundColor: "#F8FAF8",
+                border: "1px solid #E2E8F0",
+                borderRadius: "8px",
+                marginBottom: "1rem",
+              }}
+            >
+              {renderFileIcon(targetAttachment.mimeType)}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#0F172A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {targetAttachment.originalName}
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "#64748B" }}>
+                  {formatBytes(targetAttachment.sizeBytes)} • Uploaded {formatDate(targetAttachment.uploadedAt)}
+                </div>
+              </div>
+            </div>
+
+            {/* Audit Notice */}
+            <div style={{ padding: "0.65rem 0.85rem", backgroundColor: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", fontSize: "0.775rem", color: "#92400E", lineHeight: 1.45, marginBottom: "1.25rem", display: "flex", alignItems: "flex-start", gap: "0.45rem" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "2px" }}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>Soft-removed files remain in audit history. File download will be permanently disabled.</span>
+            </div>
 
             <form onSubmit={handleConfirmRemove}>
               <div style={{ marginBottom: "1rem" }}>
-                <label
-                  htmlFor="removalReasonInput"
-                  style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.35rem" }}
-                >
-                  Removal Reason <span style={{ color: "var(--color-error)" }}>*</span>
-                </label>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+                  <label
+                    htmlFor="removalReasonInput"
+                    style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--color-text-main)", margin: 0 }}
+                  >
+                    Removal Reason <span style={{ color: "var(--color-error)" }}>*</span>
+                  </label>
+                  <span style={{ fontSize: "0.75rem", color: removalReason.trim().length >= 3 ? "var(--color-primary)" : "#94A3B8" }}>
+                    Min 3 chars ({removalReason.trim().length} entered)
+                  </span>
+                </div>
                 <textarea
                   id="removalReasonInput"
                   className="zen-form-control"
@@ -488,12 +532,9 @@ export function AttachmentSection({
                     if (removalError) setRemovalError(null);
                   }}
                   data-testid="removal-reason-input"
-                  style={{ width: "100%", boxSizing: "border-box" }}
+                  style={{ width: "100%", boxSizing: "border-box", resize: "vertical" }}
                   required
                 />
-                <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "4px" }}>
-                  Minimum 3 characters ({removalReason.trim().length} entered)
-                </div>
               </div>
 
               {removalError && (
@@ -513,7 +554,7 @@ export function AttachmentSection({
                 </div>
               )}
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.25rem" }}>
                 <button
                   type="button"
                   className="zen-btn-secondary"
@@ -529,12 +570,33 @@ export function AttachmentSection({
                 </button>
                 <button
                   type="submit"
-                  className="zen-btn-primary"
+                  style={{
+                    backgroundColor: "#DC2626",
+                    border: "1px solid #DC2626",
+                    color: "#FFFFFF",
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                    padding: "0.5rem 1.15rem",
+                    borderRadius: "var(--radius-btn)",
+                    cursor: isRemoving || removalReason.trim().length < 3 ? "not-allowed" : "pointer",
+                    opacity: isRemoving || removalReason.trim().length < 3 ? 0.6 : 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    transition: "all 0.15s ease",
+                    boxShadow: "0 1px 2px rgba(220, 38, 38, 0.2)",
+                  }}
                   disabled={isRemoving || removalReason.trim().length < 3}
                   data-testid="modal-confirm-btn"
-                  style={{ backgroundColor: "var(--color-error)", borderColor: "var(--color-error)" }}
                 >
-                  {isRemoving ? "Removing..." : "Confirm Removal"}
+                  {isRemoving ? (
+                    <>
+                      <span style={{ display: "inline-block", width: "14px", height: "14px", border: "2px solid #FFFFFF", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                      <span>Removing...</span>
+                    </>
+                  ) : (
+                    <span>Confirm Removal</span>
+                  )}
                 </button>
               </div>
             </form>

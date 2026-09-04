@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRequester } from "../context/RequesterContext";
 import {
   Category,
@@ -35,6 +35,7 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
 
 export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   const { currentRequester } = useRequester();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
   const [categoryId, setCategoryId] = useState<number | "">("");
@@ -148,13 +149,13 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
 
     if (errorMessage) {
       setFieldErrors((prev) => ({ ...prev, attachments: errorMessage! }));
-      e.target.value = ""; // Reset file input
+      e.target.value = "";
       return;
     }
 
     setFieldErrors((prev) => ({ ...prev, attachments: undefined }));
     setSelectedFiles((prev) => [...prev, ...newFiles]);
-    e.target.value = ""; // Reset input so user can add more if < 5
+    e.target.value = "";
   }
 
   function handleRemoveFile(indexToRemove: number) {
@@ -215,336 +216,388 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   // Success State View
   if (createdTicket) {
     return (
-      <div className="zen-card shadow-sm border p-4 my-2">
-        <div className="text-center py-3">
-          <div
-            className="d-inline-flex align-items-center justify-content-center mb-3"
+      <div className="zen-card" style={{ maxWidth: "600px", margin: "2rem auto", textAlign: "center", padding: "2.5rem 1.5rem" }}>
+        <div
+          style={{
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            backgroundColor: "var(--color-pale-green)",
+            color: "var(--color-primary)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "1rem",
+          }}
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h3 style={{ margin: "0 0 0.5rem", fontSize: "1.25rem", color: "var(--color-text-main)" }}>
+          Ticket Created Successfully!
+        </h3>
+        <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
+          Your support request has been submitted with official Ticket Number:
+        </p>
+
+        <div
+          style={{
+            display: "inline-block",
+            padding: "0.45rem 1.25rem",
+            backgroundColor: "var(--color-pale-green)",
+            border: "1px solid #C4E6D2",
+            borderRadius: "9999px",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <span
             style={{
-              width: 64,
-              height: 64,
-              backgroundColor: "var(--color-pale-green)",
-              borderRadius: "50%",
-              fontSize: "2rem",
+              fontSize: "1.1rem",
+              fontWeight: 700,
+              color: "var(--color-primary-dark)",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
             }}
+            data-testid="created-ticket-number"
           >
-            ✅
-          </div>
-          <h3 className="h4 fw-bold text-success mb-2">Ticket Created Successfully!</h3>
-          <p className="text-muted mb-4">
-            Your support ticket has been submitted with official Ticket Number:
-          </p>
+            {createdTicket.ticketNumber}
+          </span>
+        </div>
 
-          <div
-            className="d-inline-block px-4 py-2 mb-4 rounded-pill border"
-            style={{
-              backgroundColor: "var(--color-pale-green)",
-              borderColor: "var(--color-secondary)",
-            }}
-          >
-            <span className="h5 fw-bold mb-0 text-dark" data-testid="created-ticket-number">
-              🎟️ {createdTicket.ticketNumber}
-            </span>
-          </div>
-
-          <div className="p-3 bg-light rounded border mb-4 text-start" style={{ maxWidth: 500, margin: "0 auto" }}>
-            <div className="d-flex justify-content-between mb-1">
-              <span className="text-muted small">Summary:</span>
-              <strong className="small text-dark">{createdTicket.summary}</strong>
-            </div>
-            <div className="d-flex justify-content-between mb-1">
-              <span className="text-muted small">Status:</span>
-              <span className="zen-badge zen-badge-new">{createdTicket.currentStatus}</span>
-            </div>
-            <div className="d-flex justify-content-between">
-              <span className="text-muted small">Requested Priority:</span>
-              <span className={`zen-badge zen-badge-priority-${createdTicket.requestedPriority.toLowerCase()}`}>
-                {createdTicket.requestedPriority}
-              </span>
-            </div>
-          </div>
-
-          <div className="d-flex justify-content-center gap-3">
-            {onCancel && (
-              <button
-                type="button"
-                className="zen-btn-secondary"
-                onClick={onCancel}
-              >
-                📋 View in My Tickets
-              </button>
-            )}
+        <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem" }}>
+          {onCancel && (
             <button
               type="button"
-              className="zen-btn-primary"
-              onClick={handleResetForm}
+              className="zen-btn-secondary"
+              onClick={onCancel}
             >
-              ➕ Create Another Ticket
+              View in My Tickets
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            className="zen-btn-primary"
+            onClick={handleResetForm}
+          >
+            Create Another Ticket
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="zen-card shadow-sm border p-4 my-2">
-      <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-        <div>
-          <h2 className="h4 fw-bold text-dark mb-1">Create IT Support Ticket</h2>
-          <p className="text-muted small mb-0">
-            Submit a new IT request for hardware, software, network, or account support.
-          </p>
-        </div>
-        {onCancel && (
-          <button
-            type="button"
-            className="zen-btn-secondary btn-sm"
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
-        )}
+    <div style={{ maxWidth: "860px", margin: "0 auto", paddingBottom: "3rem" }}>
+      {/* Page Header */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.35rem", fontWeight: 700, color: "var(--color-text-main)", letterSpacing: "-0.02em" }}>
+          Create IT Support Ticket
+        </h1>
+        <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
+          Submit a technical issue or service request to the IT team.
+        </p>
       </div>
 
-      {/* Server Error Alert (Safe Error State) */}
+      {/* Server Error Alert */}
       {serverError && (
-        <div className="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
-          <span>⚠️</span>
+        <div style={{ padding: "0.85rem 1rem", backgroundColor: "var(--color-error-bg)", border: "1px solid #FECACA", borderRadius: "8px", color: "var(--color-error)", fontSize: "0.875rem", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
           <div>
             <strong>Submission Error:</strong> {serverError}
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate>
-        {/* Read-Only Header Section */}
-        <div className="row g-3 p-3 mb-4 rounded border" style={{ backgroundColor: "var(--color-readonly-bg)" }}>
-          <div className="col-md-6">
-            <label className="zen-form-label mb-1 text-muted">
-              Requester (Read-Only)
-            </label>
-            <div className="d-flex align-items-center gap-2 px-3 py-2 bg-white rounded border">
-              <span>👤</span>
-              <strong>{currentRequester ? currentRequester.name : "None"}</strong>
-              <span className="text-muted small">
-                ({currentRequester ? currentRequester.department : "No department"})
+      <form onSubmit={handleSubmit} noValidate id="create-ticket-form">
+        {/* Section 1: Requester & Classification */}
+        <div className="zen-form-section">
+          <div className="zen-form-section-title">
+            <span className="zen-form-section-number">1</span>
+            Classification & Context
+          </div>
+
+          {/* Read-Only Context Bar */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem", padding: "0.75rem 1rem", backgroundColor: "#F8FAF8", border: "1px solid #E2E8F0", borderRadius: "8px", marginBottom: "1.25rem" }}>
+            <div>
+              <div style={{ fontSize: "0.725rem", textTransform: "uppercase", color: "#64748B", fontWeight: 700, letterSpacing: "0.04em", marginBottom: "0.2rem" }}>
+                Requester (Read-Only)
+              </div>
+              <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0F172A" }}>
+                {currentRequester ? currentRequester.name : "None"}
+                <span style={{ fontSize: "0.75rem", color: "#64748B", fontWeight: 400, marginLeft: "0.4rem" }}>
+                  ({currentRequester ? currentRequester.department : ""})
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: "0.725rem", textTransform: "uppercase", color: "#64748B", fontWeight: 700, letterSpacing: "0.04em", marginBottom: "0.2rem" }}>
+                Date Submitted
+              </div>
+              <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0F172A" }}>
+                {todayFormatted}
+              </div>
+            </div>
+          </div>
+
+          {/* Classification Dropdowns Grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
+            {/* Category */}
+            <div>
+              <label htmlFor="ticketCategory" className="zen-form-label">
+                Category <span className="zen-required">*</span>
+              </label>
+              <select
+                id="ticketCategory"
+                className={`zen-form-control ${fieldErrors.categoryId ? "is-invalid" : ""}`}
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value ? Number(e.target.value) : "");
+                  if (fieldErrors.categoryId) setFieldErrors((p) => ({ ...p, categoryId: undefined }));
+                }}
+                disabled={isLoadingRefData}
+                required
+              >
+                <option value="">-- Select Category --</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.categoryId && (
+                <div className="zen-invalid-feedback">{fieldErrors.categoryId}</div>
+              )}
+            </div>
+
+            {/* Related System */}
+            <div>
+              <label htmlFor="ticketSystem" className="zen-form-label">
+                Related System <span className="zen-required">*</span>
+              </label>
+              <select
+                id="ticketSystem"
+                className={`zen-form-control ${fieldErrors.relatedSystemId ? "is-invalid" : ""}`}
+                value={relatedSystemId}
+                onChange={(e) => {
+                  setRelatedSystemId(e.target.value ? Number(e.target.value) : "");
+                  if (fieldErrors.relatedSystemId) setFieldErrors((p) => ({ ...p, relatedSystemId: undefined }));
+                }}
+                disabled={isLoadingRefData}
+                required
+              >
+                <option value="">-- Select Related System --</option>
+                {relatedSystems.map((sys) => (
+                  <option key={sys.id} value={sys.id}>
+                    {sys.name}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.relatedSystemId && (
+                <div className="zen-invalid-feedback">{fieldErrors.relatedSystemId}</div>
+              )}
+            </div>
+
+            {/* Requested Priority */}
+            <div>
+              <label htmlFor="ticketPriority" className="zen-form-label">
+                Requested Priority <span className="zen-required">*</span>
+              </label>
+              <select
+                id="ticketPriority"
+                className={`zen-form-control ${fieldErrors.requestedPriority ? "is-invalid" : ""}`}
+                value={requestedPriority}
+                onChange={(e) => {
+                  setRequestedPriority(e.target.value as Priority);
+                  if (fieldErrors.requestedPriority) setFieldErrors((p) => ({ ...p, requestedPriority: undefined }));
+                }}
+                required
+              >
+                <option value="">-- Select Priority --</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+              {fieldErrors.requestedPriority && (
+                <div className="zen-invalid-feedback">{fieldErrors.requestedPriority}</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Section 2: Issue Details */}
+        <div className="zen-form-section">
+          <div className="zen-form-section-title">
+            <span className="zen-form-section-number">2</span>
+            Issue Details
+          </div>
+
+          {/* Summary Input */}
+          <div style={{ marginBottom: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+              <label htmlFor="ticketSummary" className="zen-form-label" style={{ margin: 0 }}>
+                Ticket Summary <span className="zen-required">*</span>
+              </label>
+              <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>
+                {summary.length}/150
               </span>
             </div>
+            <input
+              id="ticketSummary"
+              type="text"
+              className={`zen-form-control ${fieldErrors.summary ? "is-invalid" : ""}`}
+              placeholder="e.g. Laptop battery drains rapidly under normal load"
+              maxLength={150}
+              value={summary}
+              onChange={(e) => {
+                setSummary(e.target.value);
+                if (fieldErrors.summary) setFieldErrors((p) => ({ ...p, summary: undefined }));
+              }}
+              required
+            />
+            {fieldErrors.summary && (
+              <div className="zen-invalid-feedback">{fieldErrors.summary}</div>
+            )}
           </div>
-          <div className="col-md-6">
-            <label className="zen-form-label mb-1 text-muted">
-              Ticket Date (Read-Only)
-            </label>
-            <div className="d-flex align-items-center gap-2 px-3 py-2 bg-white rounded border">
-              <span>📅</span>
-              <span className="text-dark">{todayFormatted}</span>
+
+          {/* Description Textarea */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+              <label htmlFor="ticketDescription" className="zen-form-label" style={{ margin: 0 }}>
+                Description <span className="zen-required">*</span>
+              </label>
+              <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>
+                {description.length}/2000
+              </span>
             </div>
-          </div>
-        </div>
-
-        {/* Classification Fields (3 Columns) */}
-        <div className="row g-3 mb-3">
-          {/* Category Dropdown */}
-          <div className="col-md-4">
-            <label htmlFor="ticketCategory" className="zen-form-label">
-              Category <span className="zen-required">*</span>
-            </label>
-            <select
-              id="ticketCategory"
-              className={`zen-form-control ${fieldErrors.categoryId ? "is-invalid" : ""}`}
-              value={categoryId}
+            <textarea
+              id="ticketDescription"
+              rows={4}
+              className={`zen-form-control ${fieldErrors.description ? "is-invalid" : ""}`}
+              placeholder="Describe the issue in detail, error messages, and reproduction steps..."
+              maxLength={2000}
+              value={description}
               onChange={(e) => {
-                setCategoryId(e.target.value ? Number(e.target.value) : "");
-                if (fieldErrors.categoryId) {
-                  setFieldErrors((prev) => ({ ...prev, categoryId: undefined }));
-                }
+                setDescription(e.target.value);
+                if (fieldErrors.description) setFieldErrors((p) => ({ ...p, description: undefined }));
               }}
-              disabled={isLoadingRefData}
+              style={{ resize: "vertical" }}
               required
-            >
-              <option value="">-- Select Category --</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.categoryId && (
-              <div className="zen-invalid-feedback">{fieldErrors.categoryId}</div>
-            )}
-          </div>
-
-          {/* Related System Dropdown */}
-          <div className="col-md-4">
-            <label htmlFor="ticketSystem" className="zen-form-label">
-              Related System <span className="zen-required">*</span>
-            </label>
-            <select
-              id="ticketSystem"
-              className={`zen-form-control ${fieldErrors.relatedSystemId ? "is-invalid" : ""}`}
-              value={relatedSystemId}
-              onChange={(e) => {
-                setRelatedSystemId(e.target.value ? Number(e.target.value) : "");
-                if (fieldErrors.relatedSystemId) {
-                  setFieldErrors((prev) => ({ ...prev, relatedSystemId: undefined }));
-                }
-              }}
-              disabled={isLoadingRefData}
-              required
-            >
-              <option value="">-- Select Related System --</option>
-              {relatedSystems.map((sys) => (
-                <option key={sys.id} value={sys.id}>
-                  {sys.name}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.relatedSystemId && (
-              <div className="zen-invalid-feedback">{fieldErrors.relatedSystemId}</div>
-            )}
-          </div>
-
-          {/* Requested Priority Dropdown */}
-          <div className="col-md-4">
-            <label htmlFor="ticketPriority" className="zen-form-label">
-              Requested Priority <span className="zen-required">*</span>
-            </label>
-            <select
-              id="ticketPriority"
-              className={`zen-form-control ${fieldErrors.requestedPriority ? "is-invalid" : ""}`}
-              value={requestedPriority}
-              onChange={(e) => {
-                setRequestedPriority(e.target.value as Priority);
-                if (fieldErrors.requestedPriority) {
-                  setFieldErrors((prev) => ({ ...prev, requestedPriority: undefined }));
-                }
-              }}
-              required
-            >
-              <option value="">-- Select Priority --</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
-            </select>
-            {fieldErrors.requestedPriority && (
-              <div className="zen-invalid-feedback">{fieldErrors.requestedPriority}</div>
+            />
+            {fieldErrors.description && (
+              <div className="zen-invalid-feedback">{fieldErrors.description}</div>
             )}
           </div>
         </div>
 
-        {/* Ticket Summary Input */}
-        <div className="mb-3">
-          <div className="d-flex justify-content-between">
-            <label htmlFor="ticketSummary" className="zen-form-label">
-              Ticket Summary <span className="zen-required">*</span>
-            </label>
-            <span className="text-muted small">
-              {summary.length}/150
-            </span>
+        {/* Section 3: Supporting Attachments */}
+        <div className="zen-form-section">
+          <div className="zen-form-section-title">
+            <span className="zen-form-section-number">3</span>
+            Supporting Attachments (Optional)
           </div>
-          <input
-            id="ticketSummary"
-            type="text"
-            className={`zen-form-control ${fieldErrors.summary ? "is-invalid" : ""}`}
-            placeholder="Brief description of the problem (e.g. Laptop battery drains quickly)"
-            maxLength={150}
-            value={summary}
-            onChange={(e) => {
-              setSummary(e.target.value);
-              if (fieldErrors.summary) {
-                setFieldErrors((prev) => ({ ...prev, summary: undefined }));
-              }
-            }}
-            required
-          />
-          {fieldErrors.summary && (
-            <div className="zen-invalid-feedback">{fieldErrors.summary}</div>
-          )}
-        </div>
-
-        {/* Ticket Description Textarea */}
-        <div className="mb-4">
-          <div className="d-flex justify-content-between">
-            <label htmlFor="ticketDescription" className="zen-form-label">
-              Description <span className="zen-required">*</span>
-            </label>
-            <span className="text-muted small">
-              {description.length}/2000
-            </span>
-          </div>
-          <textarea
-            id="ticketDescription"
-            rows={4}
-            className={`zen-form-control ${fieldErrors.description ? "is-invalid" : ""}`}
-            placeholder="Detailed information regarding what happened, steps to reproduce, or any error messages..."
-            maxLength={2000}
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
-              if (fieldErrors.description) {
-                setFieldErrors((prev) => ({ ...prev, description: undefined }));
-              }
-            }}
-            style={{ resize: "vertical" }}
-            required
-          />
-          {fieldErrors.description && (
-            <div className="zen-invalid-feedback">{fieldErrors.description}</div>
-          )}
-        </div>
-
-        {/* Attachments Dropzone / Selector */}
-        <div className="mb-4 p-3 border rounded bg-light">
-          <label htmlFor="ticketAttachments" className="zen-form-label d-flex justify-content-between">
-            <span>📎 Supporting Attachments (Optional)</span>
-            <span className="text-muted small">
-              Max 5 files (JPG, PNG, WEBP, PDF up to 5 MB each)
-            </span>
-          </label>
 
           <input
+            ref={fileInputRef}
             id="ticketAttachments"
             type="file"
-            className="form-control"
             multiple
             accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
             onChange={handleFileChange}
             disabled={selectedFiles.length >= 5}
+            style={{ display: "none" }}
           />
 
+          {/* Apple-Style Modern Dashed Dropzone */}
+          <div
+            className={`zen-dropzone ${selectedFiles.length >= 5 ? "disabled" : ""}`}
+            onClick={() => {
+              if (selectedFiles.length < 5) fileInputRef.current?.click();
+            }}
+            data-testid="attachment-input-trigger"
+          >
+            <div className="zen-dropzone-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#0F172A", marginBottom: "0.25rem" }}>
+              {selectedFiles.length >= 5 ? "Maximum 5 attachments reached" : "Click or Drag files to attach"}
+            </div>
+            <div style={{ fontSize: "0.775rem", color: "#64748B" }}>
+              JPG, PNG, WEBP, or PDF • Up to 5 MB per file (Max 5 files)
+            </div>
+          </div>
+
           {fieldErrors.attachments && (
-            <div className="text-danger small mt-2 d-flex align-items-center gap-1">
-              <span>⚠️</span> {fieldErrors.attachments}
+            <div className="zen-invalid-feedback" style={{ marginTop: "0.5rem" }}>
+              {fieldErrors.attachments}
             </div>
           )}
 
           {/* Selected Files List */}
           {selectedFiles.length > 0 && (
-            <div className="mt-3">
-              <strong className="d-block small mb-2 text-dark">
-                Selected Attachments ({selectedFiles.length}/5):
-              </strong>
-              <div className="d-flex flex-column gap-2">
+            <div style={{ marginTop: "1rem" }}>
+              <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569", marginBottom: "0.5rem" }}>
+                Selected Files ({selectedFiles.length}/5):
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                 {selectedFiles.map((file, idx) => (
                   <div
                     key={idx}
-                    className="d-flex align-items-center justify-content-between p-2 bg-white rounded border small"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0.6rem 0.85rem",
+                      backgroundColor: "#F8FAF8",
+                      border: "1px solid #E2E8F0",
+                      borderRadius: "6px",
+                      fontSize: "0.85rem",
+                    }}
                   >
-                    <div className="d-flex align-items-center gap-2 text-truncate">
-                      <span>📄</span>
-                      <span className="fw-semibold text-truncate">{file.name}</span>
-                      <span className="text-muted">
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                      <span style={{ fontWeight: 600, color: "#0F172A", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                        {file.name}
+                      </span>
+                      <span style={{ fontSize: "0.75rem", color: "#64748B" }}>
                         ({(file.size / 1024).toFixed(1)} KB)
                       </span>
                     </div>
+
                     <button
                       type="button"
-                      className="btn btn-outline-danger btn-sm py-0 px-2"
-                      onClick={() => handleRemoveFile(idx)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(idx);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--color-error)",
+                        cursor: "pointer",
+                        padding: "0.2rem 0.4rem",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
                       title="Remove file"
                     >
-                      ✕
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
                     </button>
                   </div>
                 ))}
@@ -554,7 +607,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
         </div>
 
         {/* Form Actions */}
-        <div className="d-flex justify-content-end gap-3 pt-3 border-top">
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
           {onCancel && (
             <button
               type="button"
@@ -573,11 +626,11 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
           >
             {isSubmitting ? (
               <>
-                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span style={{ display: "inline-block", width: "14px", height: "14px", border: "2px solid #FFFFFF", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
                 <span>Submitting Ticket...</span>
               </>
             ) : (
-              <span>➔ Submit Ticket</span>
+              <span>Submit Ticket</span>
             )}
           </button>
         </div>
