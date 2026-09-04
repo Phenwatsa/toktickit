@@ -11,7 +11,7 @@
 | PR #28 | feature/2-ticket-creation | Approved |
 | PR #29 | feature/3-my-tickets | Approved |
 | PR #30 | feature/4-ticket-detail-attachments | Approved |
-| PR #... | feature/5-e2e-and-responsive | Pending |
+| PR #31 | feature/5-e2e-and-responsive | Pending |
 | PR #... | docs/lab2-documentation | Pending |
 
 ---

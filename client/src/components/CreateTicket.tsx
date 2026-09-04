@@ -8,6 +8,7 @@ import {
   fetchActiveCategories,
   fetchActiveRelatedSystems,
   createTicket,
+  uploadAttachment,
 } from "../api";
 
 interface CreateTicketProps {
@@ -187,6 +188,17 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
         summary: summary.trim(),
         description: description.trim(),
       });
+
+      // Persist any attached files to the newly created ticket
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          try {
+            await uploadAttachment(newTicket.id, currentRequester.id, file);
+          } catch (uploadErr) {
+            console.error("Failed to upload attachment during ticket creation:", uploadErr);
+          }
+        }
+      }
 
       setCreatedTicket(newTicket);
       if (onSuccess) {

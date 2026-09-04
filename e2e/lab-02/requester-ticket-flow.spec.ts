@@ -114,18 +114,25 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     // Attach file during ticket creation
     const initialFilePath = path.join(process.cwd(), "temp-initial-spec.pdf");
     fs.writeFileSync(initialFilePath, "%PDF-1.4 initial hardware diagnostic log");
-    await page.setInputFiles('#ticketAttachments', initialFilePath);
+    await page.setInputFiles("#ticketAttachments", initialFilePath);
     await expect(page.locator("text=temp-initial-spec.pdf")).toBeVisible();
 
     // Submit ticket
     await page.click('[data-testid="submit-ticket-button"]');
 
-    // Clean up temporary local file
+    // Verify success view with created ticket number
+    await expect(page.locator("text=Ticket Created Successfully!")).toBeVisible();
+    await expect(page.locator('[data-testid="created-ticket-number"]')).toBeVisible();
+
+    // Clean up temporary local file AFTER submission has completed
     if (fs.existsSync(initialFilePath)) {
       fs.unlinkSync(initialFilePath);
     }
 
-    // 3. Verify automatic redirection to My Tickets and presence of new ticket
+    // 3. Click "View in My Tickets" button
+    await page.click('button:has-text("View in My Tickets")');
+
+    // Verify presence of new ticket in My Tickets table
     await expect(page.locator("text=My Support Tickets")).toBeVisible();
     const targetRow = page.locator("tr", { hasText: uniqueSummary });
     await expect(targetRow).toBeVisible();
@@ -139,23 +146,13 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await expect(page.locator('[data-testid="badge-priority-high"]')).toBeVisible();
     await expect(page.locator('[data-testid="ticket-meta-grid"]').locator("text=Jennifer Anderson")).toBeVisible();
 
-    // 6. Upload supplementary attachment in Ticket Detail view
-    const tempFilePath = path.join(process.cwd(), "temp-supplementary-log.pdf");
-    fs.writeFileSync(tempFilePath, "%PDF-1.4 supplementary log for e2e testing");
+    // 6. Verify that the initial attachment uploaded during creation appears in Active Attachments
+    await expect(page.locator("text=temp-initial-spec.pdf")).toBeVisible();
+    const initialAttachmentItem = page.locator('[data-testid^="attachment-item-"]', { hasText: "temp-initial-spec.pdf" });
+    await expect(initialAttachmentItem).toBeVisible();
 
-    await page.setInputFiles('[data-testid="file-input"]', tempFilePath);
-
-    // Verify uploaded attachment in Active Attachments list
-    const attachmentItem = page.locator('[data-testid^="attachment-item-"]').first();
-    await expect(attachmentItem).toBeVisible();
-
-    // Clean up temporary local file
-    if (fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath);
-    }
-
-    // 7. Soft-Remove Attachment
-    await attachmentItem.locator('button:has-text("Remove")').click();
+    // 7. Soft-Remove the initial Attachment
+    await initialAttachmentItem.locator('button:has-text("Remove")').click();
     await expect(page.locator('[data-testid="removal-modal"]')).toBeVisible();
 
     // Enter non-empty removal reason
@@ -170,15 +167,30 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await expect(page.locator("text=Attached outdated diagnostic log by mistake")).toBeVisible();
     await expect(page.locator('[data-testid^="download-disabled-"]').first()).toBeVisible();
 
-    // 9. Test In-App / Browser Back Navigation
+    // 9. Upload supplementary attachment in Ticket Detail view
+    const tempFilePath = path.join(process.cwd(), "temp-supplementary-log.pdf");
+    fs.writeFileSync(tempFilePath, "%PDF-1.4 supplementary log for e2e testing");
+
+    await page.setInputFiles('[data-testid="file-input"]', tempFilePath);
+
+    // Verify uploaded attachment in Active Attachments list
+    const supplementaryItem = page.locator('[data-testid^="attachment-item-"]', { hasText: "temp-supplementary-log.pdf" });
+    await expect(supplementaryItem).toBeVisible();
+
+    // Clean up temporary local file
+    if (fs.existsSync(tempFilePath)) {
+      fs.unlinkSync(tempFilePath);
+    }
+
+    // 10. Test In-App Back Navigation
     await page.click('[data-testid="back-to-list-btn"]');
     await expect(page.locator("text=My Support Tickets")).toBeVisible();
   });
 
   // -------------------------------------------------------------------------
-  // E2E-02: Multi-User Ownership & Tenant Isolation
+  // E2E-02: Multi-User Ownership Isolation & Unauthorized Access Protection
   // -------------------------------------------------------------------------
-  test("E2E-02: Multi-User Ownership Isolation between Jennifer and David", async ({ page }) => {
+  test("E2E-02: Multi-User Ownership Isolation & Unauthorized Access Protection", async ({ page }) => {
     // 1. Select Jennifer (index 1) and create a private ticket
     await selectRequesterByIndex(page, 1);
 
@@ -191,6 +203,9 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.fill("#ticketSummary", jenniferSummary);
     await page.fill("#ticketDescription", "Private HR data sync access request for confidential audit.");
     await page.click('[data-testid="submit-ticket-button"]');
+
+    await expect(page.locator("text=Ticket Created Successfully!")).toBeVisible();
+    await page.click('button:has-text("View in My Tickets")');
 
     // Verify Jennifer sees her ticket in My Tickets
     await expect(page.locator("text=My Support Tickets")).toBeVisible();
@@ -229,11 +244,17 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.selectOption("#requesterSelect", { index: 1 });
     await page.click('[data-testid="continue-requester-btn"]');
 
-    // Desktop: My Tickets Table
+    // Desktop: My Tickets Table (Requester A)
     await page.waitForSelector('[data-testid="tickets-table-card"]');
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(screenshotsDir, "03-my-tickets-desktop.png") });
     await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "01-my-tickets-requester-a.png") });
+
+    // Desktop: Search and Filter Applied
+    await page.selectOption(".zen-filter-select", { index: 1 });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "03-my-tickets-filter-search.png") });
+    await page.click('[data-testid="clear-filters-btn"]');
 
     // Desktop: Filter No-results State
     await page.fill(".zen-search-input", "NONEXISTENT_QUERY_XYZ_9999");
@@ -244,7 +265,28 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "05-my-tickets-no-results.png") });
     await page.click('[data-testid="clear-filters-btn"]');
 
-    // Desktop: Create Ticket Form
+    // Switch to David (index 2) to capture Requester B tickets view
+    await clickChangeRequester(page);
+    await page.selectOption("#requesterSelect", { index: 2 });
+    await page.click('[data-testid="continue-requester-btn"]');
+    await page.waitForSelector('[data-testid="tickets-table-card"]');
+    await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "02-my-tickets-requester-b.png") });
+
+    // Switch to Maria (index 3) to capture Empty State
+    await clickChangeRequester(page);
+    await page.selectOption("#requesterSelect", { index: 3 });
+    await page.click('[data-testid="continue-requester-btn"]');
+    await page.waitForSelector('[data-testid="empty-state"]');
+    await assertNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(screenshotsDir, "04-my-tickets-empty.png") });
+    await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "04-my-tickets-empty-state.png") });
+
+    // Switch back to Jennifer (index 1) for Create Ticket flow
+    await clickChangeRequester(page);
+    await page.selectOption("#requesterSelect", { index: 1 });
+    await page.click('[data-testid="continue-requester-btn"]');
+
+    // Desktop: Create Ticket Form (Initial State)
     await page.click('button.zen-nav-link:has-text("Create Ticket")');
     await page.waitForSelector("#ticketCategory");
     await assertNoHorizontalOverflow(page);
@@ -256,60 +298,121 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.waitForSelector(".zen-invalid-feedback");
     await page.screenshot({ path: path.join(screenshotsDir, "create-ticket", "02-create-ticket-validation-errors.png") });
 
-    // Desktop: Open Ticket Detail View
-    await page.click('button.zen-nav-link:has-text("My Tickets")');
-    await page.waitForSelector('[data-testid="tickets-table-card"]');
-    const firstViewBtn = page.locator('button.zen-btn-view:has-text("View")').first();
-    if (await firstViewBtn.isVisible()) {
-      await firstViewBtn.click();
-      await page.waitForSelector('[data-testid="ticket-detail-view"]');
-      await assertNoHorizontalOverflow(page);
-      await page.screenshot({ path: path.join(screenshotsDir, "06-ticket-detail-desktop.png") });
-      await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "01-ticket-detail-view.png") });
+    // Desktop: Create Ticket Invalid Attachment (rejected format)
+    const invalidFile = path.join(process.cwd(), "unsupported-script.exe");
+    fs.writeFileSync(invalidFile, "fake binary data");
+    await page.setInputFiles("#ticketAttachments", invalidFile);
+    await page.waitForSelector(".zen-invalid-feedback");
+    await page.screenshot({ path: path.join(screenshotsDir, "create-ticket", "05-create-ticket-invalid-attachment.png") });
+    if (fs.existsSync(invalidFile)) fs.unlinkSync(invalidFile);
 
-      // Check if active attachment exists or upload one
-      let removeBtn = page.locator('[data-testid^="remove-btn-"]').first();
-      if (!(await removeBtn.isVisible())) {
-        const tempFile = path.join(process.cwd(), "temp-spec.pdf");
-        fs.writeFileSync(tempFile, "%PDF-1.4 demo spec");
-        await page.setInputFiles('[data-testid="file-input"]', tempFile);
-        await page.waitForSelector('[data-testid^="attachment-item-"]');
-        if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+    // Desktop: Create Ticket API Failure & Preserved Form State
+    await page.selectOption("#ticketCategory", { index: 1 });
+    await page.selectOption("#ticketSystem", { index: 1 });
+    await page.selectOption("#ticketPriority", "HIGH");
+    await page.fill("#ticketSummary", "Preserved summary test across API failure");
+    await page.fill("#ticketDescription", "Preserved description test across API failure scenario.");
+
+    // Intercept with 500 error to capture preserved state
+    await page.route("**/api/tickets", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Internal Server Error: Database cluster temporarily unavailable" }),
+        });
+      } else {
+        await route.continue();
       }
+    });
 
-      removeBtn = page.locator('[data-testid^="remove-btn-"]').first();
-      await page.waitForSelector('[data-testid^="remove-btn-"]');
-      await removeBtn.click();
-      await page.waitForSelector('[data-testid="removal-modal"]');
-      await page.screenshot({ path: path.join(screenshotsDir, "07-attachment-soft-remove-modal.png") });
-      await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "03-attachment-soft-removal.png") });
+    await page.click('[data-testid="submit-ticket-button"]');
+    await page.waitForSelector("text=Database cluster temporarily unavailable");
+    await page.screenshot({ path: path.join(screenshotsDir, "create-ticket", "06-create-ticket-api-failure-preserved.png") });
+    await page.unroute("**/api/tickets");
 
-      // Complete removal for 08 screenshot
-      await page.fill('[data-testid="removal-reason-input"]', "File superseded by latest revision.");
-      await page.click('[data-testid="modal-confirm-btn"]');
-      await page.waitForSelector('[data-testid="removed-attachments-section"]');
-      await page.screenshot({ path: path.join(screenshotsDir, "08-ticket-detail-soft-removed.png") });
-      await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "04-attachment-removed-metadata.png") });
+    // Desktop: Create Ticket Submitting Busy State
+    await page.route("**/api/tickets", async (route) => {
+      if (route.request().method() === "POST") {
+        await new Promise((r) => setTimeout(r, 1200));
+        await route.continue();
+      } else {
+        await route.continue();
+      }
+    });
 
-      await page.click('[data-testid="back-to-list-btn"]');
-    }
+    const createRespPromise = page.waitForResponse((resp) => resp.url().includes("/api/tickets") && resp.request().method() === "POST");
+    await page.click('[data-testid="submit-ticket-button"]');
+    await page.waitForSelector("text=Submitting Ticket...");
+    await page.screenshot({ path: path.join(screenshotsDir, "create-ticket", "03-create-ticket-submitting-busy.png") });
+    await createRespPromise;
+    await page.unroute("**/api/tickets");
 
-    // Capture Empty State with Maria Garcia (index 3)
-    await clickChangeRequester(page);
-    await page.selectOption("#requesterSelect", { index: 3 });
-    await page.click('[data-testid="continue-requester-btn"]');
-    await page.waitForSelector('[data-testid="empty-state"]');
+    // Desktop: Create Ticket Success Screen with Ticket Number
+    await page.waitForSelector("text=Ticket Created Successfully!");
     await assertNoHorizontalOverflow(page);
-    await page.screenshot({ path: path.join(screenshotsDir, "04-my-tickets-empty.png") });
-    await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "04-my-tickets-empty-state.png") });
+    await page.screenshot({ path: path.join(screenshotsDir, "create-ticket", "04-create-ticket-success.png") });
+
+    // Click "View in My Tickets"
+    await page.click('button:has-text("View in My Tickets")');
+    await page.waitForSelector('[data-testid="tickets-table-card"]');
+
+    // Desktop: Open Ticket Detail View
+    const firstViewBtn = page.locator('button.zen-btn-view:has-text("View")').first();
+    await firstViewBtn.click();
+    await page.waitForSelector('[data-testid="ticket-detail-view"]');
+    await assertNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(screenshotsDir, "06-ticket-detail-desktop.png") });
+    await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "01-ticket-detail-view.png") });
+
+    // Detail: Upload Attachment and Download view
+    let removeBtn = page.locator('[data-testid^="remove-btn-"]').first();
+    if (!(await removeBtn.isVisible())) {
+      const tempDoc = path.join(process.cwd(), "network-diagnostics.pdf");
+      fs.writeFileSync(tempDoc, "%PDF-1.4 network diagnostics capture");
+      await page.setInputFiles('[data-testid="file-input"]', tempDoc);
+      await page.waitForSelector('[data-testid^="attachment-item-"]');
+      if (fs.existsSync(tempDoc)) fs.unlinkSync(tempDoc);
+    }
+    await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "02-attachment-add-and-download.png") });
+
+    // Detail: Soft-Removal Modal
+    removeBtn = page.locator('[data-testid^="remove-btn-"]').first();
+    await removeBtn.click();
+    await page.waitForSelector('[data-testid="removal-modal"]');
+    await page.screenshot({ path: path.join(screenshotsDir, "07-attachment-soft-remove-modal.png") });
+    await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "03-attachment-soft-removal.png") });
+
+    // Detail: Confirm Soft-Removal & View Audit Record
+    await page.fill('[data-testid="removal-reason-input"]', "File superseded by latest revision.");
+    await page.click('[data-testid="modal-confirm-btn"]');
+    await page.waitForSelector('[data-testid="removed-attachments-section"]');
+    await page.screenshot({ path: path.join(screenshotsDir, "08-ticket-detail-soft-removed.png") });
+    await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "04-attachment-removed-metadata.png") });
+
+    // Detail: Unauthorized Access Rejection Error Screen
+    await page.route("**/api/tickets/*", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Access Denied: You do not have permission to access tickets owned by another requester." }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.reload();
+    await page.waitForSelector('[data-testid="detail-error"]');
+    await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "05-unauthorized-access-rejected.png") });
+    await page.unroute("**/api/tickets/*");
 
     // =========================================================================
     // 2. Tablet Viewport (820x1180 - iPad Air / 768-991px)
     // =========================================================================
     await page.setViewportSize({ width: 820, height: 1180 });
-
-    // Tablet: My Tickets (Empty State)
-    await page.waitForSelector('[data-testid="empty-state"]');
+    await page.goto("/#/my-tickets");
+    await page.waitForSelector('[data-testid="tickets-table-card"]');
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(screenshotsDir, "03-my-tickets-tablet.png") });
     await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "07-my-tickets-tablet.png") });
@@ -319,11 +422,6 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.waitForSelector("#ticketCategory");
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(screenshotsDir, "02-create-ticket-tablet.png") });
-
-    // Switch back to Jennifer (index 1) for tablet detail
-    await clickChangeRequester(page);
-    await page.selectOption("#requesterSelect", { index: 1 });
-    await page.click('[data-testid="continue-requester-btn"]');
 
     // Tablet: Ticket Detail View
     await page.click('button.zen-nav-link:has-text("My Tickets")');
@@ -348,20 +446,20 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.screenshot({ path: path.join(screenshotsDir, "06-ticket-detail-mobile.png") });
     await page.screenshot({ path: path.join(screenshotsDir, "ticket-detail", "07-ticket-detail-mobile.png") });
 
-    // Mobile: Back to My Tickets
+    // Mobile: Back to My Tickets & Mobile Cards View
     await page.click('[data-testid="back-to-list-btn"]');
     await page.waitForSelector('[data-testid="tickets-table-card"]');
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(screenshotsDir, "03-my-tickets-mobile.png") });
     await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "06-my-tickets-mobile-cards.png") });
 
-    // Mobile: Test & Screenshot Filter Popup Modal
+    // Mobile: Filter Popup Modal
     await page.click('[data-testid="mobile-filter-trigger-btn"]');
     await page.waitForSelector('[data-testid="mobile-filter-modal"]');
     await assertNoHorizontalOverflow(page);
     await page.click('button:has-text("Apply Filters")');
 
-    // Mobile: Open Sidebar Drawer & Navigate to Create Ticket
+    // Mobile: Sidebar Drawer & Create Ticket View
     await page.click('[data-testid="hamburger-menu-btn"]');
     await page.waitForSelector('[data-testid="mobile-drawer"]');
     await page.click('button.zen-drawer-nav-item:has-text("Create New Ticket")');

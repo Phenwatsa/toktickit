@@ -26,6 +26,7 @@ const storage = multer.diskStorage({
 });
 
 const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
 
 const upload = multer({
   storage,
@@ -33,7 +34,8 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5 MB
   },
   fileFilter: (_req, file, cb) => {
-    if (allowedMimeTypes.includes(file.mimetype)) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
       cb(null, true);
     } else {
       cb(new Error("UNSUPPORTED_MEDIA_TYPE"));

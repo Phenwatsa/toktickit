@@ -107,20 +107,20 @@ npx playwright test
  ✓ tests/lab-02/RequesterTicketDetail.test.tsx (2 tests)
  ✓ tests/lab-02/AttachmentSection.test.tsx (6 tests)
  ✓ tests/lab-01/App.test.tsx (4 tests)
- ✓ tests/lab-02/CreateTicket.test.tsx (7 tests)
+ ✓ tests/lab-02/CreateTicket.test.tsx (8 tests)
  ✓ tests/lab-02/MyTickets.test.tsx (7 tests)
 
  Test Files  6 passed (6)
-      Tests  29 passed (29)
+      Tests  30 passed (30)
 ```
 
 ### End-to-End Tests (Playwright)
 ```text
 Running 3 tests using 1 worker
 
-  ✓  1 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:39:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-01: Complete Requester Ticket Lifecycle (Create -> List -> Detail -> Soft-Remove) (947ms)
-  ✓  2 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:128:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-02: Multi-User Ownership Isolation between Jennifer and David (426ms)
-  ✓  3 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:159:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-03: Responsive Viewport Verification & Screenshot Capture (1.9s)
+  ✓  1 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:82:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-01: Complete Requester Ticket Lifecycle (Create with Attachment -> List -> Detail -> Soft-Remove)
+  ✓  2 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:193:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-02: Multi-User Ownership Isolation & Unauthorized Access Protection
+  ✓  3 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:227:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-03: Responsive Viewport Verification (Desktop, Tablet, Mobile) & Deliverable Screenshots
 
-  3 passed (4.1s)
+  3 passed
 ```

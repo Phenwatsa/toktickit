@@ -203,7 +203,6 @@ function MainApp() {
         {currentView === "create-ticket" && (
           <CreateTicket
             onCancel={() => navigateTo("my-tickets")}
-            onSuccess={() => navigateTo("my-tickets")}
           />
         )}
 
