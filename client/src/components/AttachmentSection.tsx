@@ -493,7 +493,7 @@ export function AttachmentSection({
                   {targetAttachment.originalName}
                 </div>
                 <div style={{ fontSize: "0.75rem", color: "#64748B" }}>
-                  {formatBytes(targetAttachment.sizeBytes)} • Uploaded {formatDate(targetAttachment.uploadedAt)}
+                  {formatBytes(targetAttachment.sizeBytes)} • Uploaded {formatDate(targetAttachment.createdAt)}
                 </div>
               </div>
             </div>

@@ -41,6 +41,16 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Mobile Filter Modal State
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState<boolean>(false);
+
+  const activeFilterCount = [
+    categoryId !== "",
+    priority !== "ALL",
+    status !== "ALL",
+    sortOption !== "createdAt_desc",
+  ].filter(Boolean).length;
+
   const hasActiveFilters = Boolean(
     (search && search.trim() !== "") ||
       categoryId !== "" ||
@@ -214,9 +224,10 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
         </button>
       </div>
 
-      {/* Filter and Search Bar Card - Strictly Single Row on Desktop */}
+      {/* Filter and Search Bar Card */}
       <div className="zen-card" style={{ marginBottom: "1.25rem", padding: "0.85rem 1rem" }} data-testid="filter-bar">
-        <div className="zen-filter-bar">
+        {/* Desktop Single-Row Filter Bar */}
+        <div className="zen-filter-bar-desktop">
           {/* Search Input */}
           <div className="zen-search-wrapper">
             <span className="zen-search-icon">
@@ -333,7 +344,219 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
             Clear Filters
           </button>
         </div>
+
+        {/* Mobile Filter Bar: Compact Search + Filter Modal Button */}
+        <div className="zen-filter-bar-mobile">
+          <div className="zen-search-wrapper">
+            <span className="zen-search-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              className="zen-search-input"
+              placeholder="Search tickets..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className={`zen-btn-filter-trigger ${activeFilterCount > 0 ? "has-active" : ""}`}
+            onClick={() => setIsMobileFilterOpen(true)}
+            data-testid="mobile-filter-trigger-btn"
+            aria-label="Open Filter Options"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="zen-filter-badge-count">{activeFilterCount}</span>
+            )}
+          </button>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className="zen-btn-clear-filters"
+              onClick={handleClearFilters}
+              style={{ padding: "0.45rem 0.6rem" }}
+              title="Reset all filters"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Mobile Filter Modal Bottom-Sheet */}
+      {isMobileFilterOpen && (
+        <div
+          className="zen-filter-modal-backdrop"
+          onClick={() => setIsMobileFilterOpen(false)}
+          data-testid="mobile-filter-modal-backdrop"
+        >
+          <div
+            className="zen-filter-modal-panel"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="mobile-filter-modal"
+          >
+            <div className="zen-filter-modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "7px",
+                    backgroundColor: "var(--color-pale-green)",
+                    color: "var(--color-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  </svg>
+                </div>
+                <h3 className="zen-filter-modal-title">Filter & Sort Tickets</h3>
+              </div>
+              <button
+                type="button"
+                className="zen-drawer-close-btn"
+                onClick={() => setIsMobileFilterOpen(false)}
+                aria-label="Close Filter Modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", marginBottom: "1.25rem" }}>
+              {/* Category */}
+              <div>
+                <label className="zen-form-label" style={{ fontSize: "0.8rem", marginBottom: "0.25rem" }}>
+                  Category
+                </label>
+                <select
+                  className="zen-form-control"
+                  value={categoryId}
+                  onChange={(e) => {
+                    setCategoryId(e.target.value ? Number(e.target.value) : "");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className="zen-form-label" style={{ fontSize: "0.8rem", marginBottom: "0.25rem" }}>
+                  Priority Level
+                </label>
+                <select
+                  className="zen-form-control"
+                  value={priority}
+                  onChange={(e) => {
+                    setPriority(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="ALL">All Priorities</option>
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
+                </select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="zen-form-label" style={{ fontSize: "0.8rem", marginBottom: "0.25rem" }}>
+                  Ticket Status
+                </label>
+                <select
+                  className="zen-form-control"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="NEW">New</option>
+                  <option value="OPEN">Open</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Sort */}
+              <div>
+                <label className="zen-form-label" style={{ fontSize: "0.8rem", marginBottom: "0.25rem" }}>
+                  Sort Order
+                </label>
+                <select
+                  className="zen-form-control"
+                  value={sortOption}
+                  onChange={(e) => {
+                    setSortOption(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="createdAt_desc">Date Created (Newest First)</option>
+                  <option value="createdAt_asc">Date Created (Oldest First)</option>
+                  <option value="ticketNumber_asc">Ticket Number (Ascending)</option>
+                  <option value="ticketNumber_desc">Ticket Number (Descending)</option>
+                  <option value="updatedAt_desc">Recently Updated</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "space-between" }}>
+              <button
+                type="button"
+                className="zen-btn-secondary"
+                style={{ flex: 1, justifyContent: "center" }}
+                onClick={() => {
+                  handleClearFilters();
+                  setIsMobileFilterOpen(false);
+                }}
+              >
+                Clear All
+              </button>
+              <button
+                type="button"
+                className="zen-btn-primary"
+                style={{ flex: 1, justifyContent: "center" }}
+                onClick={() => setIsMobileFilterOpen(false)}
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Alert */}
       {error && (

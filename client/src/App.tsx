@@ -80,9 +80,31 @@ function MainApp() {
   if (!currentRequester || isChangingRequester) {
     return (
       <div className="min-vh-100 d-flex flex-column bg-light">
-        <header className="zen-header py-3">
-          <div className="container d-flex align-items-center">
-            <span className="navbar-brand text-white fw-bold mb-0">⏱️ TokTickIT</span>
+        <header className="zen-header" style={{ padding: "0.75rem 1.5rem" }}>
+          <div className="zen-container d-flex align-items-center">
+            <div className="navbar-brand d-flex align-items-center gap-2">
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "7px",
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  color: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.15)",
+                  border: "1px solid rgba(255, 255, 255, 0.25)",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <span style={{ fontWeight: 700, letterSpacing: "-0.01em", color: "#FFFFFF" }}>TokTickIT</span>
+            </div>
           </div>
         </header>
         <main className="flex-grow-1 d-flex align-items-center justify-content-center">

@@ -137,22 +137,21 @@ export function RequesterTicketDetail({
   }
 
   return (
-    <div className="zen-container" style={{ paddingTop: "1.5rem", paddingBottom: "3rem" }} data-testid="ticket-detail-view">
+    <div className="zen-container" style={{ paddingTop: "1.25rem", paddingBottom: "3rem" }} data-testid="ticket-detail-view">
       {/* Navigation Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+      <div className="zen-detail-nav-bar">
         <button
           type="button"
-          className="zen-btn-secondary"
+          className="zen-btn-secondary zen-btn-back"
           onClick={onBack}
           data-testid="back-to-list-btn"
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem", padding: "0.45rem 0.85rem" }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          Back to My Tickets
+          <span>Back to My Tickets</span>
         </button>
-        <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
+        <span className="zen-detail-nav-hint">
           Ticket Detail Inspection (Read-Only)
         </span>
       </div>
@@ -166,7 +165,7 @@ export function RequesterTicketDetail({
                 style={{
                   fontSize: "1.3rem",
                   fontWeight: 700,
-                  color: "var(--color-primary-dark)",
+                  color: "var(--color-primary)",
                   fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                 }}
                 data-testid="detail-ticket-number"
@@ -176,7 +175,7 @@ export function RequesterTicketDetail({
               {renderStatusBadge(ticket.currentStatus)}
               {renderPriorityBadge(ticket.requestedPriority)}
             </div>
-            <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 700, color: "var(--color-text-main)" }} data-testid="detail-summary">
+            <h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 700, color: "var(--color-text-main)", letterSpacing: "-0.01em" }} data-testid="detail-summary">
               {ticket.summary}
             </h2>
           </div>
