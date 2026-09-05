@@ -37,8 +37,9 @@ This document maps all Functional Requirements (FRs), Business Rules (BRs), and 
 | **UI-07** | UI | AC-07, BR-11 | Display empty state & no-results state | Distinct empty illustration for 0 tickets and no-results banner for filter | `client/tests/lab-02/MyTickets.test.tsx` | Passed |
 | **UI-08** | UI | AC-08, FR-12 | Soft removal modal validation and UI update | Requires reason; updates attachment list to soft-removed state | `client/tests/lab-02/AttachmentSection.test.tsx` | Passed |
 | **UI-09** | UI | AC-06, FR-09 | Render Ticket Detail screen in read-only mode | Header badges, metadata cards, description, and back action work | `client/tests/lab-02/RequesterTicketDetail.test.tsx` | Passed |
-| **E2E-01** | E2E | AC-01..AC-08 | Full ticket lifecycle E2E flow | Select requester $\rightarrow$ Create ticket $\rightarrow$ View in My Tickets $\rightarrow$ Detail $\rightarrow$ Soft-remove | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
-| **E2E-02** | E2E | AC-05, AC-06 | Multi-user ownership & switching E2E | Switching requester A to B isolates ticket lists and blocks cross-access | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
+| **E2E-01** | E2E | AC-01..AC-08 | Full ticket lifecycle E2E flow with initial attachment | Select requester $\rightarrow$ Create ticket with attachment $\rightarrow$ View in My Tickets $\rightarrow$ Detail $\rightarrow$ Soft-remove | `e2e/lab-02/requester-ticket-flow.spec.ts` | Passed |
+| **E2E-02** | E2E | AC-05, AC-06 | Multi-user ownership & switching E2E | Switching requester A to B isolates ticket lists and blocks cross-access | `e2e/lab-02/requester-ticket-flow.spec.ts` | Passed |
+| **E2E-03** | E2E | AC-01..AC-10 | Cross-viewport responsive verification (Desktop, Tablet, Mobile) | Zero horizontal overflow assertion (`scrollWidth <= clientWidth`), Sidebar Drawer, Filter Modal, & captures across all 3 viewports | `e2e/lab-02/requester-ticket-flow.spec.ts` | Passed |
 
 ---
 
@@ -61,11 +62,11 @@ This document maps all Functional Requirements (FRs), Business Rules (BRs), and 
 
 ## 4. Responsive and Visual Checklist
 
-- [ ] **Desktop ($\ge 992\text{px}$)**: Centered layout with max-width container; multi-column form grids; full 9-column My Tickets table.
-- [ ] **Tablet ($768 - 991\text{px}$)**: 2-column form grids; condensed table layout; touch-friendly target sizes ($\ge 40\text{px}$).
-- [ ] **Mobile ($< 768\text{px}$)**: Single-column vertically stacked controls; My Tickets table transitions to responsive card layout; zero unwanted horizontal scroll.
-- [ ] **Zen Green Palette**: Primary `#006B3C`, Secondary `#0B7A46`, Pale Green `#EAF6EF`, Background `#F5F7F6`.
-- [ ] **Form Styling**: Required asterisks visible; field error messages positioned immediately below inputs; read-only fields have soft gray-green background.
+- [x] **Desktop ($\ge 992\text{px}$)**: Centered layout with max-width container; multi-column form grids; full 9-column My Tickets table.
+- [x] **Tablet ($768 - 991\text{px}$)**: 2-column form grids; condensed table layout; touch-friendly target sizes ($\ge 40\text{px}$).
+- [x] **Mobile ($< 768\text{px}$)**: Single-column vertically stacked controls; My Tickets table transitions to responsive card layout; zero unwanted horizontal scroll.
+- [x] **Zen Green Palette**: Primary `#006B3C`, Secondary `#0B7A46`, Pale Green `#EAF6EF`, Background `#F5F7F6`.
+- [x] **Form Styling**: Required asterisks visible; field error messages positioned immediately below inputs; read-only fields have soft gray-green background.
 
 ---
 
@@ -106,9 +107,20 @@ npx playwright test
  ✓ tests/lab-02/RequesterTicketDetail.test.tsx (2 tests)
  ✓ tests/lab-02/AttachmentSection.test.tsx (6 tests)
  ✓ tests/lab-01/App.test.tsx (4 tests)
- ✓ tests/lab-02/CreateTicket.test.tsx (7 tests)
+ ✓ tests/lab-02/CreateTicket.test.tsx (8 tests)
  ✓ tests/lab-02/MyTickets.test.tsx (7 tests)
 
  Test Files  6 passed (6)
-      Tests  29 passed (29)
+      Tests  30 passed (30)
+```
+
+### End-to-End Tests (Playwright)
+```text
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:82:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-01: Complete Requester Ticket Lifecycle (Create with Attachment -> List -> Detail -> Soft-Remove)
+  ✓  2 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:193:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-02: Multi-User Ownership Isolation & Unauthorized Access Protection
+  ✓  3 [chromium] › e2e/lab-02/requester-ticket-flow.spec.ts:227:3 › Lab 2 Requester Ticketing End-to-End Suite › E2E-03: Responsive Viewport Verification (Desktop, Tablet, Mobile) & Deliverable Screenshots
+
+  3 passed
 ```

@@ -1,97 +1,230 @@
 :root {
   --color-primary: #006B3C;
-  --color-primary-hover: #00502D;
+  --color-primary-hover: #005630;
   --color-secondary: #0B7A46;
   --color-secondary-hover: #086137;
   --color-pale-green: #EAF6EF;
+  --color-pale-green-hover: #DCF0E4;
   --color-bg-page: #F5F7F6;
   --color-surface: #FFFFFF;
-  --color-text-primary: #1A2E22;
-  --color-text-muted: #5F7167;
+  --color-text-main: #0F172A;
+  --color-text-primary: #1E293B;
+  --color-text-muted: #64748B;
   --color-border: #E2E8F0;
+  --color-border-subtle: #F1F5F9;
   --color-input-border: #CBD5E1;
-  --color-readonly-bg: #F1F5F2;
+  --color-readonly-bg: #F8FAF8;
   --color-error: #DC2626;
   --color-error-bg: #FEF2F2;
   --color-warning: #D97706;
   --color-warning-bg: #FEF3C7;
   --color-success: #15803D;
   --color-success-bg: #EAF6EF;
+  --font-family-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  --radius-card: 10px;
+  --radius-btn: 8px;
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
   background-color: var(--color-bg-page);
   color: var(--color-text-primary);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-family-sans);
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  max-width: 100vw;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Zen Green Header */
+/* ==========================================================================
+   Zen Green Navbar (Deep Forest Green with Crisp High-Contrast Tabs)
+   ========================================================================== */
 .zen-header {
   background-color: var(--color-primary);
   color: #FFFFFF;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding: 0.75rem 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 107, 60, 0.2);
+}
+
+.zen-header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.zen-header-brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .zen-header .navbar-brand {
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
 }
 
+.zen-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .zen-nav-link {
-  color: rgba(255, 255, 255, 0.85);
+  background-color: transparent !important;
+  color: #FFFFFF !important;
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 9999px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  opacity: 0.88;
 }
 
 .zen-nav-link:hover {
-  color: #FFFFFF;
-  background-color: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  opacity: 1;
 }
 
 .zen-nav-link.active {
-  color: #FFFFFF;
-  background-color: var(--color-secondary);
-  font-weight: 600;
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.24) !important;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  opacity: 1;
 }
 
-/* Buttons */
+.zen-header-user-section {
+  display: flex;
+  align-items: center;
+}
+
+.zen-header-user-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zen-header-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  font-size: 0.825rem;
+  color: #FFFFFF;
+}
+
+.zen-header-user-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.zen-header-user-name {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.zen-header-user-dept {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
+}
+
+.zen-header-change-btn {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #FFFFFF;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.zen-header-change-btn:hover {
+  background-color: rgba(255, 255, 255, 0.24);
+}
+
+.zen-btn-text-desktop {
+  display: inline;
+}
+
+.zen-btn-text-mobile {
+  display: none;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
 .zen-btn-primary {
   background-color: var(--color-primary);
   border: 1px solid var(--color-primary);
   color: #FFFFFF;
   font-weight: 600;
   font-size: 0.875rem;
-  padding: 0.45rem 1rem;
-  border-radius: 6px;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  padding: 0.5rem 1.15rem;
+  border-radius: var(--radius-btn);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 107, 60, 0.2);
 }
 
 .zen-btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
   color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0, 107, 60, 0.3);
+  transform: translateY(-0.5px);
+}
+
+.zen-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .zen-btn-primary:disabled {
@@ -100,28 +233,35 @@ body {
   color: #FFFFFF;
   cursor: not-allowed;
   opacity: 0.7;
+  box-shadow: none;
 }
 
 .zen-btn-secondary {
   background-color: #FFFFFF;
   border: 1px solid var(--color-input-border);
-  color: var(--color-text-primary);
+  color: var(--color-text-main);
   font-weight: 500;
   font-size: 0.875rem;
-  padding: 0.45rem 1rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-btn);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
   cursor: pointer;
+  box-shadow: var(--shadow-subtle);
 }
 
 .zen-btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-pale-green);
-  border-color: var(--color-secondary);
-  color: var(--color-primary);
+  background-color: #F8FAFC;
+  border-color: #94A3B8;
+  color: var(--color-text-main);
+  transform: translateY(-0.5px);
+}
+
+.zen-btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .zen-btn-secondary:disabled {
@@ -129,29 +269,115 @@ body {
   border-color: #E2E8F0;
   color: #94A3B8;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* Cards */
+/* Distinct & Prominent Clear Filters Button */
+.zen-btn-clear-filters {
+  background-color: #E6F4EA;
+  border: 1.5px solid #8CD1A8;
+  color: #005630;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-btn);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 86, 48, 0.12);
+}
+
+.zen-btn-clear-filters:hover:not(:disabled) {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 107, 60, 0.25);
+  transform: translateY(-0.5px);
+}
+
+.zen-btn-clear-filters:active:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(0);
+}
+
+.zen-btn-clear-filters:disabled {
+  background-color: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  color: #94A3B8;
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   Cards & Layout
+   ========================================================================== */
+.zen-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  width: 100%;
+}
+
 .zen-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
 }
 
-/* Filter Bar Layout */
+/* Form Section Card Divider */
+.zen-form-section {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-subtle);
+}
+
+.zen-form-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zen-form-section-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--color-pale-green);
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Single-Row Filter Bar Layout */
 .zen-filter-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
   align-items: center;
+  width: 100%;
 }
 
 .zen-search-wrapper {
   position: relative;
-  flex: 1 1 240px;
-  min-width: 200px;
+  flex: 2 1 200px;
+  min-width: 160px;
 }
 
 .zen-search-icon {
@@ -162,51 +388,58 @@ body {
   color: #94A3B8;
   font-size: 0.85rem;
   pointer-events: none;
+  display: flex;
+  align-items: center;
 }
 
 .zen-search-input {
   width: 100%;
-  padding: 0.45rem 0.75rem 0.45rem 2.2rem;
+  padding: 0.48rem 0.75rem 0.48rem 2.25rem;
   font-size: 0.875rem;
+  font-family: inherit;
   border: 1px solid var(--color-input-border);
   border-radius: 6px;
-  color: var(--color-text-primary);
+  color: var(--color-text-main);
   background-color: #FFFFFF;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .zen-search-input:focus {
   border-color: var(--color-primary);
   outline: 0;
-  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.12);
 }
 
 .zen-filter-select {
-  padding: 0.45rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.48rem 0.65rem;
+  font-size: 0.85rem;
+  font-family: inherit;
   border: 1px solid var(--color-input-border);
   border-radius: 6px;
-  color: var(--color-text-primary);
+  color: var(--color-text-main);
   background-color: #FFFFFF;
-  flex: 0 1 auto;
-  min-width: 140px;
+  flex: 1 1 130px;
+  min-width: 110px;
   cursor: pointer;
-  transition: border-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .zen-filter-select:focus {
   border-color: var(--color-primary);
   outline: 0;
-  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.12);
 }
 
-/* Table */
+/* ==========================================================================
+   Table & Responsive Grid
+   ========================================================================== */
 .zen-table-container {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-card);
+  width: 100%;
 }
 
 .zen-table-responsive {
@@ -228,16 +461,17 @@ body {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 0.75rem 1rem;
+  padding: 0.95rem 1.25rem;
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
 .zen-table td {
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid #F1F5F9;
   vertical-align: middle;
   color: #334155;
+  transition: background-color 0.15s ease;
 }
 
 .zen-table tbody tr:hover td {
@@ -251,14 +485,14 @@ body {
 .zen-ticket-number {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: var(--color-primary);
   white-space: nowrap;
   display: inline-block;
 }
 
 .zen-ticket-summary {
-  font-weight: 500;
+  font-weight: 600;
   color: #0F172A;
   margin-bottom: 2px;
 }
@@ -275,76 +509,87 @@ body {
   background-color: #FFFFFF;
   border: 1px solid #CBD5E1;
   color: #334155;
-  font-weight: 500;
-  font-size: 0.775rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.95rem;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .zen-btn-view:hover {
   background-color: var(--color-pale-green);
   border-color: var(--color-secondary);
   color: var(--color-primary);
+  box-shadow: 0 2px 4px rgba(0, 107, 60, 0.12);
+  transform: translateY(-0.5px);
 }
 
-/* Pagination */
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
 .zen-pagination {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
-  background-color: #F8FAFC;
+  padding: 0.85rem 1.25rem;
+  background-color: #FAFAFA;
   border-top: 1px solid var(--color-border);
   font-size: 0.825rem;
   color: #64748B;
   gap: 0.5rem;
 }
 
-/* Empty & No-results states */
+/* ==========================================================================
+   Empty & No-Results States
+   ========================================================================== */
 .zen-empty-state {
   text-align: center;
-  padding: 2.75rem 1.5rem;
+  padding: 3.5rem 1.5rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
 .zen-empty-icon {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background-color: var(--color-pale-green);
+  color: var(--color-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .zen-empty-title {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #0F172A;
   margin: 0 0 0.35rem 0;
+  letter-spacing: -0.01em;
 }
 
 .zen-empty-desc {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #64748B;
-  max-width: 420px;
-  margin: 0 auto 1.25rem auto;
-  line-height: 1.45;
+  max-width: 440px;
+  margin: 0 auto 1.5rem auto;
+  line-height: 1.5;
 }
 
-/* Form Controls */
+/* ==========================================================================
+   Form Controls
+   ========================================================================== */
 .zen-form-label {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 0.35rem;
+  color: #1E293B;
+  margin-bottom: 0.4rem;
   display: block;
 }
 
@@ -355,19 +600,20 @@ body {
 
 .zen-form-control {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.85rem;
   font-size: 0.9rem;
-  color: var(--color-text-primary);
+  font-family: inherit;
+  color: var(--color-text-main);
   background-color: #FFFFFF;
   border: 1px solid var(--color-input-border);
   border-radius: 6px;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: all 0.15s ease;
 }
 
 .zen-form-control:focus {
   border-color: var(--color-primary);
   outline: 0;
-  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.12);
 }
 
 .zen-form-control.is-invalid {
@@ -378,7 +624,8 @@ body {
 .zen-invalid-feedback {
   font-size: 0.8rem;
   color: var(--color-error);
-  margin-top: 0.3rem;
+  margin-top: 0.35rem;
+  font-weight: 500;
 }
 
 .zen-readonly-field {
@@ -387,11 +634,91 @@ body {
   border-color: #D1D9D4;
 }
 
-/* Badges */
+/* ==========================================================================
+   Modern Dropzone / File Upload Box
+   ========================================================================== */
+.zen-dropzone {
+  border: 2px dashed #CBD5E1;
+  border-radius: var(--radius-card);
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+  background-color: #FAFAF9;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.zen-dropzone:hover:not(.disabled) {
+  border-color: var(--color-primary);
+  background-color: var(--color-pale-green);
+}
+
+.zen-dropzone.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #F8FAFC;
+}
+
+.zen-dropzone-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  color: var(--color-primary);
+  border: 1px solid #E2E8F0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.65rem;
+  box-shadow: var(--shadow-subtle);
+}
+
+/* ==========================================================================
+   Modal Overlay
+   ========================================================================== */
+.zen-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.zen-modal-content {
+  background-color: #FFFFFF;
+  border-radius: var(--radius-card);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 480px;
+  width: 100%;
+  padding: 1.75rem;
+  border: 1px solid var(--color-border);
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
 .zen-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.55rem;
+  padding: 0.22rem 0.65rem;
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 9999px;
@@ -464,7 +791,9 @@ body {
   border: 1px solid #FECACA;
 }
 
-/* Callouts / Info boxes */
+/* ==========================================================================
+   Callouts & Notifications
+   ========================================================================== */
 .zen-callout-info {
   background-color: var(--color-pale-green);
   border-left: 4px solid var(--color-secondary);
@@ -481,4 +810,380 @@ body {
   border-radius: 4px;
   font-size: 0.875rem;
   color: #78350F;
+}
+
+/* ==========================================================================
+   Desktop vs Mobile Utility Classes & Drawer Styling
+   ========================================================================== */
+.zen-desktop-only {
+  display: flex !important;
+}
+
+.zen-mobile-only {
+  display: none !important;
+}
+
+.zen-hamburger-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zen-hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.zen-drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 3000;
+  display: flex;
+  justify-content: flex-end;
+  animation: drawerFadeIn 0.2s ease-out;
+}
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.zen-drawer-panel {
+  background-color: #FFFFFF;
+  width: 82%;
+  max-width: 320px;
+  height: 100%;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1rem;
+  animation: drawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.zen-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.zen-drawer-close-btn {
+  background: #F1F5F9;
+  border: none;
+  color: #64748B;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.zen-drawer-close-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.zen-drawer-user-card {
+  background-color: #F8FAF8;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-card);
+  padding: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.zen-drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.zen-drawer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.zen-drawer-nav-item:hover {
+  background-color: var(--color-pale-green);
+  color: var(--color-primary);
+}
+
+.zen-drawer-nav-item.active {
+  background-color: var(--color-pale-green);
+  color: var(--color-primary);
+  border-color: #C4E6D2;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Filter Modal Popup (Mobile Bottom-Sheet)
+   ========================================================================== */
+.zen-filter-bar-desktop {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
+  align-items: center;
+  width: 100%;
+}
+
+.zen-filter-bar-mobile {
+  display: none;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+.zen-btn-filter-trigger {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-input-border);
+  color: var(--color-text-main);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-btn);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 38px;
+  transition: all 0.15s ease;
+}
+
+.zen-btn-filter-trigger:hover {
+  border-color: var(--color-primary);
+  background-color: #F8FAFC;
+}
+
+.zen-btn-filter-trigger.has-active {
+  background-color: var(--color-pale-green);
+  border-color: #8CD1A8;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.zen-filter-badge-count {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  margin-left: 0.2rem;
+}
+
+.zen-filter-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 2500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.zen-filter-modal-panel {
+  background-color: #FFFFFF;
+  border-radius: 16px 16px 0 0;
+  max-width: 500px;
+  width: 100%;
+  padding: 1.25rem 1.25rem 1.75rem;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+  animation: filterModalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+@keyframes filterModalSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.zen-filter-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.zen-filter-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.zen-detail-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.zen-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.zen-detail-nav-hint {
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints: Tablet (768px - 991px) and Mobile (< 768px)
+   ========================================================================== */
+@media (max-width: 991px) {
+  .zen-header {
+    padding: 0.6rem 1rem;
+  }
+
+  .zen-header-container {
+    gap: 0.5rem;
+  }
+
+  .zen-nav-link {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    gap: 0.25rem;
+  }
+
+  .zen-header-user-dept {
+    display: none !important;
+  }
+
+  .zen-header-user-pill {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .zen-header-change-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.775rem;
+  }
+
+  .zen-filter-bar-desktop {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .zen-desktop-only {
+    display: none !important;
+  }
+
+  .zen-mobile-only {
+    display: flex !important;
+  }
+
+  .zen-header {
+    padding: 0.6rem 1rem;
+  }
+
+  .zen-header-container {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .zen-mobile-header-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .zen-filter-bar-desktop {
+    display: none !important;
+  }
+
+  .zen-filter-bar-mobile {
+    display: flex !important;
+  }
+
+  .zen-detail-nav-hint {
+    display: none !important;
+  }
+
+  .zen-card {
+    padding: 1rem !important;
+  }
+
+  .zen-search-wrapper {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .zen-search-input {
+    height: 38px !important;
+    padding: 0.45rem 0.75rem 0.45rem 2.25rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  .zen-btn-primary,
+  .zen-btn-secondary {
+    min-height: 40px;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .zen-table th,
+  .zen-table td {
+    padding: 0.75rem 0.75rem;
+    font-size: 0.825rem;
+  }
+
+  .zen-pagination {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
 }

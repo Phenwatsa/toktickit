@@ -11,7 +11,7 @@
 | PR #28 | feature/2-ticket-creation | Approved |
 | PR #29 | feature/3-my-tickets | Approved |
 | PR #30 | feature/4-ticket-detail-attachments | Approved |
-| PR #... | feature/5-e2e-and-responsive | Pending |
+| PR #31 | feature/5-e2e-and-responsive | Approved |
 | PR #... | docs/lab2-documentation | Pending |
 
 ---
@@ -61,6 +61,15 @@
 
 **How I responded:**
 > Thank you for the thorough review and approval! I have recorded the peer review in `reviewer.md`. PR #30 is ready to be merged into `lab2-staging`.
+
+---
+
+## PR #31 — Issue 10: End-to-End Testing & Responsive Polish
+**Reviewer comment I received:**
+> Reviewed the updates again. Everything looks good now the E2E flow, responsive behavior, overflow checks, screenshots, and visual checklist are all covered and consistent. The issue from my previous review has also been fixed.
+
+**How I responded:**
+> Thank you for the re-review and approval! I have recorded the approved peer review in `reviewer.md`. PR #31 is ready to be merged into `lab2-staging`.
 
 ---
 

@@ -12,6 +12,7 @@ vi.mock("../../src/api", () => ({
   fetchActiveCategories: vi.fn(),
   fetchActiveRelatedSystems: vi.fn(),
   createTicket: vi.fn(),
+  uploadAttachment: vi.fn(),
   checkSystem: vi.fn(),
 }));
 
@@ -271,5 +272,61 @@ describe("CreateTicket Component", () => {
     expect((screen.getByLabelText(/Category/i) as HTMLSelectElement).value).toBe("2");
     expect((screen.getByLabelText(/Related System/i) as HTMLSelectElement).value).toBe("1");
     expect((screen.getByLabelText(/Requested Priority/i) as HTMLSelectElement).value).toBe("HIGH");
+  });
+
+  it("persists selected attachments via uploadAttachment on submit", async () => {
+    vi.mocked(api.createTicket).mockResolvedValueOnce(mockCreatedTicket);
+    vi.mocked(api.uploadAttachment).mockResolvedValueOnce({
+      id: 50,
+      ticketId: 101,
+      originalName: "test-log.pdf",
+      sizeBytes: 1024,
+      mimeType: "application/pdf",
+      isRemoved: false,
+      removedAt: null,
+      removalReason: null,
+      createdAt: new Date().toISOString(),
+    });
+
+    render(
+      <RequesterProvider>
+        <CreateTicket />
+      </RequesterProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Category/i)).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText(/Requested Priority/i), { target: { value: "HIGH" } });
+    fireEvent.change(screen.getByLabelText(/Ticket Summary/i), {
+      target: { value: "Laptop battery drains quickly" },
+    });
+    fireEvent.change(screen.getByLabelText(/Description/i), {
+      target: { value: "Detailed description of the battery problem." },
+    });
+
+    const fileInput = document.getElementById("ticketAttachments") as HTMLInputElement;
+    const testFile = new File(["test log content"], "test-log.pdf", { type: "application/pdf" });
+    fireEvent.change(fileInput, { target: { files: [testFile] } });
+
+    expect(screen.getByText("test-log.pdf")).toBeInTheDocument();
+
+    const submitBtn = screen.getByTestId("submit-ticket-button");
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(api.createTicket).toHaveBeenCalledWith({
+        requesterId: 1,
+        categoryId: 2,
+        relatedSystemId: 1,
+        requestedPriority: "HIGH",
+        summary: "Laptop battery drains quickly",
+        description: "Detailed description of the battery problem.",
+      });
+      expect(api.uploadAttachment).toHaveBeenCalledWith(101, 1, testFile);
+    });
   });
 });
