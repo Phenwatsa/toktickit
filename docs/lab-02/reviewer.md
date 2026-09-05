@@ -66,10 +66,10 @@
 
 ## PR #31 — Issue 10: End-to-End Testing & Responsive Polish
 **Reviewer comment I received:**
-> The E2E flow and responsive checks look good, and the required screenshots are included. I only noticed one small documentation inconsistency: the visual checklist still lists the page background as #F5F7F6, while the current CSS uses #F8FAF9. Please update the checklist/spec to match the current implementation. Once this is fixed, I'm happy to approve.
+> Reviewed the updates again. Everything looks good now the E2E flow, responsive behavior, overflow checks, screenshots, and visual checklist are all covered and consistent. The issue from my previous review has also been fixed.
 
 **How I responded:**
-> Thank you for catching this! I have aligned `--color-bg-page` in `client/src/styles/zen-green.css` to `#F5F7F6`, establishing 100% consistency with the Zen Green specification table in `docs/lab-02/ui-spec.md`, `tests.md`, and the assignment engineering contract. All 32 server tests, 30 client tests, and 3 Playwright E2E suites are passing cleanly.
+> Thank you for the re-review and approval! I have recorded the approved peer review in `reviewer.md`. PR #31 is ready to be merged into `lab2-staging`.
 
 ---
 
