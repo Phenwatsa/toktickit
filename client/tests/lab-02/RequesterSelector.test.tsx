@@ -79,11 +79,12 @@ describe("RequesterSelector Component & Context", () => {
 
     // Wait for dropdown to populate
     await waitFor(() => {
-      expect(screen.getByLabelText(/Development Requester/i)).toBeInTheDocument();
+      const el = screen.getByLabelText(/Development Requester/i) as HTMLSelectElement;
+      expect(el.options.length).toBe(3); // 1 placeholder + 2 users
+      expect(el.value).toBe("1");
     });
 
     const select = screen.getByLabelText(/Development Requester/i) as HTMLSelectElement;
-    expect(select.options.length).toBe(3); // 1 placeholder + 2 users
 
     // Select David Lee
     fireEvent.change(select, { target: { value: "2" } });
