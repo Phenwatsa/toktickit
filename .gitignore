@@ -6,3 +6,8 @@ dist/
 build/
 *.log
 .DS_Store
+server/uploads/*
+!server/uploads/.gitkeep
+test-results/
+playwright-report/
+*scratch_test_files/
