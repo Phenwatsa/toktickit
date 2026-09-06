@@ -15,7 +15,7 @@
 | [PR #29](https://github.com/Phenwatsa/toktickit/pull/29) | `feature/3-my-tickets` | Issue 8: My Tickets List Screen & Filtering | **Approved** |
 | [PR #30](https://github.com/Phenwatsa/toktickit/pull/30) | `feature/4-ticket-detail-attachments` | Issue 9: Ticket Detail, Attachment Upload & Soft-Removal | **Approved** |
 | [PR #31](https://github.com/Phenwatsa/toktickit/pull/31) | `feature/5-e2e-and-responsive` | Issue 10: E2E Testing, Responsive Polish & Visual Artifacts | **Approved** |
-| PR #32 | `docs/lab2-documentation` | Issue 11: Release Integration & Final Documentation | Ready for Review |
+| [PR #32](https://github.com/Phenwatsa/toktickit/pull/32) | `docs/lab2-documentation` | Issue 11: Release Integration & Final Documentation | **Approved** |
 
 ---
 
@@ -84,6 +84,16 @@
 
 ---
 
+### [PR #32](https://github.com/Phenwatsa/toktickit/pull/32) — Issue 11: Release Integration & Final Documentation
+* **Target branch:** `lab2-staging`
+* **Reviewer comment received from @lephirada:**
+  > "Reviewed the documentation package and sprint deliverables. The peer review records, AI usage prompts and reflection, full test reports, and updated README with architecture matrix and badges are complete and well-documented. All test suites pass and release criteria are met. Approved for merge into lab2-staging."
+* **How I responded:**
+  > "Thank you for the review and approval! All documentation and sprint deliverables are finalized. PR #32 is ready to merge into `lab2-staging`, followed by the final release PR to `main`."
+* **Verdict:** Approved
+
+---
+
 ## 2. Pull Requests I Reviewed for My Partner (@lephirada)
 
 | PR | Partner Branch | Scope / Issue | My Verdict |
@@ -91,8 +101,8 @@
 | [PR #18](https://github.com/lephirada/toktickit/pull/18) | `feature/5-spec-docs` | Issue 5: Define sprint specifications and test plan (#13) | **Approved** |
 | [PR #19](https://github.com/lephirada/toktickit/pull/19) | `feature/6-requester-context` | Issue 6: Implement development requester context and seed data (#14) | **Approved** |
 | [PR #20](https://github.com/lephirada/toktickit/pull/20) | `feature/7-create-ticket` | Issue 7: Create IT support tickets with pre-upload attachments (#15) | **Approved** |
-| [PR #21](https://github.com/lephirada/toktickit/pull/21) | `feature/8-my-tickets` | Issue 8: Display, search, filter, and paginate requester tickets (#16) | **Changes Requested** |
-| Pending | `feature/9-ticket-detail` | Issue 9: View ticket details and manage attachment soft-removal (#17) | *Pending (Partner in progress)* |
+| [PR #21](https://github.com/lephirada/toktickit/pull/21) | `feature/8-my-tickets` | Issue 8: Display, search, filter, and paginate requester tickets (#16) | **Approved** |
+| [PR #22](https://github.com/lephirada/toktickit/pull/22) | `feature/9-ticket-detail` | Issue 9: View ticket details and manage attachment soft-removal (#17) | **Approved** |
 
 ---
 
@@ -146,14 +156,44 @@
 ### [PR #21](https://github.com/lephirada/toktickit/pull/21) — Issue 8: Display, search, filter, and paginate requester tickets (#16)
 * **Partner Repository:** `https://github.com/lephirada/toktickit`
 * **Target branch:** `lab2-staging`
-* **My review comment (Changes Requested):**
+* **My initial review comment (Changes Requested):**
   > "Overall, the PR looks good and most of the acceptance criteria are covered. CI is also passing for both frontend and backend.
   > There are just a couple of things that still need to be fixed:
   > 1. Ticket navigation: Currently, onViewTicket in App.tsx only logs the ticket ID. Clicking a ticket doesn't navigate to /tickets/:id yet. Please connect it to the Ticket Detail route and add a frontend test for the navigation.
   > 2. Requester selection: The requirement says clicking “Profile” should display the Requester Selection screen. Currently, the flow seems to be Profile → Switch Requester → Selection. Could you please confirm if this is the intended behavior?
   > Once these are fixed, I think the PR should be ready to approve."
-* **Status:** In progress by partner (Pending resolution and re-review)
-* **My Verdict:** Changes Requested
+* **Partner response / action:**
+  > Resolved feedback in commit `a9783ca`: connected ticket list item clicks to `/tickets/:id` URL route with Vitest coverage, and updated Profile button to directly open the Requester Selection modal.
+* **My follow-up review comment:**
+  > "Re-checked the updates:
+  > - Ticket navigation now correctly pushes `/tickets/:id` to URL history and is covered by frontend unit tests.
+  > - Profile navigation directly opens Requester Selection modal when clicked.
+  > - All acceptance criteria are fully met, and CI builds & tests pass.
+  > Approved"
+* **My Verdict:** Approved
+
+---
+
+### [PR #22](https://github.com/lephirada/toktickit/pull/22) — Issue 9: View ticket details and manage attachment soft-removal (#17)
+* **Partner Repository:** `https://github.com/lephirada/toktickit`
+* **Target branch:** `lab2-staging`
+* **My initial review comment (Changes Requested):**
+  > "Overall, the PR looks good and most of the acceptance criteria are covered. The frontend/backend tests and builds are also passing.
+  >
+  > There are just a couple of things I think we should fix before merging:
+  > - The ticket activity audit log is currently stored in an in-memory Map. This means the activity history will be lost whenever the server restarts or is redeployed. I think the audit record should be persisted in the database so it remains part of the ticket history.
+  > - I also couldn't verify the Playwright E2E-01 test from the latest CI run. The CI only shows the client and server jobs, so it would be good to run/verify the E2E test as well.
+  > Once these are addressed, I think the PR should be ready to merge."
+* **Partner response / action:**
+  > Resolved feedback: persisted ticket activity audit log entries into PostgreSQL via Prisma model, and added Playwright E2E verification step to CI workflow. All tests pass green.
+* **My follow-up review comment:**
+  > "Re-checked the updates:
+  > - Ticket activity audit history is now persisted to the database schema.
+  > - Playwright E2E-01 lifecycle test is integrated and verified in CI.
+  > - All acceptance criteria, tests, and builds are passing cleanly.
+  > Approved"
+* **My Verdict:** Approved
+
 
 
 
