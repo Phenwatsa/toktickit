@@ -18,18 +18,18 @@ This document provides the definitive planning specification for GitHub Issues #
 * **Required branch:** `docs/lab3-spec-and-test-plan`
 * **In-Scope:**
   - Author complete engineering contract files in `docs/lab-03/`:
-    - `docs/lab-03/specification.md`: Sprint Goal, Stakeholder Request, In/Out Scope, numbered Functional Requirements (FR-xx), Business Rules (BR-01 to BR-xx), Authorization Matrix (Requester, IT Staff, Admin), Data Migration strategy, Product Definition of Done (DoD).
-    - `docs/lab-03/api-spec.md`: Complete REST contracts for Authentication, IT Staff Queue/Detail, Public Comments, Internal Notes, and Admin User Management (endpoints, HTTP methods, headers, payload schemas, query parameters, status codes, and safe error responses).
+    - `docs/lab-03/specification.md`: Sprint Goal, Stakeholder Request, In/Out Scope, numbered Functional Requirements (FR-xx), Business Rules (BR-01 to BR-xx), Central Authorization Matrix (Requester, IT Staff, Admin), 100% FR $\rightarrow$ BR $\rightarrow$ AC Traceability, Data Migration strategy, Two-Stage Definition of Done (DoD).
+    - `docs/lab-03/api-spec.md`: Complete REST contracts for Authentication (JWT + `tokenVersion` logout invalidation), IT Staff Queue/Detail, Public Comments, Internal Notes, and Admin User Management (endpoints, HTTP methods, headers, standardized error schemas 400/401/403/404/409, and safe error responses).
     - `docs/lab-03/ui-spec.md`: Apple-style Zen Green design token alignments, screen structure specifications (Login, Change Password, Staff Queue, Staff Detail, Admin User Management), responsive layout breakpoints (Desktop, Tablet, Mobile), and visual checklist.
-    - `docs/lab-03/tests.md`: Planned test matrix covering Unit, API/Integration, UI Component, and E2E Playwright tests with full Acceptance Criteria (AC-xx) traceability.
-    - `docs/lab-03/ai-collaboration-guide.md`: Establish AI coding protocol, 9 engineering rules, and issue workflow for Sprint 3.
+    - `docs/lab-03/tests.md`: Planned test matrix covering Unit, API/Integration, UI Component, and E2E Playwright tests with full Acceptance Criteria (AC-01 through AC-16) traceability without gaps.
+    - `docs/lab-03/ai-collaboration-guide.md`: Establish AI coding protocol, 10 engineering rules, and issue workflow for Sprint 3.
 * **Out-of-Scope:**
   - Writing or modifying any runtime production code or test implementation code.
 * **Acceptance Criteria:**
-  - [ ] All 5 specification documents are committed and merged to `lab3-staging` before any implementation code is authored.
-  - [ ] Every Functional Requirement (FR) maps directly to at least one Business Rule (BR) and Acceptance Criterion (AC).
-  - [ ] The Authorization Matrix strictly distinguishes operations permitted for Requester, IT Staff, and Administrator.
-  - [ ] Planned test IDs in `tests.md` cover 100% of defined Acceptance Criteria.
+  - [ ] All specification documents are committed and merged to `lab3-staging` via PR #42 before any implementation code is authored.
+  - [ ] Every Functional Requirement (FR-01 to FR-15) maps directly to governing Business Rules (BR) and testable Acceptance Criteria (AC-01 to AC-16).
+  - [ ] The Central Authorization Matrix strictly distinguishes operations permitted for Requester, IT Staff, and Administrator.
+  - [ ] Planned test IDs in `tests.md` cover 100% of defined Acceptance Criteria with zero traceability gaps.
 
 ---
 
@@ -39,7 +39,7 @@ This document provides the definitive planning specification for GitHub Issues #
 * **In-Scope:**
   - **Prisma Schema & Migration:**
     - Evolve database schema from Lab 2 without losing existing Categories, RelatedSystems, Tickets, or Attachments data.
-    - Migrate `RequesterUser` to a unified `User` model with fields: `id`, `name`, `email` (unique), `passwordHash`, `role` (ENUM: `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), `mustChangePassword` (boolean, default false), `isActive` (boolean, default true), and timestamps.
+    - Migrate `RequesterUser` to a unified `User` model with fields: `id`, `name`, `email` (unique), `passwordHash`, `role` (ENUM: `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), `mustChangePassword` (boolean, default false), `isActive` (boolean, default true), `tokenVersion` (int, default 1 for logout revocation), and timestamps.
     - Update `Ticket` model to include `itPriority` (ENUM: `LOW`, `MEDIUM`, `HIGH`, `URGENT`), and optional `ticketOwnerId` foreign key referencing `User`.
     - Create models for append-only communication: `PublicComment` (ticketId, authorId, content, createdAt) and `InternalNote` (ticketId, authorId, content, createdAt).
   - **Idempotent Seed Data (`server/prisma/seed.ts`):**
@@ -49,8 +49,8 @@ This document provides the definitive planning specification for GitHub Issues #
     - Seed realistic initial tickets across various statuses, priorities, and assignments with sample public comments and internal notes.
     - Ensure passwords are cryptographically hashed (e.g. bcrypt) with documented development credentials.
   - **Authentication REST API (`server/src/routes/auth.ts`):**
-    - `POST /api/auth/login`: Authenticate active users with email and password; reject inactive users or invalid credentials with safe 401 response; return token/session and user profile (`id`, `name`, `email`, `role`, `mustChangePassword`).
-    - `POST /api/auth/logout`: Invalidate session/token.
+    - `POST /api/auth/login`: Authenticate active users with email and password; reject inactive users or invalid credentials with safe 401 response; return JWT Bearer token and user profile (`id`, `name`, `email`, `role`, `mustChangePassword`).
+    - `POST /api/auth/logout`: Invalidate session by incrementing user's `tokenVersion` in the database.
     - `GET /api/auth/me`: Retrieve current authenticated user profile.
     - `POST /api/auth/change-password`: Allow authenticated user requiring password change to submit current password and valid new password, clearing `mustChangePassword` flag upon success.
   - **Auth Middleware:**
@@ -235,7 +235,7 @@ This document provides the definitive planning specification for GitHub Issues #
   - Final PDF report generation (deferred to Issue #19).
 * **Acceptance Criteria:**
   - [ ] All E2E test suites pass 100% on headless browser runs.
-  - [ ] Zero horizontal scrollbars detected across all views in mobile/tablet viewports.
+  - [ ] Zero horizontal scrollbars detected across all views in mobile/tablet viewports (AC-16).
   - [ ] All required screenshots are clearly captured, high-resolution, and organized in their respective directories.
 
 ---

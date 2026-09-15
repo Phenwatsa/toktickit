@@ -1,26 +1,48 @@
 # TokTickIT Lab 3 — REST API Specification
 
-This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab 3). It details endpoint paths, HTTP methods, authentication headers, request and response payloads, query parameters, authorization matrix, and safe error semantics.
+This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab 3). It details endpoint paths, HTTP methods, authentication headers, request and response payloads, query parameters, authorization rules, and standardized safe error schemas.
 
 ---
 
-## 1. Authentication & Session Strategy
+## 1. Authentication & Session Architecture
 
-- **Mechanism**: Bearer Token (JWT) transmitted via the standard `Authorization: Bearer <token>` HTTP header, or secure session token.
-- **Token Payload**:
+### 1.1 Mechanism: Stateless JWT with Server-Side `tokenVersion` Revocation
+To combine high performance with immediate server-side revocation on logout, the application employs a **JWT Bearer Token backed by a `tokenVersion` on the User model**:
+- **Token Delivery**: Clients transmit the token via standard HTTP Header:
+  `Authorization: Bearer <token>`
+- **Token Payload Schema**:
   ```json
   {
     "userId": 1,
     "email": "jennifer.anderson@toktickit.com",
     "role": "REQUESTER",
+    "tokenVersion": 1,
     "mustChangePassword": false,
     "iat": 1726400000,
     "exp": 1726486400
   }
   ```
-- **Error Behavior**:
-  - `401 Unauthorized`: Missing, expired, or invalid token, or user account inactive.
-  - `403 Forbidden`: Authenticated user lacks permission for the requested resource (e.g. Requester calling Admin or Notes APIs).
+- **Logout / Invalidation Lifecycle**:
+  1. When a user calls `POST /api/auth/logout`, the backend executes `prisma.user.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } })`.
+  2. The authentication middleware (`requireAuth`) inspects incoming JWTs, decoding `tokenVersion` and comparing it against the live user record:
+     - If `decoded.tokenVersion !== user.tokenVersion`, the token is recognized as revoked and the server returns `401 Unauthorized`.
+     - If the user account has `isActive: false`, the server returns `401 Unauthorized`.
+  3. This completely resolves the stateless JWT logout problem without requiring Redis or complex infrastructure.
+
+### 1.2 Standardized Safe Error Schema
+All error responses adhere to a consistent, safe JSON payload:
+```json
+{
+  "error": "Human-readable error explanation",
+  "code": "STANDARDIZED_ERROR_CODE",
+  "details": [
+    {
+      "field": "email",
+      "message": "Valid email address is required"
+    }
+  ]
+}
+```
 
 ---
 
@@ -52,18 +74,28 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
   }
   ```
 * **Error Responses**:
-  - `400 Bad Request`: Validation error (e.g. missing email/password).
-  - `401 Unauthorized`: Invalid credentials or account deactivated (`{ "error": "Invalid email or password" }`).
+  - `400 Bad Request`:
+    ```json
+    { "error": "Invalid input data", "code": "VALIDATION_ERROR", "details": [{ "field": "email", "message": "Email is required" }] }
+    ```
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Invalid email or password", "code": "INVALID_CREDENTIALS" }
+    ```
+    *(Note: Deactivated accounts also return this generic message to prevent account discovery)*
 
 ### 2.2 Logout
 * **Endpoint**: `POST /api/auth/logout`
 * **Access**: Authenticated (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`)
+* **Request Body**: None
 * **Success Response (`200 OK`)**:
   ```json
   {
     "message": "Logged out successfully"
   }
   ```
+* **Error Responses**:
+  - `401 Unauthorized`: Missing or invalid token (`{ "error": "Authentication required", "code": "UNAUTHORIZED" }`).
 
 ### 2.3 Current User Profile
 * **Endpoint**: `GET /api/auth/me`
@@ -82,17 +114,17 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     }
   }
   ```
-* **Error Response**:
-  - `401 Unauthorized`: Not authenticated.
+* **Error Responses**:
+  - `401 Unauthorized`: Token invalid or account deactivated (`{ "error": "Session expired or invalid", "code": "UNAUTHORIZED" }`).
 
-### 2.4 Change Password (Mandatory / Self-Service)
+### 2.4 Change Password (Mandatory First-Login / Self-Service)
 * **Endpoint**: `POST /api/auth/change-password`
 * **Access**: Authenticated
 * **Request Body**:
   ```json
   {
     "currentPassword": "string (required)",
-    "newPassword": "string (min 8 chars, 1 upper, 1 lower, 1 number, required)",
+    "newPassword": "string (min 8 chars, 1 uppercase, 1 lowercase, 1 number, required)",
     "confirmPassword": "string (must match newPassword, required)"
   }
   ```
@@ -104,8 +136,8 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
   }
   ```
 * **Error Responses**:
-  - `400 Bad Request`: New password does not meet policy or passwords do not match.
-  - `401 Unauthorized`: Current password is incorrect.
+  - `400 Bad Request`: Passwords do not match or complexity rules failed (`{ "error": "New password does not meet security requirements", "code": "PASSWORD_POLICY_ERROR" }`).
+  - `401 Unauthorized`: Current password verification failed (`{ "error": "Current password is incorrect", "code": "INVALID_CURRENT_PASSWORD" }`).
 
 ---
 
@@ -113,14 +145,14 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
 
 ### 3.1 Retrieve Staff Ticket Queue
 * **Endpoint**: `GET /api/staff/tickets`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR` (Returns `403 Forbidden` for `REQUESTER`)
+* **Access**: `IT_STAFF`, `ADMINISTRATOR`
 * **Query Parameters**:
   - `search` (string, optional): Search keyword against `ticketNumber` and `summary`.
-  - `status` (string, optional): Comma-separated or single status (e.g. `NEW,OPEN,IN_PROGRESS`).
+  - `status` (string, optional): Filter by single status or comma-separated list.
   - `categoryId` (number, optional): Filter by category ID.
   - `requestedPriority` (string, optional): `LOW`, `MEDIUM`, `HIGH`, `URGENT`.
   - `itPriority` (string, optional): `LOW`, `MEDIUM`, `HIGH`, `URGENT`.
-  - `ownerId` (number, optional): User ID of assigned owner (or `unassigned`).
+  - `ownerId` (number | string, optional): IT Staff ID or `'unassigned'`.
   - `sortBy` (string, optional): `createdAt`, `updatedAt`, `ticketNumber`, `itPriority`. Default: `createdAt`.
   - `sortOrder` (string, optional): `asc`, `desc`. Default: `desc`.
   - `page` (number, optional): Default: `1`.
@@ -151,6 +183,9 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     }
   }
   ```
+* **Error Responses**:
+  - `401 Unauthorized`: Not authenticated.
+  - `403 Forbidden`: User role is `REQUESTER` (`{ "error": "Access denied. Ticket queue is restricted to IT Staff and Administrators.", "code": "FORBIDDEN" }`).
 
 ### 3.2 Retrieve Single Ticket Detail (Staff View)
 * **Endpoint**: `GET /api/staff/tickets/:id`
@@ -173,12 +208,14 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
       "ticketOwner": { "id": 2, "name": "Michael Brown", "email": "michael@toktickit.com" },
       "createdAt": "2026-05-13T09:14:00Z",
       "updatedAt": "2026-05-13T10:30:00Z",
-      "attachments": [],
-      "publicCommentsCount": 3,
-      "internalNotesCount": 2
+      "attachments": []
     }
   }
   ```
+* **Error Responses**:
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Requester attempted to access staff detail (`{ "error": "Access denied.", "code": "FORBIDDEN" }`).
+  - `404 Not Found`: Ticket does not exist (`{ "error": "Ticket not found", "code": "NOT_FOUND" }`).
 
 ### 3.3 Claim Ticket Ownership
 * **Endpoint**: `PATCH /api/staff/tickets/:id/claim`
@@ -188,13 +225,14 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
   ```json
   {
     "message": "Ticket successfully claimed",
-    "ticketOwner": {
-      "id": 2,
-      "name": "Michael Brown",
-      "email": "michael@toktickit.com"
-    }
+    "ticketOwner": { "id": 2, "name": "Michael Brown", "email": "michael@toktickit.com" }
   }
   ```
+* **Error Responses**:
+  - `400 Bad Request`: Ticket is already closed or cancelled (`{ "error": "Cannot claim a closed or cancelled ticket", "code": "INVALID_STATE" }`).
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-staff user.
+  - `404 Not Found`: Ticket not found.
 
 ### 3.4 Reassign Ticket Ownership
 * **Endpoint**: `PATCH /api/staff/tickets/:id/assign`
@@ -209,13 +247,14 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
   ```json
   {
     "message": "Ticket reassigned successfully",
-    "ticketOwner": {
-      "id": 3,
-      "name": "Sarah Johnson",
-      "email": "sarah@toktickit.com"
-    }
+    "ticketOwner": { "id": 3, "name": "Sarah Johnson", "email": "sarah@toktickit.com" }
   }
   ```
+* **Error Responses**:
+  - `400 Bad Request`: Target user is inactive or not an IT Staff/Admin (`{ "error": "Target user must be an active IT Staff or Administrator", "code": "INVALID_OWNER" }`).
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-staff user.
+  - `404 Not Found`: Ticket or target user not found.
 
 ### 3.5 Update IT Priority
 * **Endpoint**: `PATCH /api/staff/tickets/:id/priority`
@@ -233,6 +272,11 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     "itPriority": "HIGH"
   }
   ```
+* **Error Responses**:
+  - `400 Bad Request`: Invalid priority value (`{ "error": "Priority must be LOW, MEDIUM, HIGH, or URGENT", "code": "VALIDATION_ERROR" }`).
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-staff user.
+  - `404 Not Found`: Ticket not found.
 
 ### 3.6 Transition Ticket Status
 * **Endpoint**: `PATCH /api/staff/tickets/:id/status`
@@ -250,12 +294,11 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     "currentStatus": "WAITING_FOR_REQUESTER"
   }
   ```
-* **Error Response (`400 Bad Request`)**:
-  ```json
-  {
-    "error": "Invalid status transition from IN_PROGRESS to CLOSED. Must be RESOLVED first."
-  }
-  ```
+* **Error Responses**:
+  - `400 Bad Request`: Status transition violates state matrix (`{ "error": "Invalid status transition from IN_PROGRESS to CLOSED. Ticket must be RESOLVED first.", "code": "INVALID_TRANSITION" }`).
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-staff user.
+  - `404 Not Found`: Ticket not found.
 
 ---
 
@@ -271,14 +314,14 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
       "id": 1,
       "content": "Thank you for the update. Please let me know if you need any additional information.",
       "createdAt": "2026-05-13T11:45:00Z",
-      "author": {
-        "id": 4,
-        "name": "Jennifer Anderson",
-        "role": "REQUESTER"
-      }
+      "author": { "id": 4, "name": "Jennifer Anderson", "role": "REQUESTER" }
     }
   ]
   ```
+* **Error Responses**:
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: User is a Requester who does not own this ticket (`{ "error": "Access denied", "code": "FORBIDDEN" }`).
+  - `404 Not Found`: Ticket not found.
 
 ### 4.2 Post Public Comment
 * **Endpoint**: `POST /api/tickets/:id/comments`
@@ -289,43 +332,55 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     "content": "string (min 2, max 2000 chars, non-whitespace)"
   }
   ```
-* **Success Response (`201 Created`)**: Returns newly created comment object.
+* **Success Response (`201 Created`)**:
+  ```json
+  {
+    "id": 2,
+    "content": "We have received replacement parts.",
+    "createdAt": "2026-05-13T12:00:00Z",
+    "author": { "id": 2, "name": "Michael Brown", "role": "IT_STAFF" }
+  }
+  ```
+* **Error Responses**:
+  - `400 Bad Request`: Empty or whitespace-only content (`{ "error": "Comment content cannot be empty", "code": "VALIDATION_ERROR" }`).
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: User is a Requester who does not own this ticket.
+  - `404 Not Found`: Ticket not found.
 
 ### 4.3 Get Internal Notes
 * **Endpoint**: `GET /api/tickets/:id/notes`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR` (Returns `403 Forbidden` for `REQUESTER`)
+* **Access**: `IT_STAFF`, `ADMINISTRATOR` (Strictly **FORBIDDEN** for `REQUESTER`)
 * **Success Response (`200 OK`)**:
   ```json
   [
     {
       "id": 1,
-      "content": "Battery diagnostic shows 62% battery wear. Ordering replacement battery pack.",
+      "content": "Battery diagnostic shows 62% battery wear. Ordering replacement pack.",
       "createdAt": "2026-05-13T10:00:00Z",
-      "author": {
-        "id": 2,
-        "name": "Michael Brown",
-        "role": "IT_STAFF"
-      }
+      "author": { "id": 2, "name": "Michael Brown", "role": "IT_STAFF" }
     }
   ]
   ```
-* **Forbidden Response (`403 Forbidden`)**:
-  ```json
-  {
-    "error": "Access denied. Internal notes are restricted to IT staff."
-  }
-  ```
+* **Error Responses**:
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Requesters receive safe rejection without leaking note existence (`{ "error": "Access denied. Internal notes are restricted to IT staff.", "code": "FORBIDDEN" }`).
+  - `404 Not Found`: Ticket not found.
 
 ### 4.4 Post Internal Note
 * **Endpoint**: `POST /api/tickets/:id/notes`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR` (Returns `403 Forbidden` for `REQUESTER`)
+* **Access**: `IT_STAFF`, `ADMINISTRATOR`
 * **Request Body**:
   ```json
   {
     "content": "string (min 2, max 2000 chars, non-whitespace)"
   }
   ```
-* **Success Response (`201 Created`)**: Returns newly created note object.
+* **Success Response (`201 Created`)**: Returns newly created note.
+* **Error Responses**:
+  - `400 Bad Request`: Empty or whitespace content.
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Forbidden for Requester.
+  - `404 Not Found`: Ticket not found.
 
 ---
 
@@ -342,6 +397,10 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     "problemAppearsResolved": true
   }
   ```
+* **Error Responses**:
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Requester does not own this ticket.
+  - `404 Not Found`: Ticket not found.
 
 ---
 
@@ -349,7 +408,7 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
 
 ### 6.1 List Users
 * **Endpoint**: `GET /api/admin/users`
-* **Access**: `ADMINISTRATOR` (Returns `403 Forbidden` for others)
+* **Access**: `ADMINISTRATOR`
 * **Query Parameters**:
   - `search` (string, optional): Search by name or email.
   - `role` (string, optional): `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`.
@@ -368,6 +427,9 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     }
   ]
   ```
+* **Error Responses**:
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-admin user (`{ "error": "Access denied. Administrator privilege required.", "code": "FORBIDDEN" }`).
 
 ### 6.2 Create User
 * **Endpoint**: `POST /api/admin/users`
@@ -383,13 +445,24 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     "initialPassword": "Password123!"
   }
   ```
-* **Success Response (`201 Created`)**: Returns created user object with `mustChangePassword: true`.
-* **Error Response (`409 Conflict`)**:
+* **Success Response (`201 Created`)**:
   ```json
   {
-    "error": "A user with this email address already exists."
+    "id": 15,
+    "name": "Alex Thompson",
+    "email": "alex.thompson@toktickit.com",
+    "role": "IT_STAFF",
+    "department": "Service Desk",
+    "isActive": true,
+    "mustChangePassword": true,
+    "createdAt": "2026-09-15T12:00:00Z"
   }
   ```
+* **Error Responses**:
+  - `400 Bad Request`: Validation failure (`{ "error": "Missing required fields", "code": "VALIDATION_ERROR" }`).
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-admin user.
+  - `409 Conflict`: Email duplicate (`{ "error": "A user with this email address already exists.", "code": "DUPLICATE_EMAIL" }`).
 
 ### 6.3 Update User
 * **Endpoint**: `PATCH /api/admin/users/:id`
@@ -403,9 +476,20 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
     "isActive": false
   }
   ```
-* **Safety Rules Enforced**:
-  - If target user is current authenticated admin and `isActive: false` $\rightarrow$ `400 Bad Request` (`"Administrators cannot deactivate their own account."`)
-  - If target user is the last remaining active admin and `isActive: false` or role changed $\rightarrow$ `400 Bad Request` (`"Cannot deactivate or demote the last remaining active administrator."`)
+* **Success Response (`200 OK`)**: Returns updated user object.
+* **Error Responses**:
+  - `400 Bad Request (Self-Deactivation)`:
+    ```json
+    { "error": "Administrators cannot deactivate their own account.", "code": "SELF_DEACTIVATION_BLOCKED" }
+    ```
+  - `400 Bad Request (Last Admin Guard)`:
+    ```json
+    { "error": "Cannot deactivate or demote the last remaining active administrator.", "code": "LAST_ADMIN_PROTECTED" }
+    ```
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-admin user.
+  - `404 Not Found`: Target user not found.
+  - `409 Conflict`: New email address is already taken by another user.
 
 ### 6.4 Reset User Initial Password
 * **Endpoint**: `POST /api/admin/users/:id/reset-password`
@@ -419,6 +503,12 @@ This document defines the complete REST API contract for TokTickIT Sprint 3 (Lab
 * **Success Response (`200 OK`)**:
   ```json
   {
-    "message": "Initial password reset successfully. User must change password at next login."
+    "message": "Initial password reset successfully. User must change password at next login.",
+    "mustChangePassword": true
   }
   ```
+* **Error Responses**:
+  - `400 Bad Request`: Invalid password complexity.
+  - `401 Unauthorized`: Authentication required.
+  - `403 Forbidden`: Non-admin user.
+  - `404 Not Found`: User not found.

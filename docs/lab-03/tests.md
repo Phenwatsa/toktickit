@@ -22,7 +22,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **API-10** | API | AC-08 | IT Staff updates `itPriority` | HTTP 200; `itPriority` updated while original `requestedPriority` remains intact | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | **API-11** | API | AC-09 | IT Staff attempts invalid status transition (`In Progress` to `Closed`) | HTTP 400 Bad Request; transition blocked according to transition rules | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
 | **API-12** | API | AC-10 | Requester and IT Staff exchange Public Comments on ticket | HTTP 201; comment created, visible to both Requester and Staff | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
-| **API-13** | API | AC-04 | Requester attempts to read or post Internal Notes | HTTP 403 Forbidden; zero note content returned | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
+| **API-13** | API | AC-04 | Requester attempts to read or post Internal Notes | HTTP 403 Forbidden; zero note content or metadata returned | `server/tests/lab-03/comments-notes.api.test.ts` | Planned |
 | **API-14** | API | AC-11 | Admin creates new user with one role and initial password | HTTP 201; user created with `mustChangePassword = true` | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | **API-15** | API | AC-12 | Admin attempts to create user with duplicate email | HTTP 409 Conflict; duplicate email error message | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | **API-16** | API | AC-13 | Admin attempts to deactivate own account | HTTP 400 Bad Request; self-deactivation blocked by safety guard | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
@@ -41,7 +41,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **UI-04** | UI | AC-06 | Staff Ticket Queue table renders tickets, badges, and owner names | Correct data columns displayed with Zen Green badges | `client/src/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
 | **UI-05** | UI | AC-06 | Staff Ticket Queue handles empty state and no-results search filter | Displays empty illustration / message with "Reset Filters" action | `client/src/tests/lab-03/StaffTicketQueue.test.tsx` | Planned |
 | **UI-06** | UI | AC-07 | Ticket Detail renders operational controls (Claim, Reassign, Status) | Buttons trigger appropriate callback actions | `client/src/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
-| **UI-07** | UI | AC-04 | Ticket Detail visually differentiates Public Comments vs Internal Notes | Public comments have green accent; internal notes have amber private accent | `client/src/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
+| **UI-07** | UI | AC-04, AC-10 | Ticket Detail enforces confidentiality of Internal Notes & renders Public Comments | When viewed by Requester, Internal Notes are completely absent; when viewed by Staff, both render with clear visual distinction | `client/src/tests/lab-03/StaffTicketDetail.test.tsx` | Planned |
 | **UI-08** | UI | AC-11 | Admin User Management displays user list and open Create User modal | Form renders name, email, role radio buttons, and initial password | `client/src/tests/lab-03/UserManagement.test.tsx` | Planned |
 | **UI-09** | UI | AC-13 | Admin User Management disables deactivation for current admin row | Active toggle switch is disabled with explanatory tooltip | `client/src/tests/lab-03/UserManagement.test.tsx` | Planned |
 
@@ -58,7 +58,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **E2E-05** | E2E | AC-04 | Requester logs in, inspects ticket, verifies Internal Notes are hidden | Internal Notes container is completely absent; comments work | `e2e/lab-03/staff-ticket-flow.spec.ts` | Planned |
 | **E2E-06** | E2E | AC-11, AC-13 | Admin creates user, attempts self-deactivation, resets password | Full admin lifecycle verified in UI with security rules | `e2e/lab-03/user-administration.spec.ts` | Planned |
 | **E2E-07** | E2E | AC-03 | Lab 2 Requester Regression: create ticket, list my tickets, attachments | All Lab 2 features function without the mock requester selector | `e2e/lab-03/requester-regression.spec.ts` | Planned |
-| **E2E-08** | E2E | — | Cross-viewport responsive audit (Desktop, Tablet, Mobile) | Zero horizontal overflow (`scrollWidth === clientWidth`) across all screens | `e2e/lab-03/responsive.spec.ts` | Planned |
+| **E2E-08** | E2E | AC-16 | Cross-viewport responsive audit (Desktop, Tablet, Mobile) | Zero horizontal overflow (`scrollWidth === clientWidth`) across all screens | `e2e/lab-03/responsive.spec.ts` | Planned |
 
 ---
 
@@ -68,7 +68,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | :--- | :--- | :--- |
 | **AC-01** | Valid credentials establish authenticated session and role | `API-01`, `UI-01`, `E2E-01` |
 | **AC-02** | Initial password user must change password before app access | `API-04`, `API-05`, `UI-03`, `E2E-02` |
-| **AC-03** | Requester identity derived from session, preventing cross-tenant access | `API-06`, `E2E-07` |
+| **AC-03** | Requester identity derived from session, enforcing cross-user ownership isolation | `API-06`, `E2E-07` |
 | **AC-04** | Internal Notes strictly hidden and forbidden for Requesters | `API-13`, `UI-07`, `E2E-05` |
 | **AC-05** | Invalid credentials or inactive accounts safely rejected | `API-02`, `API-03`, `UI-02`, `E2E-01` |
 | **AC-06** | IT Staff queue retrieval with search, filters, pagination | `API-07`, `UI-04`, `UI-05`, `E2E-03` |
@@ -81,3 +81,4 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **AC-13** | Prevention of Admin self-deactivation | `API-16`, `UI-09`, `E2E-06` |
 | **AC-14** | Last active administrator protection | `API-17` |
 | **AC-15** | Non-Admin forbidden from User Management / Staff Queue | `API-08`, `API-18` |
+| **AC-16** | Cross-viewport responsive layout and zero horizontal overflow | `E2E-08` |
