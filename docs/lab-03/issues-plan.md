@@ -111,9 +111,9 @@ This document provides the definitive planning specification for GitHub Issues #
 * **Required branch:** `feature/lab3-3-staff-queue`
 * **In-Scope:**
   - **IT Staff Queue REST API (`server/src/routes/staff.ts`):**
-    - `GET /api/staff/tickets`: Protected endpoint restricted to `IT_STAFF` and `ADMINISTRATOR` roles.
+    - `GET /api/staff/tickets`: Protected endpoint restricted strictly to `IT_STAFF` role.
     - Query capabilities: keyword search (ticket number, summary), filters (status, category, requested priority, IT priority, assigned owner), sorting (created date, updated date, priority), and pagination (page, limit, total count metadata).
-    - Return safe HTTP 403 Forbidden if called by a `REQUESTER`.
+    - Return safe HTTP 403 Forbidden if called by `REQUESTER` or `ADMINISTRATOR`.
   - **IT Staff Ticket Queue UI (`client/src/pages/StaffTicketQueue.tsx`):**
     - Zen Green styled table on desktop and responsive card view on mobile.
     - Displays: Ticket Number, Created Date, Summary, Category, Requested Priority, IT Priority, Status badge, and Ticket Owner.
@@ -121,13 +121,13 @@ This document provides the definitive planning specification for GitHub Issues #
     - Handles UI states: Loading skeleton/spinner, Empty queue, No-results search state, and error alerts.
     - Clickable row / action button navigating to Ticket Detail view.
   - **Automated Tests:**
-    - `server/tests/lab-03/staff-queue.api.test.ts` (Supertest: query filtering, pagination, and role restriction).
+    - `server/tests/lab-03/staff-queue.api.test.ts` (Supertest: query filtering, pagination, and role restriction returning 403 for Requester and Admin).
     - `client/src/tests/lab-03/StaffTicketQueue.test.tsx` (Vitest: rendering, filter interactions, pagination, empty state).
 * **Out-of-Scope:**
   - Claiming, reassigning, or editing ticket details (deferred to Issue #16).
   - Internal notes and comments creation (deferred to Issue #16).
 * **Acceptance Criteria:**
-  - [ ] Endpoint `GET /api/staff/tickets` returns paginated list of all system tickets for IT Staff/Admin, but returns 403 Forbidden for Requester users.
+  - [ ] Endpoint `GET /api/staff/tickets` returns paginated list of all system tickets for IT Staff, but returns 403 Forbidden for Requester and Administrator users.
   - [ ] Search, filter by status/priority, and pagination metadata work accurately.
   - [ ] Desktop table transforms smoothly to card layout on small viewports without horizontal scroll.
   - [ ] Loading, Empty, and No-Results states display distinct, user-friendly Zen Green feedback.
@@ -140,16 +140,16 @@ This document provides the definitive planning specification for GitHub Issues #
 * **Required branch:** `feature/lab3-4-ticket-detail-and-notes`
 * **In-Scope:**
   - **IT Staff Ticket Operations API:**
-    - `GET /api/staff/tickets/:id`: Retrieve single ticket detail with attachments, public comments, and internal notes (restricted to IT Staff/Admin).
+    - `GET /api/staff/tickets/:id`: Retrieve single ticket detail with attachments, public comments, and internal notes (restricted to `IT_STAFF`; Requester and Admin receive 403 Forbidden).
     - `PATCH /api/staff/tickets/:id/claim`: Assign current IT Staff user as ticket owner.
     - `PATCH /api/staff/tickets/:id/assign`: Reassign ticket owner to another active IT Staff user.
-    - `PATCH /api/staff/tickets/:id/priority`: Update `itPriority` (only IT Staff/Admin permitted).
-    - `PATCH /api/staff/tickets/:id/status`: Transition ticket status according to defined 8-status transition matrix (`New`, `Open`, `In Progress`, `Waiting for Requester`, `Resolved`, `Closed`, `Reopened`, `Cancelled`).
+    - `PATCH /api/staff/tickets/:id/priority`: Update `itPriority` (only `IT_STAFF` permitted).
+    - `PATCH /api/staff/tickets/:id/status`: Transition ticket status according to defined 8-status transition matrix (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`).
   - **Comments & Notes APIs:**
-    - `POST /api/tickets/:id/comments`: Append Public Comment (author recorded from session; accessible by Requester owner, IT Staff, Admin).
+    - `POST /api/tickets/:id/comments`: Append Public Comment (author recorded from session; accessible by Requester owner and IT Staff).
     - `GET /api/tickets/:id/comments`: Retrieve Public Comments for the ticket.
-    - `POST /api/tickets/:id/notes`: Append Internal Note (restricted to IT Staff/Admin; strictly rejects empty/whitespace content).
-    - `GET /api/tickets/:id/notes`: Retrieve Internal Notes (restricted to IT Staff/Admin; Requesters receive 403 Forbidden with zero note data leaked).
+    - `POST /api/tickets/:id/notes`: Append Internal Note (restricted to `IT_STAFF`; strictly rejects empty/whitespace content).
+    - `GET /api/tickets/:id/notes`: Retrieve Internal Notes (restricted to `IT_STAFF`; Requesters and Admins receive 403 Forbidden with zero note data leaked).
   - **Requester Resolution Action:**
     - `PATCH /api/requester/tickets/:id/resolve-indication`: Endpoint allowing ticket requester to mark "Problem Appears Resolved" without formally closing the ticket.
   - **Frontend UI Enhancements:**
@@ -168,7 +168,7 @@ This document provides the definitive planning specification for GitHub Issues #
   - [ ] IT Staff can claim ownership, reassign to active staff, and adjust IT Priority.
   - [ ] Status transitions adhere strictly to permitted state flow.
   - [ ] Requesters can add and view Public Comments, and indicate problem resolved, but cannot alter formal status to Resolved/Closed.
-  - [ ] Internal Notes are completely inaccessible and invisible to Requester users via both UI and direct API calls (403 Forbidden).
+  - [ ] Internal Notes are completely inaccessible and invisible to Requester and Administrator users via both UI and direct API calls (403 Forbidden).
   - [ ] Comments and notes reject whitespace-only or empty submissions and persist creation timestamps and authors.
   - [ ] All associated Supertest and Vitest test suites pass 100%.
 

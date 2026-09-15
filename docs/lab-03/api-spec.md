@@ -143,12 +143,16 @@ All error responses adhere to a consistent, safe JSON payload:
 
 ## 3. IT Staff Ticket Queue & Operations
 
+> [!NOTE]
+> **Canonical Ticket Statuses**: The backend API strictly exchanges uppercase ENUM values: `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`. The frontend renders corresponding display labels (`New`, `In Progress`, etc.).
+> **Role Restriction**: In accordance with the course specification (§4.3), all staff ticketing operations are strictly restricted to `IT_STAFF`. `ADMINISTRATOR` and `REQUESTER` users receive `403 Forbidden`.
+
 ### 3.1 Retrieve Staff Ticket Queue
 * **Endpoint**: `GET /api/staff/tickets`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: `IT_STAFF`
 * **Query Parameters**:
   - `search` (string, optional): Search keyword against `ticketNumber` and `summary`.
-  - `status` (string, optional): Filter by single status or comma-separated list.
+  - `status` (string, optional): Filter by single status or comma-separated list (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`).
   - `categoryId` (number, optional): Filter by category ID.
   - `requestedPriority` (string, optional): `LOW`, `MEDIUM`, `HIGH`, `URGENT`.
   - `itPriority` (string, optional): `LOW`, `MEDIUM`, `HIGH`, `URGENT`.
@@ -185,11 +189,11 @@ All error responses adhere to a consistent, safe JSON payload:
   ```
 * **Error Responses**:
   - `401 Unauthorized`: Not authenticated.
-  - `403 Forbidden`: User role is `REQUESTER` (`{ "error": "Access denied. Ticket queue is restricted to IT Staff and Administrators.", "code": "FORBIDDEN" }`).
+  - `403 Forbidden`: User role is not `IT_STAFF` (e.g. `REQUESTER` or `ADMINISTRATOR`) (`{ "error": "Access denied. Ticket queue is restricted to IT Staff.", "code": "FORBIDDEN" }`).
 
 ### 3.2 Retrieve Single Ticket Detail (Staff View)
 * **Endpoint**: `GET /api/staff/tickets/:id`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: `IT_STAFF`
 * **Success Response (`200 OK`)**:
   ```json
   {
@@ -219,7 +223,7 @@ All error responses adhere to a consistent, safe JSON payload:
 
 ### 3.3 Claim Ticket Ownership
 * **Endpoint**: `PATCH /api/staff/tickets/:id/claim`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: `IT_STAFF`
 * **Request Body**: None (assigns authenticated user)
 * **Success Response (`200 OK`)**:
   ```json
@@ -231,12 +235,12 @@ All error responses adhere to a consistent, safe JSON payload:
 * **Error Responses**:
   - `400 Bad Request`: Ticket is already closed or cancelled (`{ "error": "Cannot claim a closed or cancelled ticket", "code": "INVALID_STATE" }`).
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: Non-staff user.
+  - `403 Forbidden`: Non-IT Staff user (`{ "error": "Access denied. IT Staff role required.", "code": "FORBIDDEN" }`).
   - `404 Not Found`: Ticket not found.
 
 ### 3.4 Reassign Ticket Ownership
 * **Endpoint**: `PATCH /api/staff/tickets/:id/assign`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: `IT_STAFF`
 * **Request Body**:
   ```json
   {
@@ -251,14 +255,14 @@ All error responses adhere to a consistent, safe JSON payload:
   }
   ```
 * **Error Responses**:
-  - `400 Bad Request`: Target user is inactive or not an IT Staff/Admin (`{ "error": "Target user must be an active IT Staff or Administrator", "code": "INVALID_OWNER" }`).
+  - `400 Bad Request`: Target user is inactive or not an IT Staff (`{ "error": "Target user must be an active IT Staff member", "code": "INVALID_OWNER" }`).
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: Non-staff user.
+  - `403 Forbidden`: Non-IT Staff user (`{ "error": "Access denied. IT Staff role required.", "code": "FORBIDDEN" }`).
   - `404 Not Found`: Ticket or target user not found.
 
 ### 3.5 Update IT Priority
 * **Endpoint**: `PATCH /api/staff/tickets/:id/priority`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: `IT_STAFF`
 * **Request Body**:
   ```json
   {
@@ -275,12 +279,12 @@ All error responses adhere to a consistent, safe JSON payload:
 * **Error Responses**:
   - `400 Bad Request`: Invalid priority value (`{ "error": "Priority must be LOW, MEDIUM, HIGH, or URGENT", "code": "VALIDATION_ERROR" }`).
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: Non-staff user.
+  - `403 Forbidden`: Non-IT Staff user.
   - `404 Not Found`: Ticket not found.
 
 ### 3.6 Transition Ticket Status
 * **Endpoint**: `PATCH /api/staff/tickets/:id/status`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: `IT_STAFF`
 * **Request Body**:
   ```json
   {
@@ -297,7 +301,7 @@ All error responses adhere to a consistent, safe JSON payload:
 * **Error Responses**:
   - `400 Bad Request`: Status transition violates state matrix (`{ "error": "Invalid status transition from IN_PROGRESS to CLOSED. Ticket must be RESOLVED first.", "code": "INVALID_TRANSITION" }`).
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: Non-staff user.
+  - `403 Forbidden`: Non-IT Staff user.
   - `404 Not Found`: Ticket not found.
 
 ---
@@ -306,7 +310,7 @@ All error responses adhere to a consistent, safe JSON payload:
 
 ### 4.1 Get Public Comments
 * **Endpoint**: `GET /api/tickets/:id/comments`
-* **Access**: Ticket Requester Owner, `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: Ticket Requester Owner, `IT_STAFF` (Returns `403 Forbidden` for other users or Administrators)
 * **Success Response (`200 OK`)**:
   ```json
   [
@@ -320,12 +324,12 @@ All error responses adhere to a consistent, safe JSON payload:
   ```
 * **Error Responses**:
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: User is a Requester who does not own this ticket (`{ "error": "Access denied", "code": "FORBIDDEN" }`).
+  - `403 Forbidden`: User is not the ticket owner or an IT Staff member (`{ "error": "Access denied", "code": "FORBIDDEN" }`).
   - `404 Not Found`: Ticket not found.
 
 ### 4.2 Post Public Comment
 * **Endpoint**: `POST /api/tickets/:id/comments`
-* **Access**: Ticket Requester Owner, `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: Ticket Requester Owner, `IT_STAFF`
 * **Request Body**:
   ```json
   {
@@ -344,12 +348,12 @@ All error responses adhere to a consistent, safe JSON payload:
 * **Error Responses**:
   - `400 Bad Request`: Empty or whitespace-only content (`{ "error": "Comment content cannot be empty", "code": "VALIDATION_ERROR" }`).
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: User is a Requester who does not own this ticket.
+  - `403 Forbidden`: User is neither the ticket owner nor an IT Staff member.
   - `404 Not Found`: Ticket not found.
 
 ### 4.3 Get Internal Notes
 * **Endpoint**: `GET /api/tickets/:id/notes`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR` (Strictly **FORBIDDEN** for `REQUESTER`)
+* **Access**: `IT_STAFF` (Strictly **FORBIDDEN** for `REQUESTER` and `ADMINISTRATOR`)
 * **Success Response (`200 OK`)**:
   ```json
   [
@@ -363,12 +367,12 @@ All error responses adhere to a consistent, safe JSON payload:
   ```
 * **Error Responses**:
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: Requesters receive safe rejection without leaking note existence (`{ "error": "Access denied. Internal notes are restricted to IT staff.", "code": "FORBIDDEN" }`).
+  - `403 Forbidden`: Requesters and Administrators receive safe rejection without leaking note existence (`{ "error": "Access denied. Internal notes are restricted to IT staff.", "code": "FORBIDDEN" }`).
   - `404 Not Found`: Ticket not found.
 
 ### 4.4 Post Internal Note
 * **Endpoint**: `POST /api/tickets/:id/notes`
-* **Access**: `IT_STAFF`, `ADMINISTRATOR`
+* **Access**: `IT_STAFF` (Strictly **FORBIDDEN** for `REQUESTER` and `ADMINISTRATOR`)
 * **Request Body**:
   ```json
   {
@@ -379,7 +383,7 @@ All error responses adhere to a consistent, safe JSON payload:
 * **Error Responses**:
   - `400 Bad Request`: Empty or whitespace content.
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: Forbidden for Requester.
+  - `403 Forbidden`: Forbidden for Requester and Administrator.
   - `404 Not Found`: Ticket not found.
 
 ---

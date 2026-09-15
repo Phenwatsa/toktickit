@@ -73,7 +73,7 @@ The TokTickIT user interface merges the **Zen Green** color identity from Lab 2 
 - **Center Navigation Links**:
   - **Requester**: "My Tickets", "Create Ticket".
   - **IT Staff**: "Ticket Queue".
-  - **Administrator**: "User Management", "Ticket Queue".
+  - **Administrator**: "User Management".
 - **Right Profile Menu**:
   - Displays user full name.
   - Role pill badge (`Requester` in green, `IT Staff` in blue/secondary, `Admin` in purple/neutral).
@@ -108,8 +108,8 @@ The TokTickIT user interface merges the **Zen Green** color identity from Lab 2 
   - **IT Priority**: Editable dropdown selector (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) with save button.
   - **Current Status**: Workflow dropdown with status transition confirmation.
 - **Communication Tabs / Panels**:
-  - **Public Comments Panel** (`--zg-pale-green` subtle accent): For communication with Requester. Displays author, role, timestamp, and message.
-  - **Internal Notes Panel** (`--zg-amber-bg` amber border accent with "Confidential" badge): Private notes strictly visible to IT Staff and Admin.
+  - **Public Comments Panel** (`--zg-pale-green` subtle accent): For collaborative communication between Requester and IT Staff. Displays author, role, timestamp, and message.
+  - **Internal Notes Panel** (`--zg-amber-bg` amber border accent with "Confidential" badge): Private operational notes strictly visible to IT Staff only (hidden from Requesters and Administrators).
   - Comment input box with "Post Public Comment" and "Add Internal Note" buttons.
 - **Attachments Card**: Lists existing attachments from Lab 2 with file size and download button.
 
