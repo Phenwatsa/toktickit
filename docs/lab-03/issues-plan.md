@@ -58,7 +58,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - `requireAuth`, `requireActive`, and `requireRole(...)` middlewares enforcing server-side authorization.
   - **Automated Backend Tests:**
     - `server/tests/lab-03/auth.api.test.ts`: Supertest suite verifying valid login, invalid login, inactive account rejection, session retrieval, password change validation, and logout.
-    - `server/tests/lab-03/authorization.api.test.ts`: Supertest suite verifying ticket ownership isolation (`API-06`) and attachment ownership isolation (`API-21`).
+    - `server/tests/lab-03/authorization.api.test.ts`: Supertest suite verifying ticket-list and ticket-detail ownership isolation derived strictly from `req.user.id` (`API-06`) and attachment ownership isolation across upload, download, and soft-delete (`API-21`).
     - `server/tests/lab-03/unit/password-policy.unit.test.ts`: Unit tests for password policy validator (`UNIT-01`).
     - `server/tests/lab-03/unit/role-auth.unit.test.ts`: Unit tests for role authorization middleware (`UNIT-03`).
     - `server/tests/lab-03/unit/token-version.unit.test.ts`: Unit tests for token revocation logic (`UNIT-06`).

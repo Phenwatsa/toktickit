@@ -15,7 +15,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **API-03** | API | AC-05 | Login attempt with deactivated account (`isActive: false`) | HTTP 401 Unauthorized; safe generic error response | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | **API-04** | API | AC-02 | User with `mustChangePassword = true` changes password | HTTP 200; updates password hash, sets `mustChangePassword = false` | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | **API-05** | API | AC-02 | Password change fails if new password does not meet complexity rules | HTTP 400 Bad Request; descriptive validation errors | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-06** | API | AC-03 | Requester attempts to query tickets with another `requesterId` in header/query | Authenticated identity from session is strictly enforced; foreign tickets not returned | `server/tests/lab-03/authorization.api.test.ts` | Planned |
+| **API-06** | API | AC-03 | Requester queries ticket list (`GET /api/tickets`) with another `requesterId` in query/header, or attempts to access another user's ticket detail (`GET /api/tickets/:id`) | Ownership strictly derived from session `req.user.id`; foreign tickets excluded from list and unauthorized ticket detail access rejected with HTTP 403 Forbidden | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | **API-07** | API | AC-06 | IT Staff queries ticket queue with search and filters | HTTP 200; returns paginated array of all system tickets with metadata | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
 | **API-08** | API | AC-15 | Unauthorized roles (Requester and Admin) attempt to access staff queue (`GET /api/staff/tickets`) | HTTP 403 Forbidden; zero queue data leaked | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
 | **API-09** | API | AC-07 | IT Staff claims unassigned ticket ownership | HTTP 200; ticket owner set to current authenticated staff ID | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
@@ -30,7 +30,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **API-18** | API | AC-15 | Non-Admin attempts to call Admin User endpoints | HTTP 403 Forbidden for Requester and IT Staff | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | **API-19** | API | AC-17 | Authenticated user retrieves current profile via `GET /api/auth/me` | HTTP 200 with user profile; HTTP 401 when token is missing or invalid | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | **API-20** | API | AC-18 | User logs out via `POST /api/auth/logout` and previous token is revoked | Calling protected route with old token fails with HTTP 401 (`tokenVersion` mismatch) | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-21** | API | AC-20 | Requester B attempts to access/upload/remove attachments on Requester A's ticket | HTTP 403 Forbidden; attachments cross-user manipulation blocked | `server/tests/lab-03/authorization.api.test.ts` | Planned |
+| **API-21** | API | AC-20 | Requester B attempts to upload, download (`GET /api/attachments/:id/download`), or soft-delete attachments on Requester A's ticket | HTTP 403 Forbidden on upload, download, and soft-delete; attachments cross-user isolation strictly enforced | `server/tests/lab-03/authorization.api.test.ts` | Planned |
 | **API-22** | API | AC-21 | Requester owner marks problem resolved via `PATCH /api/requester/tickets/:id/resolve-indication`; non-owner, IT Staff, and Admin attempts rejected | HTTP 200 with `problemAppearsResolved: true` and official status unchanged; HTTP 403 Forbidden for non-owner, Staff, and Admin; HTTP 404 for nonexistent ticket | `server/tests/lab-03/requester-resolution.api.test.ts` | Planned |
 
 ---
@@ -88,7 +88,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | :--- | :--- | :--- |
 | **AC-01** | Valid credentials establish authenticated session and role | `API-01`, `UI-01`, `E2E-01` |
 | **AC-02** | Initial password user must change password before app access | `API-04`, `API-05`, `UI-03`, `E2E-02`, `UNIT-01` |
-| **AC-03** | Requester identity derived from session, enforcing cross-user ownership isolation | `API-06`, `E2E-07` |
+| **AC-03** | Requester identity derived from session `req.user.id`, enforcing ticket-list and ticket-detail cross-user ownership isolation | `API-06`, `E2E-07` |
 | **AC-04** | Internal Notes strictly hidden and forbidden for Requesters and Admins | `API-13`, `UI-07`, `E2E-05` |
 | **AC-05** | Invalid credentials or inactive accounts safely rejected | `API-02`, `API-03`, `UI-02`, `E2E-01` |
 | **AC-06** | IT Staff queue retrieval with search, filters, pagination | `API-07`, `UI-04`, `UI-05`, `E2E-03` |
@@ -105,5 +105,5 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **AC-17** | Current user profile retrieval via `GET /api/auth/me` | `API-19` |
 | **AC-18** | Server-side token revocation on logout via `tokenVersion` | `API-20`, `E2E-01`, `UNIT-06` |
 | **AC-19** | Role-based navigation rendering strictly permitted destinations | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
-| **AC-20** | Requester attachment ownership isolation against unauthorized access | `API-21`, `E2E-07` |
+| **AC-20** | Requester attachment ownership isolation against unauthorized access (upload, download, soft-delete) | `API-21`, `E2E-07` |
 | **AC-21** | Requester owner marks problem appears resolved without altering official status; non-owners blocked | `API-22`, `UI-11`, `E2E-09` |

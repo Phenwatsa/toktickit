@@ -60,6 +60,13 @@ All protected functional endpoints across Staff Queue, Ticket Detail, Operations
   - `POST /api/auth/logout` (to terminate session)
   - `GET /api/auth/me` (to inspect current user profile and flag status)
 
+### 1.4 Lab 2 API Contracts Continuity & Elevation
+All existing REST contracts established in Lab 2 ([`docs/lab-02/api-spec.md`](../lab-02/api-spec.md)) are fully carried forward into Lab 3 and enhanced with authentication and strict server-side ownership enforcement:
+- **Reference Data**: `GET /api/categories/active` and `GET /api/related-systems/active` continue to serve active dropdown reference lists without breaking changes.
+- **Ticket Submission**: `POST /api/tickets` preserves the Lab 2 payload structure (`summary`, `description`, `categoryId`, `relatedSystemId`, `requestedPriority`), automatically binds ticket ownership to `req.user.id`, and initializes `itPriority` to the value of `requestedPriority` (BR-11).
+- **Ticket Listing & Detail**: `GET /api/tickets` and `GET /api/tickets/:id` are upgraded from simulated `x-requester-id` headers to verified JWT tokens, strictly enforcing cross-user isolation (`req.user.id`).
+- **Attachment Operations**: File upload (`POST /api/tickets/:id/attachments`), download (`GET /api/attachments/:id/download`), and soft-removal (`DELETE /api/tickets/:id/attachments/:attachmentId`) retain their Lab 2 specifications (5 MB limit, valid MIME types, max 5 files), upgraded to enforce Bearer JWT authentication and strict ticket ownership isolation (AC-20).
+
 ---
 
 ## 2. Authentication Endpoints
@@ -475,20 +482,23 @@ All protected functional endpoints across Staff Queue, Ticket Detail, Operations
 * **Success Response (`201 Created`)**: Returns full created ticket object including `requestedPriority: "HIGH"`, `itPriority: "HIGH"`, and `currentStatus: "NEW"`.
 
 ### 5.3 Lab 2 Requester Endpoints Continuity Contract (FR-06, BR-03, AC-03, AC-20)
-All ticket queries and attachment operations established in Lab 2 continue to be supported with 100% functional continuity, upgraded to enforce **Bearer JWT Authentication** and **Ownership Isolation**:
+All ticket queries, detail inspection, and attachment operations established in Lab 2 ([`docs/lab-02/api-spec.md`](../lab-02/api-spec.md)) continue to be supported with 100% functional continuity, carried forward and upgraded to enforce **Bearer JWT Authentication** and **Ownership Isolation**:
 
 * **List My Tickets**: `GET /api/tickets`
-  - **Access**: Authenticated `REQUESTER` (isolated by session `req.user.id`). IT Staff use `GET /api/staff/tickets` to inspect all system tickets.
-  - **Behavior**: Returns tickets created by the authenticated requester. Query parameters attempting to override identity (e.g. `?requesterId=...`) are strictly ignored.
+  - **Access**: Authenticated `REQUESTER` (isolated strictly by server session `req.user.id`). IT Staff use `GET /api/staff/tickets` to inspect all system tickets.
+  - **Behavior**: Returns tickets created by the authenticated requester. Query parameters attempting to override identity (e.g. `?requesterId=...` or headers `x-requester-id`) are strictly ignored.
 * **Single Ticket Detail**: `GET /api/tickets/:id`
-  - **Access**: Ticket Requester Owner or `IT_STAFF`.
-  - **Behavior**: If accessed by a Requester who does not own the ticket, returns `403 Forbidden` (`{ "error": "Access denied. You do not own this ticket.", "code": "FORBIDDEN" }`). Requester view excludes `internalNotes`.
+  - **Access**: Ticket Requester Owner (derived strictly from `req.user.id`) or `IT_STAFF`.
+  - **Behavior**: Verifies ticket ownership against authenticated user session. If accessed by a Requester who does not own the ticket, returns HTTP `403 Forbidden` (`{ "error": "Access denied. You do not own this ticket.", "code": "FORBIDDEN" }`). Any client-supplied `requesterId` in query or header is discarded. Requester view excludes `internalNotes`. Non-existent ticket returns `404 Not Found`.
 * **Attachment Upload**: `POST /api/tickets/:id/attachments`
   - **Access**: Ticket Requester Owner or `IT_STAFF`.
-  - **Behavior**: Requesters may upload attachments only to tickets they own. Non-owner Requesters receive `403 Forbidden`. Multipart validation (max 5 MB; allowed formats: JPG, PNG, WebP, PDF) remains unchanged from Lab 2.
+  - **Behavior**: Requesters may upload attachments only to tickets they own (derived from `req.user.id`). Non-owner Requesters receive HTTP `403 Forbidden`. Administrators receive HTTP `403 Forbidden`. Multipart validation (max 5 MB; allowed formats: JPG, PNG, WebP, PDF; maximum 5 active files per ticket) remains unchanged from Lab 2.
+* **Attachment Download**: `GET /api/attachments/:id/download`
+  - **Access**: Ticket Requester Owner or `IT_STAFF`.
+  - **Behavior**: Streams/downloads binary attachment content. Requesters can download attachments only if the parent ticket is owned by them (`ticket.requesterId === req.user.id`). If Requester B attempts to download an attachment on Requester A's ticket, the request is rejected with HTTP `403 Forbidden` (`{ "error": "Access denied. You do not have permission to download this attachment.", "code": "FORBIDDEN" }`). IT Staff can download attachments from any ticket in the queue. Administrators receive HTTP `403 Forbidden`. Soft-removed attachments (`isRemoved: true`) return HTTP `410 Gone`.
 * **Attachment Soft-Delete**: `DELETE /api/tickets/:id/attachments/:attachmentId`
   - **Access**: Ticket Requester Owner or `IT_STAFF`.
-  - **Behavior**: Requesters may soft-delete attachments only on tickets they own. Non-owner Requesters receive `403 Forbidden`.
+  - **Behavior**: Requesters may soft-delete attachments only on tickets they own (`req.user.id`). Non-owner Requesters receive HTTP `403 Forbidden`. Administrators receive HTTP `403 Forbidden`. Sets `isRemoved = true` and records `removedAt`.
 
 ---
 

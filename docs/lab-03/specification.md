@@ -23,7 +23,7 @@ The IT department requires replacing the temporary Development Requester selecto
 - **Secure Authentication & Session Management**: Email/password authentication, salted password hashing with bcrypt, stateless JWT Bearer tokens with server-side `tokenVersion` invalidation on logout, and current user profile retrieval.
 - **Mandatory First-Login Password Change**: Users flagged with an initial password (`mustChangePassword = true`) must change it upon initial login before accessing normal application functions.
 - **Role-Based Access Control (RBAC)**: Enforce three mutually exclusive roles (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`) on both backend endpoints and frontend navigation, maintaining separation of concerns between IT Staff (ticketing) and Administrators (user management).
-- **Requester Continuity & Enhancement**: Migration from simulated selector to authenticated identity; preserve all Lab 2 ticket creation, listing, detail, and attachment capabilities; add Public Comments and "Problem Appears Resolved" indication.
+- **Requester Continuity & Enhancement**: Migration from simulated selector to authenticated identity; carry forward all existing Lab 2 requester ticket creation, listing, detail, and attachment contracts ([`docs/lab-02/api-spec.md`](../lab-02/api-spec.md)) enhanced with Bearer JWT authentication and strict server-side ownership isolation; add Public Comments and "Problem Appears Resolved" indication.
 - **IT Staff Ticket Queue**: Searchable, filterable, sortable, and paginated ticket list for IT Staff only with Zen Green badges and desktop table / mobile card layouts.
 - **IT Staff Ticket Detail Operations**: View full ticket metadata; claim ticket ownership; reassign ownership to another active IT staff; set IT Priority; execute permitted status transitions among 8 official statuses.
 - **Public Comments & Internal Notes**: Append-only communication timeline with backend author and timestamp recording. Public Comments visible to Requester and IT Staff; Internal Notes strictly restricted to IT Staff.
@@ -54,7 +54,7 @@ The IT department requires replacing the temporary Development Requester selecto
 - **FR-05 (Role-Based Navigation)**: The application navigation bar shall dynamically present only destinations permitted for the authenticated user's role.
 
 ### Requester Capabilities
-- **FR-06 (Authenticated Ticket & Attachment Management)**: The system shall bind all Requester ticket creation, listing, detail viewing, and attachment operations exclusively to the authenticated user's identity (`req.user.id`), enforcing cross-user ownership isolation.
+- **FR-06 (Authenticated Ticket & Attachment Management)**: All Lab 2 ticket creation, listing, detail viewing, and attachment API contracts ([`docs/lab-02/api-spec.md`](../lab-02/api-spec.md)) shall be carried forward and bound exclusively to the authenticated user's identity (`req.user.id`), enforcing strict cross-user ownership isolation.
 - **FR-07 (Requester Public Comments)**: A requester shall be able to post and read Public Comments on tickets they own.
 - **FR-08 (Problem Appears Resolved)**: A requester shall be able to submit an indication that their reported problem appears resolved without directly changing the official ticket status to Resolved or Closed.
 
@@ -83,8 +83,8 @@ The table below defines the baseline role-based access permissions across all sy
 | **Logout & Token Revocation** | ✅ | ✅ | ✅ | Increments `tokenVersion` server-side (FR-04) |
 | **Create Support Ticket** | ✅ | ❌ (403) | ❌ (403) | Assigned to `req.user.id` as requester (BR-03) |
 | **View Owned Tickets List** | ✅ | ❌ (403) | ❌ (403) | Returns only tickets matching `requesterId = req.user.id` |
-| **View Owned Ticket Detail** | ✅ | ❌ (403) | ❌ (403) | Access blocked for other users' tickets (403 Forbidden) |
-| **Manage Attachments (Upload/Soft-Delete)** | ✅ (Owned) | ✅ | ❌ (403) | Requesters manage owned ticket files; IT Staff manage ticket files in queue; Admin forbidden (BR-03) |
+| **View Owned Ticket Detail** | ✅ (Owned) | ✅ | ❌ (403) | Requesters view owned ticket detail (strictly derived from `req.user.id`); non-owner requesters rejected (403 Forbidden); IT Staff view any ticket; Admin forbidden |
+| **Manage Attachments (Upload/Download/Soft-Delete)** | ✅ (Owned) | ✅ | ❌ (403) | Requesters upload, download, and soft-delete files on owned tickets; IT Staff download and manage ticket files in queue; Admin forbidden (BR-03) |
 | **View IT Staff Ticket Queue** | ❌ (403) | ✅ | ❌ (403) | Full system queue; Admin forbidden (Handout §4.3) |
 | **View Any Ticket Detail (Staff View)**| ❌ (403) | ✅ | ❌ (403) | Includes operational controls and internal notes |
 | **Claim Ticket Ownership** | ❌ (403) | ✅ | ❌ (403) | Assigns current staff member as owner (BR-10) |
@@ -93,38 +93,35 @@ The table below defines the baseline role-based access permissions across all sy
 | **Execute Ticket Status Transition** | ❌ (403) | ✅ | ❌ (403) | Validated against permitted 8-status matrix (BR-12) |
 | **Mark "Problem Appears Resolved"** | ✅ (Owned)| ❌ (403) | ❌ (403) | Sets informational flag; does not alter status (BR-13) |
 | **View Public Comments** | ✅ (Owned)| ✅ | ❌ (403) | Visible to Requester owner and IT Staff only (BR-06) |
-| **Post Public Comment** | ✅ (Owned)| ✅ | ❌ (403) | Append-only; author recorded from session (BR-08) |
-| **View Internal Notes** | ❌ (403) | ✅ | ❌ (403) | **Confidential**: Staff-only; zero note leaked (BR-07) |
-| **Post Internal Note** | ❌ (403) | ✅ | ❌ (403) | Restricted to IT Staff; append-only (BR-07, BR-08) |
-| **View User Management List** | ❌ (403) | ❌ (403) | ✅ | Admin-only; non-admins receive 403 Forbidden |
-| **Create User Account** | ❌ (403) | ❌ (403) | ✅ | Single role; initial password; checks email uniqueness |
-| **Update User Profile / Active Status**| ❌ (403) | ❌ (403) | ✅ | Protected by self-deactivation & last admin guards |
-| **Reset Initial Password** | ❌ (403) | ❌ (403) | ✅ | Sets `mustChangePassword = true` for target user |
+| **Post Public Comments** | ✅ (Owned)| ✅ | ❌ (403) | Appends public communication record (BR-08) |
+| **View Internal Notes** | ❌ (403) | ✅ | ❌ (403) | Strictly hidden from Requester and Administrator (BR-07) |
+| **Post Internal Notes** | ❌ (403) | ✅ | ❌ (403) | Restricted strictly to IT Staff; append-only (BR-07) |
+| **View User Management Directory** | ❌ (403) | ❌ (403) | ✅ | Restricted to Admin; list, search, filter (FR-14) |
+| **Create New User** | ❌ (403) | ❌ (403) | ✅ | Sets single role and initial temporary password (FR-15)|
+| **Edit User Profile / Status** | ❌ (403) | ❌ (403) | ✅ | Name, email, role, active status (FR-15) |
+| **Reset User Password** | ❌ (403) | ❌ (403) | ✅ | Sets new initial password and forces change (FR-15) |
 
 ---
 
-## 4.2 FR $\rightarrow$ BR $\rightarrow$ AC Traceability Mapping
+## 4.2 Automated Tests Coverage Traceability
 
-Every functional requirement maps explicitly to corresponding business rules and testable acceptance criteria with zero gaps:
-
-| FR ID | Functional Requirement Summary | Governing Business Rules | Mapped Acceptance Criteria | Covering Automated Tests |
+| FR ID | Description | Governing BR | Verified By AC | Automated Tests |
 | :--- | :--- | :--- | :--- | :--- |
-| **FR-01** | User Authentication with credentials | `BR-01`, `BR-04`, `BR-05` | `AC-01`, `AC-05` | `API-01`, `API-02`, `API-03`, `UI-01`, `UI-02`, `E2E-01` |
-| **FR-02** | Mandatory First-Login Password Change | `BR-02`, `BR-05` | `AC-02` | `API-04`, `API-05`, `UI-03`, `E2E-02`, `UNIT-01` |
-| **FR-03** | Current User Profile (`/me`) Retrieval | `BR-01`, `BR-03` | `AC-17` | `API-19` |
-| **FR-04** | Logout & Token Revocation via `tokenVersion` | `BR-01`, `BR-04` | `AC-18` | `API-20`, `E2E-01`, `UNIT-06` |
-| **FR-05** | Role-Based Navigation Presentation | `BR-03`, `BR-14` | `AC-19` | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
+| **FR-01** | User Authentication (Login) | `BR-01`, `BR-05` | `AC-01`, `AC-05` | `API-01`, `API-02`, `API-03`, `UI-01`, `UI-02`, `E2E-01` |
+| **FR-02** | Mandatory Password Change on First Login | `BR-02`, `BR-05` | `AC-02` | `API-04`, `API-05`, `UI-03`, `E2E-02`, `UNIT-01` |
+| **FR-03** | User Identity & Role Context Retrieval | `BR-01` | `AC-17`, `AC-19` | `API-19`, `UI-10`, `E2E-01` |
+| **FR-04** | Secure Session Logout & Token Invalidation | `BR-04` | `AC-18` | `API-20`, `E2E-01`, `UNIT-06` |
+| **FR-05** | Role-Based Access Control Middleware | `BR-01`, `BR-02` | `AC-15` | `API-08`, `API-18`, `UNIT-03` |
 | **FR-06** | Authenticated Ticket & Attachment Management | `BR-03` | `AC-03`, `AC-20` | `API-06`, `API-21`, `E2E-07` |
-| **FR-07** | Requester Public Comments Posting/Reading | `BR-06`, `BR-08`, `BR-09` | `AC-10` | `API-12`, `UI-07`, `E2E-04`, `E2E-05` |
-| **FR-08** | Indicate Problem Appears Resolved | `BR-13` | `AC-21` | `API-22`, `UI-11`, `E2E-09` |
-| **FR-09** | IT Staff Ticket Queue with Querying | `BR-10`, `BR-11`, `BR-12` | `AC-06`, `AC-15` | `API-07`, `API-08`, `UI-04`, `UI-05`, `E2E-03` |
-| **FR-10** | Claim & Reassign Ticket Ownership | `BR-10` | `AC-07` | `API-09`, `UI-06`, `E2E-04` |
-| **FR-11** | Manage IT Priority independently | `BR-11` | `AC-08` | `API-10`, `UI-06`, `E2E-04`, `UNIT-04` |
-| **FR-12** | Permitted Ticket Status Transitions | `BR-12` | `AC-09` | `API-11`, `UI-06`, `E2E-04`, `UNIT-02` |
-| **FR-13** | Confidential Internal Notes Creation/View | `BR-07`, `BR-08`, `BR-09` | `AC-04` | `API-13`, `UI-07`, `E2E-05` |
-| **FR-14** | Admin User List Retrieval with Search/Filter | `BR-14`, `BR-18` | `AC-11`, `AC-15` | `API-14`, `API-18`, `UI-08`, `E2E-06`, `UNIT-03` |
-| **FR-15** | Admin User Account Creation, Edit & Password Reset | `BR-14`, `BR-15`, `BR-16`, `BR-17`, `BR-18` | `AC-11`, `AC-12`, `AC-13`, `AC-14` | `API-14`, `API-15`, `API-16`, `API-17`, `UI-08`, `UI-09`, `E2E-06`, `UNIT-05` |
-| *(Cross)* | Cross-Viewport Responsive & Zero Overflow | `BR-19` | `AC-16` | `E2E-08` |
+| **FR-07** | Requester Ticket Submission | `BR-03`, `BR-11`| `AC-08` | `API-10`, `UNIT-04`, `E2E-07` |
+| **FR-08** | Requester Problem Resolution Indication | `BR-13` | `AC-21` | `API-22`, `UI-11`, `E2E-09` |
+| **FR-09** | IT Staff Ticket Queue | Handout §4.3 | `AC-06` | `API-07`, `UI-04`, `UI-05`, `E2E-03` |
+| **FR-10** | IT Staff Ticket Ownership Assignment | `BR-10` | `AC-07` | `API-09`, `UI-06`, `E2E-04` |
+| **FR-11** | IT Priority Management | `BR-11` | `AC-08` | `API-10`, `UI-06`, `E2E-04`, `UNIT-04` |
+| **FR-12** | IT Staff Ticket Status Transition | `BR-12` | `AC-09` | `API-11`, `UI-06`, `E2E-04`, `UNIT-02` |
+| **FR-13** | Ticket Communication (Public & Internal) | `BR-06`, `BR-07`, `BR-08`, `BR-09` | `AC-04`, `AC-10` | `API-12`, `API-13`, `UI-07`, `E2E-04`, `E2E-05` |
+| **FR-14** | Administrator User Management Directory | `BR-14`, `BR-18`| `AC-15` | `API-18`, `UI-08`, `E2E-06` |
+| **FR-15** | User Lifecycle & Safety Guards | `BR-14`–`BR-18`| `AC-11`, `AC-12`, `AC-13`, `AC-14` | `API-14`, `API-15`, `API-16`, `API-17`, `UI-08`, `UI-09`, `E2E-06`, `UNIT-05` |
 
 ---
 
@@ -133,7 +130,7 @@ Every functional requirement maps explicitly to corresponding business rules and
 ### Authentication & Security
 - **BR-01 (Active User Credential Check)**: Only an active user (`isActive = true`) with valid matching credentials may authenticate. Deactivated accounts must be rejected with safe error feedback without disclosing whether the account exists or is disabled.
 - **BR-02 (Mandatory First-Login Enforcement & API Blocking)**: A user marked with `mustChangePassword = true` cannot access normal application views or functional endpoints. All protected functional routes enforce this rule; any attempt by an authenticated user with `mustChangePassword === true` to invoke functional endpoints (tickets, comments, notes, admin users) is rejected with HTTP `403 Forbidden` (`{ "error": "Password change required before accessing application features.", "code": "PASSWORD_CHANGE_REQUIRED" }`). The only exempted routes are `POST /api/auth/change-password`, `POST /api/auth/logout`, and `GET /api/auth/me`.
-- **BR-03 (Authenticated Ownership & Access Control)**: The authenticated session identity, not any client-supplied `requesterId`, strictly determines the ownership of Requester operations. Requesters are strictly confined to tickets and attachments they own. IT Staff possess operational access across the system ticket queue including viewing and managing attachments. Cross-user ticket inspection, editing, or attachment manipulation by other unauthorized requesters or administrators must be rejected with HTTP 403 Forbidden.
+- **BR-03 (Authenticated Ownership & Access Control)**: The authenticated session identity (`req.user.id`), not any client-supplied `requesterId`, strictly determines the ownership of Requester operations. Requesters are strictly confined to tickets and attachments they own for all operations (viewing ticket list, accessing single ticket detail, uploading, downloading, and soft-deleting attachments). IT Staff possess operational access across the system ticket queue including viewing tickets and managing/downloading attachments. Cross-user ticket inspection, unauthorized ticket detail access, or attachment manipulation (upload/download/delete) by other unauthorized requesters or administrators must be rejected with HTTP 403 Forbidden.
 - **BR-04 (Cryptographic Password Storage & Token Revocation)**: Passwords must never be stored, logged, or returned in plaintext. Passwords must be salted and hashed with bcrypt ($\ge 10$ rounds). Authentication uses JWT tokens signed with a server secret. Token revocation on logout is enforced via a numeric `tokenVersion` field on the `User` model; incrementing this version invalidates all outstanding tokens issued prior to logout.
 - **BR-05 (Password Complexity Rules)**: Passwords must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.
 
@@ -412,7 +409,7 @@ model InternalNote {
 
 - **AC-01 (Valid Authentication)**: Given an active user with valid credentials, when the user logs in, then the backend establishes authenticated access and returns the permitted user identity, role, and valid JWT token.
 - **AC-02 (Mandatory Password Change)**: Given a user who must change the initial password (`mustChangePassword = true`), when login succeeds, then normal application screens remain unavailable until a valid new password is saved.
-- **AC-03 (Requester Ticket Ownership Isolation)**: Given an authenticated Requester, when querying tickets, then the backend strictly applies `req.user.id` and returns only owned tickets, rejecting requests to inspect other users' tickets with HTTP 403 Forbidden.
+- **AC-03 (Requester Ticket Ownership Isolation)**: Given an authenticated Requester, when querying the ticket list or accessing a single ticket detail (`GET /api/tickets/:id`), then the backend strictly derives identity from `req.user.id` and confines results to owned tickets, rejecting requests to inspect other users' tickets or ticket details with HTTP 403 Forbidden.
 - **AC-04 (Internal Note Confidentiality)**: Given a Requester or Administrator account, when an Internal Note endpoint is requested, then the operation is rejected with HTTP 403 Forbidden without exposing note content or metadata.
 - **AC-05 (Invalid Credentials & Inactive Safety)**: Given invalid credentials or a deactivated user account, when attempting to log in, then the request fails with HTTP 401 and displays a generic safe error message.
 - **AC-06 (Staff Ticket Queue Retrieval)**: Given an authenticated IT Staff user, when accessing the queue, then all system tickets are returned with accurate search, filter, and pagination metadata.
@@ -429,7 +426,7 @@ model InternalNote {
 - **AC-17 (Current User Profile Retrieval)**: Given an authenticated session, when `GET /api/auth/me` is requested, then the user's profile and assigned role are returned; when unauthenticated, HTTP 401 is returned.
 - **AC-18 (Token Revocation on Logout)**: Given an authenticated user who logs out via `POST /api/auth/logout`, when subsequent requests are made using the prior JWT token, then the server rejects the token with HTTP 401 Unauthorized due to `tokenVersion` mismatch.
 - **AC-19 (Role-Based Navigation Rendering)**: Given an authenticated user, when viewing the application shell, then only links permitted for the user's role are visible in the navigation bar.
-- **AC-20 (Requester Attachment Ownership Isolation)**: Given an attachment on a ticket owned by Requester A, when Requester B attempts to upload, download, or soft-remove it, then the request is rejected with HTTP 403 Forbidden.
+- **AC-20 (Requester Attachment Ownership Isolation)**: Given an attachment on a ticket owned by Requester A, when Requester B attempts to upload, download (`GET /api/attachments/:id/download`), or soft-remove it, then the request is rejected with HTTP 403 Forbidden.
 - **AC-21 (Requester Resolution Indication)**: Given an authenticated Requester who owns a ticket, when they submit an indication that the problem appears resolved (`PATCH /api/requester/tickets/:id/resolve-indication`), then `problemAppearsResolved` is set to `true` while the official ticket status remains unchanged; when a non-owner Requester, IT Staff, or Administrator attempts this action, the request is rejected with HTTP 403 Forbidden.
 
 ---
