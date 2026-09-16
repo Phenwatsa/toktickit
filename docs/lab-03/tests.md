@@ -69,28 +69,41 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 
 ---
 
+### 1.4 Unit Tests (`server/tests/lab-03/unit/` & `client/src/tests/lab-03/unit/`)
+
+| Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+| **UNIT-01** | Unit | AC-02 | Password policy complexity rule validator (length $\ge 8$, upper, lower, digit) | Returns valid `true` on compliant passwords; returns `false` with precise violation codes on failure | `server/tests/lab-03/unit/password-policy.unit.test.ts` | Planned |
+| **UNIT-02** | Unit | AC-09 | 8-status finite state machine transition validator | Valid transitions return `true`; illegal transitions (e.g. `IN_PROGRESS` $\rightarrow$ `CLOSED`) return `false` | `server/tests/lab-03/unit/status-transition.unit.test.ts` | Planned |
+| **UNIT-03** | Unit | AC-15 | Role-based authorization middleware permission checks | Verifies `requireRole` helper permits authorized roles and rejects unauthorized roles with 403 Forbidden | `server/tests/lab-03/unit/role-auth.unit.test.ts` | Planned |
+| **UNIT-04** | Unit | AC-08 | Priority assignment helper upon ticket initialization | Verifies `itPriority` helper sets initial IT priority equal to `requestedPriority` (BR-11) | `server/tests/lab-03/unit/priority-init.unit.test.ts` | Planned |
+| **UNIT-05** | Unit | AC-13, AC-14 | Administrator safety guards (self-deactivation and last active admin check) | Prevents self-deactivation (`userId === targetId`) and blocking when sole active admin remaining | `server/tests/lab-03/unit/admin-guard.unit.test.ts` | Planned |
+| **UNIT-06** | Unit | AC-18 | JWT payload `tokenVersion` mismatch validator | Verifies token comparison rejects stale `tokenVersion` against active database version | `server/tests/lab-03/unit/token-version.unit.test.ts` | Planned |
+
+---
+
 ## 2. Acceptance Criteria Traceability Matrix
 
 | AC ID | Acceptance Criterion Summary | Covering Automated Tests |
 | :--- | :--- | :--- |
 | **AC-01** | Valid credentials establish authenticated session and role | `API-01`, `UI-01`, `E2E-01` |
-| **AC-02** | Initial password user must change password before app access | `API-04`, `API-05`, `UI-03`, `E2E-02` |
+| **AC-02** | Initial password user must change password before app access | `API-04`, `API-05`, `UI-03`, `E2E-02`, `UNIT-01` |
 | **AC-03** | Requester identity derived from session, enforcing cross-user ownership isolation | `API-06`, `E2E-07` |
 | **AC-04** | Internal Notes strictly hidden and forbidden for Requesters and Admins | `API-13`, `UI-07`, `E2E-05` |
 | **AC-05** | Invalid credentials or inactive accounts safely rejected | `API-02`, `API-03`, `UI-02`, `E2E-01` |
 | **AC-06** | IT Staff queue retrieval with search, filters, pagination | `API-07`, `UI-04`, `UI-05`, `E2E-03` |
 | **AC-07** | Ticket ownership claim and reassignment | `API-09`, `UI-06`, `E2E-04` |
-| **AC-08** | IT Priority management preserving Requested Priority | `API-10`, `UI-06`, `E2E-04` |
-| **AC-09** | Status transitions adhere to defined state matrix | `API-11`, `UI-06`, `E2E-04` |
+| **AC-08** | IT Priority management preserving Requested Priority | `API-10`, `UI-06`, `E2E-04`, `UNIT-04` |
+| **AC-09** | Status transitions adhere to defined state matrix | `API-11`, `UI-06`, `E2E-04`, `UNIT-02` |
 | **AC-10** | Public Comments exchange between Requester and Staff | `API-12`, `UI-07`, `E2E-04`, `E2E-05` |
 | **AC-11** | Admin user creation with role and initial password | `API-14`, `UI-08`, `E2E-06` |
 | **AC-12** | Duplicate email rejection on user creation/update | `API-15`, `E2E-06` |
-| **AC-13** | Prevention of Admin self-deactivation | `API-16`, `UI-09`, `E2E-06` |
-| **AC-14** | Last active administrator protection | `API-17` |
-| **AC-15** | Non-Admin forbidden from User Management / Non-Staff forbidden from Staff Queue | `API-08`, `API-18` |
+| **AC-13** | Prevention of Admin self-deactivation | `API-16`, `UI-09`, `E2E-06`, `UNIT-05` |
+| **AC-14** | Last active administrator protection | `API-17`, `UNIT-05` |
+| **AC-15** | Non-Admin forbidden from User Management / Non-Staff forbidden from Staff Queue | `API-08`, `API-18`, `UNIT-03` |
 | **AC-16** | Cross-viewport responsive layout and zero horizontal overflow | `E2E-08` |
 | **AC-17** | Current user profile retrieval via `GET /api/auth/me` | `API-19` |
-| **AC-18** | Server-side token revocation on logout via `tokenVersion` | `API-20`, `E2E-01` |
+| **AC-18** | Server-side token revocation on logout via `tokenVersion` | `API-20`, `E2E-01`, `UNIT-06` |
 | **AC-19** | Role-based navigation rendering strictly permitted destinations | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
 | **AC-20** | Requester attachment ownership isolation against unauthorized access | `API-21`, `E2E-07` |
 | **AC-21** | Requester owner marks problem appears resolved without altering official status; non-owners blocked | `API-22`, `UI-11`, `E2E-09` |

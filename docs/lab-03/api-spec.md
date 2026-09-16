@@ -44,6 +44,22 @@ All error responses adhere to a consistent, safe JSON payload:
 }
 ```
 
+### 1.3 Global First-Login Password Change Enforcement (`requirePasswordChanged`)
+All protected functional endpoints across Staff Queue, Ticket Detail, Operations, Comments, Notes, Requester Operations, and Admin User Management execute the `requirePasswordChanged` middleware following JWT verification:
+* **Enforcement Rule**: If an authenticated user's `mustChangePassword === true`, access to functional endpoints is blocked immediately:
+  - **HTTP Status**: `403 Forbidden`
+  - **Payload**:
+    ```json
+    {
+      "error": "Password change required before accessing application features.",
+      "code": "PASSWORD_CHANGE_REQUIRED"
+    }
+    ```
+* **Exempted Routes**:
+  - `POST /api/auth/change-password` (to update initial password)
+  - `POST /api/auth/logout` (to terminate session)
+  - `GET /api/auth/me` (to inspect current user profile and flag status)
+
 ---
 
 ## 2. Authentication Endpoints

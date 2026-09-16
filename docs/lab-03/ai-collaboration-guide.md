@@ -25,15 +25,15 @@ This document establishes the collaboration agreement, core engineering rules, o
 * The AI will provide recommended commit messages following Conventional Commits (e.g., `docs(spec): ...`, `feat(auth): ...`) and explicit CLI instructions for the developer to execute manually in their terminal.
 
 ### Rule 4: Issue & Branch Traceability
-* Strictly follow the 8 GitHub Issues decomposition (#12 through #19) with dedicated feature branches prefixed by `lab3`:
-  1. `docs/lab3-spec-and-test-plan` (Issue #12: Spec DD & Test Plan)
-  2. `feature/lab3-1-auth-foundation` (Issue #13: DB Migration, Seed Data & Auth API)
-  3. `feature/lab3-2-auth-ui` (Issue #14: Login, Password Change UI & Decommission Mock)
-  4. `feature/lab3-3-staff-queue` (Issue #15: IT Staff Ticket Queue API & UI)
-  5. `feature/lab3-4-ticket-detail-and-notes` (Issue #16: Staff Detail, Public Comments & Internal Notes)
-  6. `feature/lab3-5-admin-user-management` (Issue #17: Administrator User Management API & UI)
-  7. `feature/lab3-6-e2e-and-responsive` (Issue #18: E2E Playwright, Responsive Polish & Screenshot Artifacts)
-  8. `docs/lab3-documentation` (Issue #19: Final Docs, Reviewer Log & Release Integration)
+* Strictly follow the 8 GitHub Issues decomposition (Issue 12 (#34) through Issue 19 (#41)) with dedicated feature branches prefixed by `lab3`:
+  1. `docs/lab3-spec-and-test-plan` (Issue 12 (#34): Spec DD & Test Plan)
+  2. `feature/lab3-1-auth-foundation` (Issue 13 (#35): DB Migration, Seed Data & Auth API)
+  3. `feature/lab3-2-auth-ui` (Issue 14 (#36): Login, Password Change UI & Decommission Mock)
+  4. `feature/lab3-3-staff-queue` (Issue 15 (#37): IT Staff Ticket Queue API & UI)
+  5. `feature/lab3-4-ticket-detail-and-notes` (Issue 16 (#38): Staff Detail, Public Comments & Internal Notes)
+  6. `feature/lab3-5-admin-user-management` (Issue 17 (#39): Administrator User Management API & UI)
+  7. `feature/lab3-6-e2e-and-responsive` (Issue 18 (#40): E2E Playwright, Responsive Polish & Screenshot Artifacts)
+  8. `docs/lab3-documentation` (Issue 19 (#41): Final Docs, Reviewer Log & Release Integration)
 * Complete one issue at a time. Do not jump across issues or combine multiple issues into a single branch.
 
 ### Rule 5: Zero Broken Tests & 100% Pass Policy
@@ -81,7 +81,7 @@ This document establishes the collaboration agreement, core engineering rules, o
 
 ```mermaid
 flowchart TD
-    A["1. Developer selects Issue (#12 to #19)"] --> B["2. AI verifies Spec, writes tests/code, updates ai-use.md"]
+    A["1. Developer selects Issue (Issue 12–19 / #34–#41)"] --> B["2. AI verifies Spec, writes tests/code, updates ai-use.md"]
     B --> C["3. AI runs automated test suites (100% pass required)"]
     C --> D["4. AI provides commit recommendation -> Developer executes Git commands"]
     D --> E["5. Developer pushes branch and opens PR to lab3-staging"]

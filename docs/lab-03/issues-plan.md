@@ -1,6 +1,6 @@
 # TokTickIT Lab 3 — GitHub Issues & Sprint Scope Breakdown
 
-This document provides the definitive planning specification for GitHub Issues #12 through #19 for TokTickIT Sprint 3 (Lab 3). Each issue includes strict scope boundaries, branch requirements, and testable acceptance criteria.
+This document provides the definitive planning specification for GitHub Issues (Issue 12 (#34) through Issue 19 (#41)) for TokTickIT Sprint 3 (Lab 3). Each issue includes strict scope boundaries, branch requirements, and testable acceptance criteria.
 
 ---
 
@@ -13,7 +13,7 @@ This document provides the definitive planning specification for GitHub Issues #
 
 ---
 
-## Issue #12: Sprint 3 Engineering Contracts, Specification & Test Plan (Spec DD)
+## Issue 12 (#34): Sprint 3 Engineering Contracts, Specification & Test Plan (Spec DD)
 * **Type:** `Documentation`
 * **Required branch:** `docs/lab3-spec-and-test-plan`
 * **In-Scope:**
@@ -23,7 +23,7 @@ This document provides the definitive planning specification for GitHub Issues #
     - `docs/lab-03/ui-spec.md`: Apple-style Zen Green design token alignments, screen structure specifications (Login, Change Password, Staff Queue, Staff Detail, Admin User Management), responsive layout breakpoints (Desktop, Tablet, Mobile), and visual checklist.
     - `docs/lab-03/tests.md`: Planned test matrix covering Unit, API/Integration, UI Component, and E2E Playwright tests with full Acceptance Criteria (AC-01 through AC-21) traceability without gaps.
     - `docs/lab-03/ai-collaboration-guide.md`: Establish AI coding protocol, 10 engineering rules, and issue workflow for Sprint 3.
-    - `docs/lab-03/ai-use.md` & `docs/lab-03/reviewer.md`: Living documents initialized with core schemas and metadata; progressively maintained in real-time throughout the sprint and finalized in Issue #19.
+    - `docs/lab-03/ai-use.md` & `docs/lab-03/reviewer.md`: Living documents initialized with core schemas and metadata; progressively maintained in real-time throughout the sprint and finalized in Issue 19 (#41).
 * **Out-of-Scope:**
   - Writing or modifying any runtime production code or test implementation code.
 * **Acceptance Criteria:**
@@ -34,7 +34,7 @@ This document provides the definitive planning specification for GitHub Issues #
 
 ---
 
-## Issue #13: Database Migration, Seed Data & Authentication Foundation (Backend API)
+## Issue 13 (#35): Database Migration, Seed Data & Authentication Foundation (Backend API)
 * **Type:** `Feature (Backend)`
 * **Required branch:** `feature/lab3-1-auth-foundation`
 * **In-Scope:**
@@ -58,9 +58,13 @@ This document provides the definitive planning specification for GitHub Issues #
     - `requireAuth`, `requireActive`, and `requireRole(...)` middlewares enforcing server-side authorization.
   - **Automated Backend Tests:**
     - `server/tests/lab-03/auth.api.test.ts`: Supertest suite verifying valid login, invalid login, inactive account rejection, session retrieval, password change validation, and logout.
+    - `server/tests/lab-03/authorization.api.test.ts`: Supertest suite verifying ticket ownership isolation (`API-06`) and attachment ownership isolation (`API-21`).
+    - `server/tests/lab-03/unit/password-policy.unit.test.ts`: Unit tests for password policy validator (`UNIT-01`).
+    - `server/tests/lab-03/unit/role-auth.unit.test.ts`: Unit tests for role authorization middleware (`UNIT-03`).
+    - `server/tests/lab-03/unit/token-version.unit.test.ts`: Unit tests for token revocation logic (`UNIT-06`).
 * **Out-of-Scope:**
-  - Frontend login forms, UI components, or client-side navigation (deferred to Issue #14).
-  - IT Staff Ticket Queue or Detail endpoints (deferred to Issue #15 & #16).
+  - Frontend login forms, UI components, or client-side navigation (deferred to Issue 14 (#36)).
+  - IT Staff Ticket Queue or Detail endpoints (deferred to Issue 15 (#37) & Issue 16 (#38)).
 * **Acceptance Criteria:**
   - [ ] Migration runs cleanly against existing Lab 2 database without data loss.
   - [ ] Seed script is idempotent and can be executed multiple times without unique constraint violations.
@@ -68,11 +72,11 @@ This document provides the definitive planning specification for GitHub Issues #
   - [ ] Authentication API returns generic, safe error messages upon invalid credentials.
   - [ ] Inactive accounts are strictly blocked from authenticating.
   - [ ] Users with `mustChangePassword = true` successfully update their password and clear the flag.
-  - [ ] 100% of tests in `server/tests/lab-03/auth.api.test.ts` pass.
+  - [ ] 100% of tests in `auth.api.test.ts`, `authorization.api.test.ts`, and associated unit test suites pass.
 
 ---
 
-## Issue #14: Authentication & First-Login Password Change UI (Frontend UI)
+## Issue 14 (#36): Authentication & First-Login Password Change UI (Frontend UI)
 * **Type:** `Feature (Frontend)`
 * **Required branch:** `feature/lab3-2-auth-ui`
 * **In-Scope:**
@@ -94,20 +98,21 @@ This document provides the definitive planning specification for GitHub Issues #
   - **Automated UI Tests:**
     - `client/src/tests/lab-03/Login.test.tsx` (Vitest + React Testing Library).
     - `client/src/tests/lab-03/ChangePassword.test.tsx`.
+    - `client/src/tests/lab-03/Navigation.test.tsx` (`UI-10`).
 * **Out-of-Scope:**
-  - IT Staff Queue and Detail screen development (deferred to Issue #15 & #16).
-  - Administrator user management screens (deferred to Issue #17).
+  - IT Staff Queue and Detail screen development (deferred to Issue 15 (#37) & Issue 16 (#38)).
+  - Administrator user management screens (deferred to Issue 17 (#39)).
 * **Acceptance Criteria:**
   - [ ] Simulated requester selector is completely removed from UI.
   - [ ] User can log in with valid credentials and receive appropriate feedback on invalid credentials.
   - [ ] Users flagged with `mustChangePassword` are confined to the password change screen and cannot navigate away until a valid new password is saved.
   - [ ] Navigation bar dynamically reflects current user identity, role badge, and permitted links.
   - [ ] Clicking Logout clears authentication state and redirects to the Login screen.
-  - [ ] 100% of Vitest tests in `Login.test.tsx` and `ChangePassword.test.tsx` pass.
+  - [ ] 100% of Vitest tests in `Login.test.tsx`, `ChangePassword.test.tsx`, and `Navigation.test.tsx` pass.
 
 ---
 
-## Issue #15: IT Staff Ticket Queue (API & UI)
+## Issue 15 (#37): IT Staff Ticket Queue (API & UI)
 * **Type:** `Feature (Full-Stack)`
 * **Required branch:** `feature/lab3-3-staff-queue`
 * **In-Scope:**
@@ -125,8 +130,8 @@ This document provides the definitive planning specification for GitHub Issues #
     - `server/tests/lab-03/staff-queue.api.test.ts` (Supertest: query filtering, pagination, and role restriction returning 403 for Requester and Admin).
     - `client/src/tests/lab-03/StaffTicketQueue.test.tsx` (Vitest: rendering, filter interactions, pagination, empty state).
 * **Out-of-Scope:**
-  - Claiming, reassigning, or editing ticket details (deferred to Issue #16).
-  - Internal notes and comments creation (deferred to Issue #16).
+  - Claiming, reassigning, or editing ticket details (deferred to Issue 16 (#38)).
+  - Internal notes and comments creation (deferred to Issue 16 (#38)).
 * **Acceptance Criteria:**
   - [ ] Endpoint `GET /api/staff/tickets` returns paginated list of all system tickets for IT Staff, but returns 403 Forbidden for Requester and Administrator users.
   - [ ] Search, filter by status/priority, and pagination metadata work accurately.
@@ -136,7 +141,7 @@ This document provides the definitive planning specification for GitHub Issues #
 
 ---
 
-## Issue #16: IT Staff Ticket Operations, Public Comments & Internal Notes (Full-Stack)
+## Issue 16 (#38): IT Staff Ticket Operations, Public Comments & Internal Notes (Full-Stack)
 * **Type:** `Feature (Full-Stack)`
 * **Required branch:** `feature/lab3-4-ticket-detail-and-notes`
 * **In-Scope:**
@@ -161,11 +166,13 @@ This document provides the definitive planning specification for GitHub Issues #
     - `server/tests/lab-03/staff-ticket-detail.api.test.ts`.
     - `server/tests/lab-03/comments-notes.api.test.ts`.
     - `server/tests/lab-03/requester-resolution.api.test.ts`.
+    - `server/tests/lab-03/unit/status-transition.unit.test.ts` (`UNIT-02`).
+    - `server/tests/lab-03/unit/priority-init.unit.test.ts` (`UNIT-04`).
     - `client/src/tests/lab-03/StaffTicketDetail.test.tsx`.
     - `client/src/tests/lab-03/RequesterTicketDetail.test.tsx`.
 * **Out-of-Scope:**
   - Actions Taken by IT Staff (explicitly deferred to Lab 4).
-  - User administration screens (deferred to Issue #17).
+  - User administration screens (deferred to Issue 17 (#39)).
   - Editing or deleting comments/notes (append-only by requirement).
 * **Acceptance Criteria:**
   - [ ] IT Staff can claim ownership, reassign to active staff, and adjust IT Priority.
@@ -177,7 +184,7 @@ This document provides the definitive planning specification for GitHub Issues #
 
 ---
 
-## Issue #17: Minimalist Administrator User Management (Full-Stack)
+## Issue 17 (#39): Minimalist Administrator User Management (Full-Stack)
 * **Type:** `Feature (Full-Stack)`
 * **Required branch:** `feature/lab3-5-admin-user-management`
 * **In-Scope:**
@@ -200,6 +207,7 @@ This document provides the definitive planning specification for GitHub Issues #
     - Protective client-side guards preventing self-deactivation with clear tooltips/alerts.
   - **Automated Tests:**
     - `server/tests/lab-03/users-admin.api.test.ts` (Supertest: CRUD, safety rules, duplicate email, self-deactivation block, last admin guard, non-admin forbidden).
+    - `server/tests/lab-03/unit/admin-guard.unit.test.ts` (`UNIT-05`).
     - `client/src/tests/lab-03/UserManagement.test.tsx` (Vitest: user list rendering, creation modal, edit modal, validation feedback).
 * **Out-of-Scope:**
   - Permanent user deletion, bulk user operations, import/export.
@@ -215,15 +223,17 @@ This document provides the definitive planning specification for GitHub Issues #
 
 ---
 
-## Issue #18: End-to-End Testing, Responsive Audit & Visual Inspection
+## Issue 18 (#40): End-to-End Testing, Responsive Audit & Visual Inspection
 * **Type:** `Testing & Quality Assurance`
 * **Required branch:** `feature/lab3-6-e2e-and-responsive`
 * **In-Scope:**
   - **Playwright E2E Test Suites (`e2e/lab-03/`):**
-    - `authentication.spec.ts`: Test valid/invalid login, inactive account blockage, mandatory first-login password change flow, authenticated navigation bar, and logout invalidation.
-    - `staff-ticket-flow.spec.ts`: Test IT Staff login, queue search/filter/pagination, opening ticket detail, claiming ticket, updating IT Priority, status transitions, adding Public Comment, and adding Internal Note.
-    - `user-administration.spec.ts`: Test Admin login, user creation, duplicate email rejection, role assignment, resetting initial password, and self-deactivation guard.
-    - `requester-regression.spec.ts`: Verify Lab 2 Requester flows (create ticket, my tickets, view attachments) still work flawlessly with authenticated sessions.
+    - `authentication.spec.ts`: Test valid/invalid login, inactive account blockage, mandatory first-login password change flow, authenticated navigation bar, and logout invalidation (`E2E-01`, `E2E-02`).
+    - `staff-ticket-flow.spec.ts`: Test IT Staff login, queue search/filter/pagination, opening ticket detail, claiming ticket, updating IT Priority, status transitions, adding Public Comment, and adding Internal Note (`E2E-03`, `E2E-04`, `E2E-05`).
+    - `user-administration.spec.ts`: Test Admin login, user creation, duplicate email rejection, role assignment, resetting initial password, and self-deactivation guard (`E2E-06`).
+    - `requester-regression.spec.ts`: Verify Lab 2 Requester flows (create ticket, my tickets, view attachments) still work flawlessly with authenticated sessions (`E2E-07`).
+    - `requester-resolution.spec.ts`: Test Requester marking "Problem Appears Resolved" and verifying persistent indication while official status remains active (`E2E-09`).
+    - `responsive.spec.ts`: Cross-viewport responsive audit asserting zero horizontal overflow (`scrollWidth === clientWidth`) across Desktop, Tablet, and Mobile (`E2E-08`).
   - **Responsive Layout & Overflow Audit:**
     - Test all major views across Desktop ($1280 \times 800$), Tablet ($768 \times 1024$), and Mobile ($375 \times 667$).
     - Assert `scrollWidth === clientWidth` ensuring zero horizontal overflow on all screen sizes.
@@ -235,7 +245,7 @@ This document provides the definitive planning specification for GitHub Issues #
       - `user-management/` (user-list, create-modal, edit-modal, safety-alert)
 * **Out-of-Scope:**
   - Modifying business logic or data contracts (unless bug fixes are uncovered).
-  - Final PDF report generation (deferred to Issue #19).
+  - Final PDF report generation (deferred to Issue 19 (#41)).
 * **Acceptance Criteria:**
   - [ ] All E2E test suites pass 100% on headless browser runs.
   - [ ] Zero horizontal scrollbars detected across all views in mobile/tablet viewports (AC-16).
@@ -243,7 +253,7 @@ This document provides the definitive planning specification for GitHub Issues #
 
 ---
 
-## Issue #19: Release Integration, Peer Review Consolidation & Sprint Documentation
+## Issue 19 (#41): Release Integration, Peer Review Consolidation & Sprint Documentation
 * **Type:** `Documentation & Release`
 * **Required branch:** `docs/lab3-documentation`
 * **In-Scope:**

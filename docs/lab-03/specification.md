@@ -84,7 +84,7 @@ The table below defines the baseline role-based access permissions across all sy
 | **Create Support Ticket** | ✅ | ❌ (403) | ❌ (403) | Assigned to `req.user.id` as requester (BR-03) |
 | **View Owned Tickets List** | ✅ | ❌ (403) | ❌ (403) | Returns only tickets matching `requesterId = req.user.id` |
 | **View Owned Ticket Detail** | ✅ | ❌ (403) | ❌ (403) | Access blocked for other users' tickets (403 Forbidden) |
-| **Manage Attachments (Owned)** | ✅ | ❌ (403) | ❌ (403) | Upload, download, soft-remove owned ticket files (BR-03) |
+| **Manage Attachments (Upload/Soft-Delete)** | ✅ (Owned) | ✅ | ❌ (403) | Requesters manage owned ticket files; IT Staff manage ticket files in queue; Admin forbidden (BR-03) |
 | **View IT Staff Ticket Queue** | ❌ (403) | ✅ | ❌ (403) | Full system queue; Admin forbidden (Handout §4.3) |
 | **View Any Ticket Detail (Staff View)**| ❌ (403) | ✅ | ❌ (403) | Includes operational controls and internal notes |
 | **Claim Ticket Ownership** | ❌ (403) | ✅ | ❌ (403) | Assigns current staff member as owner (BR-10) |
@@ -110,20 +110,20 @@ Every functional requirement maps explicitly to corresponding business rules and
 | FR ID | Functional Requirement Summary | Governing Business Rules | Mapped Acceptance Criteria | Covering Automated Tests |
 | :--- | :--- | :--- | :--- | :--- |
 | **FR-01** | User Authentication with credentials | `BR-01`, `BR-04`, `BR-05` | `AC-01`, `AC-05` | `API-01`, `API-02`, `API-03`, `UI-01`, `UI-02`, `E2E-01` |
-| **FR-02** | Mandatory First-Login Password Change | `BR-02`, `BR-05` | `AC-02` | `API-04`, `API-05`, `UI-03`, `E2E-02` |
+| **FR-02** | Mandatory First-Login Password Change | `BR-02`, `BR-05` | `AC-02` | `API-04`, `API-05`, `UI-03`, `E2E-02`, `UNIT-01` |
 | **FR-03** | Current User Profile (`/me`) Retrieval | `BR-01`, `BR-03` | `AC-17` | `API-19` |
-| **FR-04** | Logout & Token Revocation via `tokenVersion` | `BR-01`, `BR-04` | `AC-18` | `API-20`, `E2E-01` |
+| **FR-04** | Logout & Token Revocation via `tokenVersion` | `BR-01`, `BR-04` | `AC-18` | `API-20`, `E2E-01`, `UNIT-06` |
 | **FR-05** | Role-Based Navigation Presentation | `BR-03`, `BR-14` | `AC-19` | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
 | **FR-06** | Authenticated Ticket & Attachment Management | `BR-03` | `AC-03`, `AC-20` | `API-06`, `API-21`, `E2E-07` |
 | **FR-07** | Requester Public Comments Posting/Reading | `BR-06`, `BR-08`, `BR-09` | `AC-10` | `API-12`, `UI-07`, `E2E-04`, `E2E-05` |
 | **FR-08** | Indicate Problem Appears Resolved | `BR-13` | `AC-21` | `API-22`, `UI-11`, `E2E-09` |
 | **FR-09** | IT Staff Ticket Queue with Querying | `BR-10`, `BR-11`, `BR-12` | `AC-06`, `AC-15` | `API-07`, `API-08`, `UI-04`, `UI-05`, `E2E-03` |
 | **FR-10** | Claim & Reassign Ticket Ownership | `BR-10` | `AC-07` | `API-09`, `UI-06`, `E2E-04` |
-| **FR-11** | Manage IT Priority independently | `BR-11` | `AC-08` | `API-10`, `UI-06`, `E2E-04` |
-| **FR-12** | Permitted Ticket Status Transitions | `BR-12` | `AC-09` | `API-11`, `UI-06`, `E2E-04` |
+| **FR-11** | Manage IT Priority independently | `BR-11` | `AC-08` | `API-10`, `UI-06`, `E2E-04`, `UNIT-04` |
+| **FR-12** | Permitted Ticket Status Transitions | `BR-12` | `AC-09` | `API-11`, `UI-06`, `E2E-04`, `UNIT-02` |
 | **FR-13** | Confidential Internal Notes Creation/View | `BR-07`, `BR-08`, `BR-09` | `AC-04` | `API-13`, `UI-07`, `E2E-05` |
-| **FR-14** | Admin User List Retrieval with Search/Filter | `BR-14`, `BR-18` | `AC-11`, `AC-15` | `API-14`, `API-18`, `UI-08`, `E2E-06` |
-| **FR-15** | Admin User Account Creation, Edit & Password Reset | `BR-14`, `BR-15`, `BR-16`, `BR-17`, `BR-18` | `AC-11`, `AC-12`, `AC-13`, `AC-14` | `API-14`, `API-15`, `API-16`, `API-17`, `UI-08`, `UI-09`, `E2E-06` |
+| **FR-14** | Admin User List Retrieval with Search/Filter | `BR-14`, `BR-18` | `AC-11`, `AC-15` | `API-14`, `API-18`, `UI-08`, `E2E-06`, `UNIT-03` |
+| **FR-15** | Admin User Account Creation, Edit & Password Reset | `BR-14`, `BR-15`, `BR-16`, `BR-17`, `BR-18` | `AC-11`, `AC-12`, `AC-13`, `AC-14` | `API-14`, `API-15`, `API-16`, `API-17`, `UI-08`, `UI-09`, `E2E-06`, `UNIT-05` |
 | *(Cross)* | Cross-Viewport Responsive & Zero Overflow | `BR-19` | `AC-16` | `E2E-08` |
 
 ---
@@ -132,8 +132,8 @@ Every functional requirement maps explicitly to corresponding business rules and
 
 ### Authentication & Security
 - **BR-01 (Active User Credential Check)**: Only an active user (`isActive = true`) with valid matching credentials may authenticate. Deactivated accounts must be rejected with safe error feedback without disclosing whether the account exists or is disabled.
-- **BR-02 (Mandatory First-Login Enforcement)**: A user marked with `mustChangePassword = true` cannot access normal application views or functional endpoints until a new password satisfying validation rules is saved.
-- **BR-03 (Authenticated Requester Ownership)**: The authenticated session identity, not any client-supplied `requesterId`, strictly determines the ownership of Requester operations. Cross-user ticket inspection, editing, or attachment manipulation must be rejected with HTTP 403 Forbidden.
+- **BR-02 (Mandatory First-Login Enforcement & API Blocking)**: A user marked with `mustChangePassword = true` cannot access normal application views or functional endpoints. All protected functional routes enforce this rule; any attempt by an authenticated user with `mustChangePassword === true` to invoke functional endpoints (tickets, comments, notes, admin users) is rejected with HTTP `403 Forbidden` (`{ "error": "Password change required before accessing application features.", "code": "PASSWORD_CHANGE_REQUIRED" }`). The only exempted routes are `POST /api/auth/change-password`, `POST /api/auth/logout`, and `GET /api/auth/me`.
+- **BR-03 (Authenticated Ownership & Access Control)**: The authenticated session identity, not any client-supplied `requesterId`, strictly determines the ownership of Requester operations. Requesters are strictly confined to tickets and attachments they own. IT Staff possess operational access across the system ticket queue including viewing and managing attachments. Cross-user ticket inspection, editing, or attachment manipulation by other unauthorized requesters or administrators must be rejected with HTTP 403 Forbidden.
 - **BR-04 (Cryptographic Password Storage & Token Revocation)**: Passwords must never be stored, logged, or returned in plaintext. Passwords must be salted and hashed with bcrypt ($\ge 10$ rounds). Authentication uses JWT tokens signed with a server secret. Token revocation on logout is enforced via a numeric `tokenVersion` field on the `User` model; incrementing this version invalidates all outstanding tokens issued prior to logout.
 - **BR-05 (Password Complexity Rules)**: Passwords must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.
 
@@ -270,7 +270,7 @@ ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL;
 
 ### 7.4 Post-Migration Verification Checklist
 Run an automated verification query script after migration:
-1. **Row Count Match**: `SELECT COUNT(*) FROM "User"` must equal original `SELECT COUNT(*) FROM "RequesterUser"` plus any newly seeded staff/admin users.
+1. **Row Count Match**: Prior to executing the migration script, record the pre-migration count via `SELECT COUNT(*) FROM "RequesterUser"`. Post-migration, verify that `SELECT COUNT(*) FROM "User"` equals the recorded pre-migration count plus any newly seeded staff/admin users.
 2. **Foreign Key Integrity**: `SELECT COUNT(*) FROM "Ticket" WHERE "requesterId" NOT IN (SELECT id FROM "User")` must equal `0`.
 3. **Attachment Integrity**: Count of attachments linked to tickets must match pre-migration count.
 4. **Password Compliance**: `SELECT COUNT(*) FROM "User" WHERE "passwordHash" IS NULL` must equal `0`.
@@ -436,7 +436,7 @@ model InternalNote {
 
 ## 10. Definition of Done (DoD)
 
-### 10.1 Issue #12 Documentation Gate Definition of Done (PR #42 Gate)
+### 10.1 Issue 12 (#34) Documentation Gate Definition of Done (PR #42 Gate)
 - [ ] Specification document (`specification.md`) completed covering all 11 sections, 15 FRs, 19 BRs, 21 ACs, central Authorization Matrix (with strict separation of duties), and explicit FR $\rightarrow$ BR $\rightarrow$ AC traceability.
 - [ ] REST API specification (`api-spec.md`) defines concrete endpoints, JWT Bearer + `tokenVersion` logout mechanism, and standardized safe error schemas (400, 401, 403, 404, 409).
 - [ ] UI specification (`ui-spec.md`) specifies Apple-style Zen Green design tokens, responsive breakpoints, screen mock structures, and visual inspection checklist.
@@ -445,10 +445,10 @@ model InternalNote {
 - [ ] Pull Request #42 opened from `docs/lab3-spec-and-test-plan` to `lab3-staging` and approved by peer reviewer.
 
 > [!NOTE]
-> **Living Documents Lifecycle**: `docs/lab-03/ai-use.md` and `docs/lab-03/reviewer.md` are initialized in Issue #12 as living project artifacts containing baseline structural metadata. They are continuously maintained in real-time throughout the sprint and finalized during Issue #19 (Sprint Review, Documentation & Release Integration). Their placeholder status in PR #42 is intended.
+> **Living Documents Lifecycle**: `docs/lab-03/ai-use.md` and `docs/lab-03/reviewer.md` are initialized in Issue 12 (#34) as living project artifacts containing baseline structural metadata. They are continuously maintained in real-time throughout the sprint and finalized during Issue 19 (#41) (Sprint Review, Documentation & Release Integration). Their placeholder status in PR #42 is intended.
 
 ### 10.2 Sprint 3 Product Definition of Done (Final Sprint Completion Gate)
-- [ ] All 8 sprint GitHub Issues (#12 to #19) are implemented on dedicated feature branches and merged into `lab3-staging` via peer-reviewed Pull Requests.
+- [ ] All 8 sprint GitHub Issues (Issue 12 (#34) through Issue 19 (#41)) are implemented on dedicated feature branches and merged into `lab3-staging` via peer-reviewed Pull Requests.
 - [ ] All Acceptance Criteria (AC-01 through AC-21) have corresponding automated test coverage and pass 100%.
 - [ ] Database migration safely migrates `RequesterUser` to `User` (applying password hashes and `mustChangePassword = true`), establishes `PublicComment`, `InternalNote`, and updates `Ticket` without data loss.
 - [ ] Idempotent seed data loads $\ge 4$ active Requesters, $\ge 1$ inactive Requester, $\ge 3$ active IT Staff, $\ge 1$ inactive IT Staff, $\ge 1$ active Admin, and realistic ticket history.
