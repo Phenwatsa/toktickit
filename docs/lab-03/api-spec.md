@@ -458,6 +458,22 @@ All error responses adhere to a consistent, safe JSON payload:
   - **Initial Status**: Initial status is automatically set to `NEW`.
 * **Success Response (`201 Created`)**: Returns full created ticket object including `requestedPriority: "HIGH"`, `itPriority: "HIGH"`, and `currentStatus: "NEW"`.
 
+### 5.3 Lab 2 Requester Endpoints Continuity Contract (FR-06, BR-03, AC-03, AC-20)
+All ticket queries and attachment operations established in Lab 2 continue to be supported with 100% functional continuity, upgraded to enforce **Bearer JWT Authentication** and **Ownership Isolation**:
+
+* **List My Tickets**: `GET /api/tickets`
+  - **Access**: Authenticated `REQUESTER` (isolated by session `req.user.id`). IT Staff use `GET /api/staff/tickets` to inspect all system tickets.
+  - **Behavior**: Returns tickets created by the authenticated requester. Query parameters attempting to override identity (e.g. `?requesterId=...`) are strictly ignored.
+* **Single Ticket Detail**: `GET /api/tickets/:id`
+  - **Access**: Ticket Requester Owner or `IT_STAFF`.
+  - **Behavior**: If accessed by a Requester who does not own the ticket, returns `403 Forbidden` (`{ "error": "Access denied. You do not own this ticket.", "code": "FORBIDDEN" }`). Requester view excludes `internalNotes`.
+* **Attachment Upload**: `POST /api/tickets/:id/attachments`
+  - **Access**: Ticket Requester Owner or `IT_STAFF`.
+  - **Behavior**: Requesters may upload attachments only to tickets they own. Non-owner Requesters receive `403 Forbidden`. Multipart validation (max 5 MB; allowed formats: JPG, PNG, WebP, PDF) remains unchanged from Lab 2.
+* **Attachment Soft-Delete**: `DELETE /api/tickets/:id/attachments/:attachmentId`
+  - **Access**: Ticket Requester Owner or `IT_STAFF`.
+  - **Behavior**: Requesters may soft-delete attachments only on tickets they own. Non-owner Requesters receive `403 Forbidden`.
+
 ---
 
 ## 6. Administrator User Management

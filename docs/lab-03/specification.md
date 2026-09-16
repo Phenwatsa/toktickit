@@ -444,6 +444,9 @@ model InternalNote {
 - [ ] AI collaboration agreement (`ai-collaboration-guide.md`) documents 10 engineering rules, including Git manual execution and past-issue immutability.
 - [ ] Pull Request #42 opened from `docs/lab3-spec-and-test-plan` to `lab3-staging` and approved by peer reviewer.
 
+> [!NOTE]
+> **Living Documents Lifecycle**: `docs/lab-03/ai-use.md` and `docs/lab-03/reviewer.md` are initialized in Issue #12 as living project artifacts containing baseline structural metadata. They are continuously maintained in real-time throughout the sprint and finalized during Issue #19 (Sprint Review, Documentation & Release Integration). Their placeholder status in PR #42 is intended.
+
 ### 10.2 Sprint 3 Product Definition of Done (Final Sprint Completion Gate)
 - [ ] All 8 sprint GitHub Issues (#12 to #19) are implemented on dedicated feature branches and merged into `lab3-staging` via peer-reviewed Pull Requests.
 - [ ] All Acceptance Criteria (AC-01 through AC-21) have corresponding automated test coverage and pass 100%.

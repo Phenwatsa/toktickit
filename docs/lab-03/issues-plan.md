@@ -23,6 +23,7 @@ This document provides the definitive planning specification for GitHub Issues #
     - `docs/lab-03/ui-spec.md`: Apple-style Zen Green design token alignments, screen structure specifications (Login, Change Password, Staff Queue, Staff Detail, Admin User Management), responsive layout breakpoints (Desktop, Tablet, Mobile), and visual checklist.
     - `docs/lab-03/tests.md`: Planned test matrix covering Unit, API/Integration, UI Component, and E2E Playwright tests with full Acceptance Criteria (AC-01 through AC-21) traceability without gaps.
     - `docs/lab-03/ai-collaboration-guide.md`: Establish AI coding protocol, 10 engineering rules, and issue workflow for Sprint 3.
+    - `docs/lab-03/ai-use.md` & `docs/lab-03/reviewer.md`: Living documents initialized with core schemas and metadata; progressively maintained in real-time throughout the sprint and finalized in Issue #19.
 * **Out-of-Scope:**
   - Writing or modifying any runtime production code or test implementation code.
 * **Acceptance Criteria:**
