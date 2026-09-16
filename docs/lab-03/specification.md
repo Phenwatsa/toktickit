@@ -116,7 +116,7 @@ Every functional requirement maps explicitly to corresponding business rules and
 | **FR-05** | Role-Based Navigation Presentation | `BR-03`, `BR-14` | `AC-19` | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
 | **FR-06** | Authenticated Ticket & Attachment Management | `BR-03` | `AC-03`, `AC-20` | `API-06`, `API-21`, `E2E-07` |
 | **FR-07** | Requester Public Comments Posting/Reading | `BR-06`, `BR-08`, `BR-09` | `AC-10` | `API-12`, `UI-07`, `E2E-04`, `E2E-05` |
-| **FR-08** | Indicate Problem Appears Resolved | `BR-13` | `AC-09`, `AC-10` | `API-12`, `E2E-04` |
+| **FR-08** | Indicate Problem Appears Resolved | `BR-13` | `AC-21` | `API-22`, `UI-11`, `E2E-09` |
 | **FR-09** | IT Staff Ticket Queue with Querying | `BR-10`, `BR-11`, `BR-12` | `AC-06`, `AC-15` | `API-07`, `API-08`, `UI-04`, `UI-05`, `E2E-03` |
 | **FR-10** | Claim & Reassign Ticket Ownership | `BR-10` | `AC-07` | `API-09`, `UI-06`, `E2E-04` |
 | **FR-11** | Manage IT Priority independently | `BR-11` | `AC-08` | `API-10`, `UI-06`, `E2E-04` |
@@ -145,7 +145,7 @@ Every functional requirement maps explicitly to corresponding business rules and
 
 ### Ticket Ownership, Priority & Workflow
 - **BR-10 (Ticket Ownership)**: A ticket may have zero or one primary Ticket Owner. Only an active user with `role = IT_STAFF` may be assigned as Ticket Owner.
-- **BR-11 (Priority Separation)**: `Requested Priority` is immutably preserved as submitted by the Requester. `IT Priority` initially defaults to the value of `Requested Priority` and may subsequently be modified only by IT Staff.
+- **BR-11 (Priority Separation & Initialization)**: `Requested Priority` is immutably preserved as submitted by the Requester. For every newly created ticket (via `POST /api/tickets`), the application service layer shall explicitly initialize `itPriority` to the exact value of `requestedPriority`. In the database, existing tickets are backfilled from `requestedPriority`, and the `itPriority` column is enforced as `NOT NULL`. After creation, `itPriority` may subsequently be modified independently only by IT Staff.
 - **BR-12 (Permitted Statuses & Transitions)**: The system enforces 8 official ticket statuses. Below is the canonical mapping between the database ENUM, API values, and UI display badges:
 
 | Canonical Enum (`TicketStatus`) | UI Display Label / Badge | Transition Category | Description |
@@ -247,6 +247,9 @@ ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_ticketOwnerId_fkey" FOREIGN KEY ("ti
 
 -- Step 7: Backfill itPriority for all existing tickets from requestedPriority (BR-11)
 UPDATE "Ticket" SET "itPriority" = "requestedPriority" WHERE "itPriority" IS NULL;
+
+-- Step 8: Enforce NOT NULL constraint on itPriority
+ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL;
 ```
 
 ### 7.3 Entity Mapping: `RequesterUser` $\rightarrow$ `User`
@@ -327,7 +330,7 @@ model Ticket {
   summary                String
   description            String
   requestedPriority      Priority        @default(MEDIUM)
-  itPriority             Priority?
+  itPriority             Priority
   currentStatus          TicketStatus    @default(NEW)
   problemAppearsResolved Boolean         @default(false)
   requesterId            Int
@@ -427,22 +430,23 @@ model InternalNote {
 - **AC-18 (Token Revocation on Logout)**: Given an authenticated user who logs out via `POST /api/auth/logout`, when subsequent requests are made using the prior JWT token, then the server rejects the token with HTTP 401 Unauthorized due to `tokenVersion` mismatch.
 - **AC-19 (Role-Based Navigation Rendering)**: Given an authenticated user, when viewing the application shell, then only links permitted for the user's role are visible in the navigation bar.
 - **AC-20 (Requester Attachment Ownership Isolation)**: Given an attachment on a ticket owned by Requester A, when Requester B attempts to upload, download, or soft-remove it, then the request is rejected with HTTP 403 Forbidden.
+- **AC-21 (Requester Resolution Indication)**: Given an authenticated Requester who owns a ticket, when they submit an indication that the problem appears resolved (`PATCH /api/requester/tickets/:id/resolve-indication`), then `problemAppearsResolved` is set to `true` while the official ticket status remains unchanged; when a non-owner Requester, IT Staff, or Administrator attempts this action, the request is rejected with HTTP 403 Forbidden.
 
 ---
 
 ## 10. Definition of Done (DoD)
 
 ### 10.1 Issue #12 Documentation Gate Definition of Done (PR #42 Gate)
-- [ ] Specification document (`specification.md`) completed covering all 11 sections, 15 FRs, 19 BRs, 20 ACs, central Authorization Matrix (with strict separation of duties), and explicit FR $\rightarrow$ BR $\rightarrow$ AC traceability.
+- [ ] Specification document (`specification.md`) completed covering all 11 sections, 15 FRs, 19 BRs, 21 ACs, central Authorization Matrix (with strict separation of duties), and explicit FR $\rightarrow$ BR $\rightarrow$ AC traceability.
 - [ ] REST API specification (`api-spec.md`) defines concrete endpoints, JWT Bearer + `tokenVersion` logout mechanism, and standardized safe error schemas (400, 401, 403, 404, 409).
 - [ ] UI specification (`ui-spec.md`) specifies Apple-style Zen Green design tokens, responsive breakpoints, screen mock structures, and visual inspection checklist.
-- [ ] Test plan (`tests.md`) maps all 20 Acceptance Criteria (including AC-16 to AC-20) to the test matrix without gaps.
+- [ ] Test plan (`tests.md`) maps all 21 Acceptance Criteria (including AC-16 to AC-21) to the test matrix without gaps.
 - [ ] AI collaboration agreement (`ai-collaboration-guide.md`) documents 10 engineering rules, including Git manual execution and past-issue immutability.
 - [ ] Pull Request #42 opened from `docs/lab3-spec-and-test-plan` to `lab3-staging` and approved by peer reviewer.
 
 ### 10.2 Sprint 3 Product Definition of Done (Final Sprint Completion Gate)
 - [ ] All 8 sprint GitHub Issues (#12 to #19) are implemented on dedicated feature branches and merged into `lab3-staging` via peer-reviewed Pull Requests.
-- [ ] All Acceptance Criteria (AC-01 through AC-20) have corresponding automated test coverage and pass 100%.
+- [ ] All Acceptance Criteria (AC-01 through AC-21) have corresponding automated test coverage and pass 100%.
 - [ ] Database migration safely migrates `RequesterUser` to `User` (applying password hashes and `mustChangePassword = true`), establishes `PublicComment`, `InternalNote`, and updates `Ticket` without data loss.
 - [ ] Idempotent seed data loads $\ge 4$ active Requesters, $\ge 1$ inactive Requester, $\ge 3$ active IT Staff, $\ge 1$ inactive IT Staff, $\ge 1$ active Admin, and realistic ticket history.
 - [ ] Zero TypeScript diagnostic errors and zero build errors across `client` and `server`.

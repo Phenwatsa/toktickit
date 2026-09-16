@@ -31,6 +31,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **API-19** | API | AC-17 | Authenticated user retrieves current profile via `GET /api/auth/me` | HTTP 200 with user profile; HTTP 401 when token is missing or invalid | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | **API-20** | API | AC-18 | User logs out via `POST /api/auth/logout` and previous token is revoked | Calling protected route with old token fails with HTTP 401 (`tokenVersion` mismatch) | `server/tests/lab-03/auth.api.test.ts` | Planned |
 | **API-21** | API | AC-20 | Requester B attempts to access/upload/remove attachments on Requester A's ticket | HTTP 403 Forbidden; attachments cross-user manipulation blocked | `server/tests/lab-03/authorization.api.test.ts` | Planned |
+| **API-22** | API | AC-21 | Requester owner marks problem resolved via `PATCH /api/requester/tickets/:id/resolve-indication`; non-owner, IT Staff, and Admin attempts rejected | HTTP 200 with `problemAppearsResolved: true` and official status unchanged; HTTP 403 Forbidden for non-owner, Staff, and Admin; HTTP 404 for nonexistent ticket | `server/tests/lab-03/requester-resolution.api.test.ts` | Planned |
 
 ---
 
@@ -48,6 +49,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **UI-08** | UI | AC-11 | Admin User Management displays user list and open Create User modal | Form renders name, email, role radio buttons, and initial password | `client/src/tests/lab-03/UserManagement.test.tsx` | Planned |
 | **UI-09** | UI | AC-13 | Admin User Management disables deactivation for current admin row | Active toggle switch is disabled with explanatory tooltip | `client/src/tests/lab-03/UserManagement.test.tsx` | Planned |
 | **UI-10** | UI | AC-19 | Role-based navigation renders strictly permitted links per role | Requester sees My Tickets/Create Ticket; Staff sees Ticket Queue; Admin sees User Management | `client/src/tests/lab-03/Navigation.test.tsx` | Planned |
+| **UI-11** | UI | AC-21 | Requester Ticket Detail renders "Problem Appears Resolved" button and updates indicator | Button click triggers PATCH request and displays resolved indicator without altering official status badge | `client/src/tests/lab-03/RequesterTicketDetail.test.tsx` | Planned |
 
 ---
 
@@ -63,6 +65,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **E2E-06** | E2E | AC-11, AC-12, AC-13, AC-19 | Admin creates user, duplicate email check, attempts self-deactivation, resets password | Full admin lifecycle verified in UI with security rules | `e2e/lab-03/user-administration.spec.ts` | Planned |
 | **E2E-07** | E2E | AC-03, AC-20 | Lab 2 Requester Regression: create ticket, list my tickets, attachments | All Lab 2 features function without the mock requester selector | `e2e/lab-03/requester-regression.spec.ts` | Planned |
 | **E2E-08** | E2E | AC-16 | Cross-viewport responsive audit (Desktop, Tablet, Mobile) | Zero horizontal overflow (`scrollWidth === clientWidth`) across all screens | `e2e/lab-03/responsive.spec.ts` | Planned |
+| **E2E-09** | E2E | AC-21 | Requester marks problem resolved, verifying indication persists while ticket status remains active | Flag `problemAppearsResolved` displays true in Requester view and IT Staff queue/detail, official status remains `OPEN` or `IN_PROGRESS` | `e2e/lab-03/requester-resolution.spec.ts` | Planned |
 
 ---
 
@@ -90,3 +93,4 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **AC-18** | Server-side token revocation on logout via `tokenVersion` | `API-20`, `E2E-01` |
 | **AC-19** | Role-based navigation rendering strictly permitted destinations | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
 | **AC-20** | Requester attachment ownership isolation against unauthorized access | `API-21`, `E2E-07` |
+| **AC-21** | Requester owner marks problem appears resolved without altering official status; non-owners blocked | `API-22`, `UI-11`, `E2E-09` |

@@ -436,8 +436,27 @@ All error responses adhere to a consistent, safe JSON payload:
   ```
 * **Error Responses**:
   - `401 Unauthorized`: Authentication required.
-  - `403 Forbidden`: Requester does not own this ticket.
+  - `403 Forbidden`: User is not the ticket owner (`{ "error": "Access denied. You do not own this ticket.", "code": "FORBIDDEN" }`) or user role is not `REQUESTER` (`{ "error": "Access denied. Requester role required.", "code": "FORBIDDEN" }`).
   - `404 Not Found`: Ticket not found.
+
+### 5.2 Ticket Submission Contract (Continuity & `itPriority` Initialization)
+* **Endpoint**: `POST /api/tickets`
+* **Access**: Authenticated `REQUESTER`
+* **Request Body**:
+  ```json
+  {
+    "summary": "Cannot access internal network printer",
+    "description": "Printer on 3rd floor shows offline state continuously.",
+    "requestedPriority": "HIGH",
+    "categoryId": 1,
+    "relatedSystemId": 2
+  }
+  ```
+* **Initialization Contract (BR-11)**:
+  - **`itPriority` Initialization**: The application service layer explicitly initializes `itPriority` to the exact value of `requestedPriority` (`itPriority: requestedPriority`). The database schema enforces `NOT NULL` on `itPriority`.
+  - **Session-Derived Requester**: The backend binds `requesterId` strictly from the authenticated JWT session (`req.user.id`), discarding any client-provided requester ID.
+  - **Initial Status**: Initial status is automatically set to `NEW`.
+* **Success Response (`201 Created`)**: Returns full created ticket object including `requestedPriority: "HIGH"`, `itPriority: "HIGH"`, and `currentStatus: "NEW"`.
 
 ---
 

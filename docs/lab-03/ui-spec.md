@@ -137,7 +137,7 @@ The TokTickIT user interface merges the **Zen Green** color identity from Lab 2 
 | Viewport | Width Range | Layout Strategy |
 | :--- | :--- | :--- |
 | **Desktop** | $\ge 992\text{px}$ | Full 8-column queue table, two-column form layouts, side-by-side modal panels |
-| **Tablet** | $768\text{px} - 991\text{px}$ | Condensed table or fluid grid view with strictly zero horizontal overflow, touch-friendly 44px targets |
+| **Tablet** | $768\text{px} - 991\text{px}$ | Transform queue table into responsive card/grid layout; page and all primary content containers strictly enforce zero horizontal overflow (`scrollWidth === clientWidth`), touch-friendly 44px targets |
 | **Mobile** | $< 768\text{px}$ | Full transformation of tables to stacked cards (`zg-mobile-card`), single-column forms, full-width buttons, collapsible hamburger navigation, strictly **Zero Horizontal Scroll** |
 
 ---
