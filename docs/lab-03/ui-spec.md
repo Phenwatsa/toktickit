@@ -34,6 +34,9 @@ The TokTickIT user interface merges the **Zen Green** color identity from Lab 2 
 | **Private Amber Border**| `--zg-amber-border`| `#F59E0B` | Border accent and icon for Internal Notes |
 | **Private Amber Text** | `--zg-amber-text` | `#92400E` | Heading & badge for Internal Notes |
 | **Error / Alert** | `--zg-danger` | `#DC2626` | Error banners, invalid field borders, deactivation badges |
+| **Role: Requester** | `--zg-role-requester-bg` / `--zg-role-requester-text` | `#F1F5F9` / `#475569` | Slate neutral badge for Requester role |
+| **Role: IT Staff** | `--zg-role-staff-bg` / `--zg-role-staff-text` | `#EAF6EF` / `#006B3C` | Pale green brand badge for IT Staff role |
+| **Role: Administrator** | `--zg-role-admin-bg` / `--zg-role-admin-text` | `#EDE9FE` / `#6D28D9` | Royal purple badge for Administrator role |
 
 ### 2.2 Typography & Spacing
 - **Font Stack**: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif`.
@@ -134,7 +137,7 @@ The TokTickIT user interface merges the **Zen Green** color identity from Lab 2 
 | Viewport | Width Range | Layout Strategy |
 | :--- | :--- | :--- |
 | **Desktop** | $\ge 992\text{px}$ | Full 8-column queue table, two-column form layouts, side-by-side modal panels |
-| **Tablet** | $768\text{px} - 991\text{px}$ | Compact table with scroll container or condensed columns, touch-friendly 44px targets |
+| **Tablet** | $768\text{px} - 991\text{px}$ | Condensed table or fluid grid view with strictly zero horizontal overflow, touch-friendly 44px targets |
 | **Mobile** | $< 768\text{px}$ | Full transformation of tables to stacked cards (`zg-mobile-card`), single-column forms, full-width buttons, collapsible hamburger navigation, strictly **Zero Horizontal Scroll** |
 
 ---

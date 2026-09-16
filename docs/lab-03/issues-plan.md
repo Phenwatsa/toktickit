@@ -21,13 +21,13 @@ This document provides the definitive planning specification for GitHub Issues #
     - `docs/lab-03/specification.md`: Sprint Goal, Stakeholder Request, In/Out Scope, numbered Functional Requirements (FR-xx), Business Rules (BR-01 to BR-xx), Central Authorization Matrix (Requester, IT Staff, Admin), 100% FR $\rightarrow$ BR $\rightarrow$ AC Traceability, Data Migration strategy, Two-Stage Definition of Done (DoD).
     - `docs/lab-03/api-spec.md`: Complete REST contracts for Authentication (JWT + `tokenVersion` logout invalidation), IT Staff Queue/Detail, Public Comments, Internal Notes, and Admin User Management (endpoints, HTTP methods, headers, standardized error schemas 400/401/403/404/409, and safe error responses).
     - `docs/lab-03/ui-spec.md`: Apple-style Zen Green design token alignments, screen structure specifications (Login, Change Password, Staff Queue, Staff Detail, Admin User Management), responsive layout breakpoints (Desktop, Tablet, Mobile), and visual checklist.
-    - `docs/lab-03/tests.md`: Planned test matrix covering Unit, API/Integration, UI Component, and E2E Playwright tests with full Acceptance Criteria (AC-01 through AC-16) traceability without gaps.
+    - `docs/lab-03/tests.md`: Planned test matrix covering Unit, API/Integration, UI Component, and E2E Playwright tests with full Acceptance Criteria (AC-01 through AC-20) traceability without gaps.
     - `docs/lab-03/ai-collaboration-guide.md`: Establish AI coding protocol, 10 engineering rules, and issue workflow for Sprint 3.
 * **Out-of-Scope:**
   - Writing or modifying any runtime production code or test implementation code.
 * **Acceptance Criteria:**
   - [ ] All specification documents are committed and merged to `lab3-staging` via PR #42 before any implementation code is authored.
-  - [ ] Every Functional Requirement (FR-01 to FR-15) maps directly to governing Business Rules (BR) and testable Acceptance Criteria (AC-01 to AC-16).
+  - [ ] Every Functional Requirement (FR-01 to FR-15) maps directly to governing Business Rules (BR) and testable Acceptance Criteria (AC-01 to AC-20).
   - [ ] The Central Authorization Matrix strictly distinguishes operations permitted for Requester, IT Staff, and Administrator.
   - [ ] Planned test IDs in `tests.md` cover 100% of defined Acceptance Criteria with zero traceability gaps.
 
@@ -39,8 +39,8 @@ This document provides the definitive planning specification for GitHub Issues #
 * **In-Scope:**
   - **Prisma Schema & Migration:**
     - Evolve database schema from Lab 2 without losing existing Categories, RelatedSystems, Tickets, or Attachments data.
-    - Migrate `RequesterUser` to a unified `User` model with fields: `id`, `name`, `email` (unique), `passwordHash`, `role` (ENUM: `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), `mustChangePassword` (boolean, default false), `isActive` (boolean, default true), `tokenVersion` (int, default 1 for logout revocation), and timestamps.
-    - Update `Ticket` model to include `itPriority` (ENUM: `LOW`, `MEDIUM`, `HIGH`, `URGENT`), and optional `ticketOwnerId` foreign key referencing `User`.
+    - Migrate `RequesterUser` to a unified `User` model with fields: `id`, `name`, `email` (unique), `passwordHash`, `role` (ENUM: `REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), `mustChangePassword` (boolean, default false; explicitly backfilled to true for existing migrated users and set to true on admin creation), `isActive` (boolean, default true), `tokenVersion` (int, default 1 for logout revocation), and timestamps.
+    - Update `Ticket` model to include `itPriority` (ENUM: `LOW`, `MEDIUM`, `HIGH`, `URGENT`; explicitly backfilled from `requestedPriority` for all existing tickets), `problemAppearsResolved` (boolean, default false), and optional `ticketOwnerId` foreign key referencing `User`.
     - Create models for append-only communication: `PublicComment` (ticketId, authorId, content, createdAt) and `InternalNote` (ticketId, authorId, content, createdAt).
   - **Idempotent Seed Data (`server/prisma/seed.ts`):**
     - Seed at least 4 active Requesters and 1 inactive Requester.

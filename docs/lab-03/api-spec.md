@@ -212,7 +212,31 @@ All error responses adhere to a consistent, safe JSON payload:
       "ticketOwner": { "id": 2, "name": "Michael Brown", "email": "michael@toktickit.com" },
       "createdAt": "2026-05-13T09:14:00Z",
       "updatedAt": "2026-05-13T10:30:00Z",
-      "attachments": []
+      "attachments": [
+        {
+          "id": 1,
+          "fileName": "battery_report.png",
+          "fileSize": 102400,
+          "mimeType": "image/png",
+          "url": "/uploads/battery_report.png"
+        }
+      ],
+      "publicComments": [
+        {
+          "id": 1,
+          "content": "We have ordered replacement parts.",
+          "createdAt": "2026-05-13T09:30:00Z",
+          "author": { "id": 2, "name": "Michael Brown", "role": "IT_STAFF" }
+        }
+      ],
+      "internalNotes": [
+        {
+          "id": 1,
+          "content": "Battery diagnostic shows 62% wear. Vendor ticket #9941.",
+          "createdAt": "2026-05-13T09:35:00Z",
+          "author": { "id": 2, "name": "Michael Brown", "role": "IT_STAFF" }
+        }
+      ]
     }
   }
   ```
@@ -379,7 +403,16 @@ All error responses adhere to a consistent, safe JSON payload:
     "content": "string (min 2, max 2000 chars, non-whitespace)"
   }
   ```
-* **Success Response (`201 Created`)**: Returns newly created note.
+* **Success Response (`201 Created`)**:
+  ```json
+  {
+    "id": 2,
+    "ticketId": 12,
+    "content": "Battery diagnostic shows 62% battery wear. Ordering replacement pack.",
+    "createdAt": "2026-05-13T10:05:00Z",
+    "author": { "id": 2, "name": "Michael Brown", "role": "IT_STAFF" }
+  }
+  ```
 * **Error Responses**:
   - `400 Bad Request`: Empty or whitespace content.
   - `401 Unauthorized`: Authentication required.

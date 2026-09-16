@@ -224,7 +224,7 @@ ALTER TABLE "RequesterUser" RENAME TO "User";
 -- Step 3: Add new columns with initial nullable/default states
 ALTER TABLE "User" ADD COLUMN "passwordHash" TEXT;
 ALTER TABLE "User" ADD COLUMN "role" "Role" NOT NULL DEFAULT 'REQUESTER';
-ALTER TABLE "User" ADD COLUMN "mustChangePassword" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "User" ADD COLUMN "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "User" ADD COLUMN "tokenVersion" INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE "User" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
@@ -244,6 +244,9 @@ ALTER TABLE "Ticket" ADD COLUMN "itPriority" "Priority";
 ALTER TABLE "Ticket" ADD COLUMN "problemAppearsResolved" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "Ticket" ADD COLUMN "ticketOwnerId" INTEGER;
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_ticketOwnerId_fkey" FOREIGN KEY ("ticketOwnerId") REFERENCES "User"("id") ON DELETE SET NULL;
+
+-- Step 7: Backfill itPriority for all existing tickets from requestedPriority (BR-11)
+UPDATE "Ticket" SET "itPriority" = "requestedPriority" WHERE "itPriority" IS NULL;
 ```
 
 ### 7.3 Entity Mapping: `RequesterUser` $\rightarrow$ `User`
@@ -304,7 +307,7 @@ model User {
   passwordHash       String
   role               Role             @default(REQUESTER)
   department         String?
-  mustChangePassword Boolean          @default(true)
+  mustChangePassword Boolean          @default(false)
   isActive           Boolean          @default(true)
   tokenVersion       Int              @default(1)
   createdAt          DateTime         @default(now())
