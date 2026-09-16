@@ -434,12 +434,12 @@ model InternalNote {
 ## 10. Definition of Done (DoD)
 
 ### 10.1 Issue 12 (#34) Documentation Gate Definition of Done (PR #42 Gate)
-- [ ] Specification document (`specification.md`) completed covering all 11 sections, 15 FRs, 19 BRs, 21 ACs, central Authorization Matrix (with strict separation of duties), and explicit FR $\rightarrow$ BR $\rightarrow$ AC traceability.
-- [ ] REST API specification (`api-spec.md`) defines concrete endpoints, JWT Bearer + `tokenVersion` logout mechanism, and standardized safe error schemas (400, 401, 403, 404, 409).
-- [ ] UI specification (`ui-spec.md`) specifies Apple-style Zen Green design tokens, responsive breakpoints, screen mock structures, and visual inspection checklist.
-- [ ] Test plan (`tests.md`) maps all 21 Acceptance Criteria (including AC-16 to AC-21) to the test matrix without gaps.
-- [ ] AI collaboration agreement (`ai-collaboration-guide.md`) documents 10 engineering rules, including Git manual execution and past-issue immutability.
-- [ ] Pull Request #42 opened from `docs/lab3-spec-and-test-plan` to `lab3-staging` and approved by peer reviewer.
+- [x] Specification document (`specification.md`) completed covering all 11 sections, 15 FRs, 19 BRs, 21 ACs, central Authorization Matrix (with strict separation of duties), and explicit FR $\rightarrow$ BR $\rightarrow$ AC traceability.
+- [x] REST API specification (`api-spec.md`) defines concrete endpoints, JWT Bearer + `tokenVersion` logout mechanism, and standardized safe error schemas (400, 401, 403, 404, 409).
+- [x] UI specification (`ui-spec.md`) specifies Apple-style Zen Green design tokens, responsive breakpoints, screen mock structures, and visual inspection checklist.
+- [x] Test plan (`tests.md`) maps all 21 Acceptance Criteria (including AC-16 to AC-21) to the test matrix without gaps.
+- [x] AI collaboration agreement (`ai-collaboration-guide.md`) documents 10 engineering rules, including Git manual execution and past-issue immutability.
+- [x] Pull Request #42 opened from `docs/lab3-spec-and-test-plan` to `lab3-staging` and approved by peer reviewer.
 
 > [!NOTE]
 > **Living Documents Lifecycle**: `docs/lab-03/ai-use.md` and `docs/lab-03/reviewer.md` are initialized in Issue 12 (#34) as living project artifacts containing baseline structural metadata. They are continuously maintained in real-time throughout the sprint and finalized during Issue 19 (#41) (Sprint Review, Documentation & Release Integration). Their placeholder status in PR #42 is intended.
