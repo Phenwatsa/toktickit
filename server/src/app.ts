@@ -5,6 +5,8 @@ import fs from "fs";
 import multer from "multer";
 import { getPrisma } from "./prisma.js";
 import { generateUniqueTicketNumber } from "./services/ticketNumber.js";
+import { authRouter } from "./routes/auth.js";
+import { requireAuth, requirePasswordChanged } from "./middleware/auth.js";
 
 // Ensure uploads folder exists
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -49,6 +51,7 @@ export const app = express();
 
 app.use(cors());          // already wired: lets the Vite dev server call this API
 app.use(express.json());
+app.use("/api/auth", authRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
@@ -92,9 +95,10 @@ app.get("/api/categories/active", getCategoriesHandler);
 app.get("/api/requesters/active", async (_req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
-    const requesters = await prisma.requesterUser.findMany({
+    const requesters = await prisma.user.findMany({
       where: {
         isActive: true,
+        role: "REQUESTER",
       },
       select: {
         id: true,
@@ -141,12 +145,13 @@ app.get("/api/related-systems/active", async (_req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Issue 7: Create Ticket
+// Lab 2 & Lab 3 — Issue 7 & Issue 13: Create Ticket
 // POST /api/tickets
 // ---------------------------------------------------------------------------
-app.post("/api/tickets", async (req: Request, res: Response) => {
+app.post("/api/tickets", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const {
       requesterId,
       categoryId,
@@ -185,14 +190,30 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
       });
     }
 
-    // 4. Validate IDs
-    const parsedRequesterId = Number(requesterId);
+    let parsedRequesterId = user.id;
+    if (requesterId !== undefined && requesterId !== null) {
+      const parsed = Number(requesterId);
+      if (isNaN(parsed)) {
+        details.push({ field: "requesterId", issue: "Valid requesterId is required." });
+      } else {
+        const targetRequester = await prisma.user.findUnique({ where: { id: parsed } });
+        if (!targetRequester || !targetRequester.isActive) {
+          return res.status(400).json({
+            error: "Invalid requester",
+            message: "The specified requester is inactive or does not exist.",
+          });
+        }
+        if (user.role === "REQUESTER") {
+          parsedRequesterId = user.id;
+        } else {
+          parsedRequesterId = parsed;
+        }
+      }
+    }
+
     const parsedCategoryId = Number(categoryId);
     const parsedSystemId = Number(relatedSystemId);
 
-    if (!parsedRequesterId || isNaN(parsedRequesterId)) {
-      details.push({ field: "requesterId", issue: "Valid requesterId is required." });
-    }
     if (!parsedCategoryId || isNaN(parsedCategoryId)) {
       details.push({ field: "categoryId", issue: "Valid categoryId is required." });
     }
@@ -205,26 +226,6 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
         error: "Validation failed",
         message: "Please correct the input errors below.",
         details,
-      });
-    }
-
-    // Verify requester header matches body if provided
-    const headerRequesterId = req.headers["x-requester-id"];
-    if (headerRequesterId && Number(headerRequesterId) !== parsedRequesterId) {
-      return res.status(400).json({
-        error: "Requester mismatch",
-        message: "The requester specified in the request does not match the active session.",
-      });
-    }
-
-    // Check entity existence and active status
-    const requester = await prisma.requesterUser.findUnique({
-      where: { id: parsedRequesterId },
-    });
-    if (!requester || !requester.isActive) {
-      return res.status(400).json({
-        error: "Invalid requester",
-        message: "The specified requester is inactive or does not exist.",
       });
     }
 
@@ -251,13 +252,14 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
     // Generate unique official ticket number
     const ticketNumber = await generateUniqueTicketNumber();
 
-    // Create ticket in DB
+    // Create ticket in DB (BR-11: itPriority initialized from requestedPriority)
     const newTicket = await prisma.ticket.create({
       data: {
         ticketNumber,
         summary: trimmedSummary,
         description: trimmedDesc,
         requestedPriority,
+        itPriority: requestedPriority,
         currentStatus: "NEW",
         requesterId: parsedRequesterId,
         categoryId: parsedCategoryId,
@@ -278,14 +280,14 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Issue 8: My Tickets List & Filtering
+// Lab 2 & Lab 3 — Issue 8 & Issue 13: My Tickets List & Filtering
 // GET /api/tickets
 // ---------------------------------------------------------------------------
-app.get("/api/tickets", async (req: Request, res: Response) => {
+app.get("/api/tickets", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const {
-      requesterId,
       search,
       categoryId,
       priority,
@@ -297,42 +299,11 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
       pageSize = "10",
     } = req.query;
 
-    const headerRequesterId = req.headers["x-requester-id"];
-    const queryRequesterId = req.query.requesterId;
-
-    // Strict session enforcement: x-requester-id header is mandatory
-    if (!headerRequesterId || isNaN(Number(headerRequesterId))) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header is required to identify the current requester.",
-      });
-    }
-
-    const sessionRequesterId = Number(headerRequesterId);
-
-    // Security check: reject if query parameter attempts to query another requester's tickets
-    if (queryRequesterId && Number(queryRequesterId) !== sessionRequesterId) {
-      return res.status(403).json({
-        error: "Forbidden",
-        message: "You cannot access tickets belonging to another requester.",
-      });
-    }
-
-    // Check that the session requester exists and is active
-    const requester = await prisma.requesterUser.findUnique({
-      where: { id: sessionRequesterId },
-    });
-    if (!requester || !requester.isActive) {
-      return res.status(400).json({
-        error: "Invalid requester session",
-        message: "The session requester is inactive or does not exist.",
-      });
-    }
-
     // Build Prisma where clause with strict tenant ownership derived from session
-    const where: any = {
-      requesterId: sessionRequesterId,
-    };
+    const where: any = {};
+    if (user.role === "REQUESTER") {
+      where.requesterId = user.id;
+    }
 
     // Keyword search (case-insensitive across ticketNumber and summary)
     if (search && typeof search === "string" && search.trim() !== "") {
@@ -449,25 +420,14 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Issue 9: Ticket Detail Inspection
+// Lab 2 & Lab 3 — Issue 9 & Issue 13: Ticket Detail Inspection
 // GET /api/tickets/:id
 // ---------------------------------------------------------------------------
-app.get("/api/tickets/:id", async (req: Request, res: Response) => {
+app.get("/api/tickets/:id", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const ticketId = Number(req.params.id);
-    const headerRequesterId = req.headers["x-requester-id"];
-    const queryRequesterId = req.query.requesterId;
-    const rawRequesterId = headerRequesterId || queryRequesterId;
-
-    if (!rawRequesterId || isNaN(Number(rawRequesterId))) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header is required.",
-      });
-    }
-
-    const sessionRequesterId = Number(rawRequesterId);
 
     if (!ticketId || isNaN(ticketId)) {
       return res.status(400).json({ error: "Invalid ticketId" });
@@ -498,10 +458,11 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
       });
     }
 
-    // Strict multi-tenant ownership check
-    if (ticket.requesterId !== sessionRequesterId) {
+    // Role check: IT_STAFF can view all tickets; REQUESTER can view only owned tickets
+    if (user.role === "REQUESTER" && ticket.requesterId !== user.id) {
       return res.status(403).json({
         error: "Forbidden",
+        code: "FORBIDDEN",
         message: "You do not have permission to view this ticket.",
       });
     }
@@ -514,44 +475,50 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Issue 9: Attachment Binary Upload
+// Lab 2 & Lab 3 — Issue 9 & Issue 13: Attachment Binary Upload
 // POST /api/tickets/:id/attachments
 // ---------------------------------------------------------------------------
-app.post("/api/tickets/:id/attachments", (req: Request, res: Response) => {
-  upload.single("file")(req, res, async (err) => {
-    if (err) {
-      if (err.code === "LIMIT_FILE_SIZE") {
-        return res.status(413).json({
-          error: "Payload Too Large",
-          message: "Attachment exceeds maximum allowed size of 5 MB.",
+app.post(
+  "/api/tickets/:id/attachments",
+  requireAuth,
+  requirePasswordChanged,
+  (req: Request, res: Response, next) => {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(413).json({
+            error: "Payload Too Large",
+            message: "Attachment exceeds maximum allowed size of 5 MB.",
+          });
+        }
+        if (err.message === "UNSUPPORTED_MEDIA_TYPE") {
+          return res.status(415).json({
+            error: "Unsupported Media Type",
+            message: "Only JPG, PNG, WEBP, and PDF files are allowed.",
+          });
+        }
+        return res.status(400).json({
+          error: "Upload failed",
+          message: err.message || "Failed to process uploaded file.",
         });
       }
-      if (err.message === "UNSUPPORTED_MEDIA_TYPE") {
-        return res.status(415).json({
-          error: "Unsupported Media Type",
-          message: "Only JPG, PNG, WEBP, and PDF files are allowed.",
-        });
-      }
-      return res.status(400).json({
-        error: "Upload failed",
-        message: err.message || "Failed to process uploaded file.",
-      });
-    }
-
+      next();
+    });
+  },
+  async (req: Request, res: Response) => {
     try {
       const prisma = getPrisma();
+      const user = req.user!;
       const ticketId = Number(req.params.id);
-      const headerRequesterId = req.headers["x-requester-id"];
 
-      if (!headerRequesterId || isNaN(Number(headerRequesterId))) {
+      if (user.role === "ADMINISTRATOR") {
         if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(400).json({
-          error: "Missing requester session",
-          message: "A valid x-requester-id session header is required.",
+        return res.status(403).json({
+          error: "Forbidden",
+          code: "FORBIDDEN",
+          message: "Administrators cannot attach files to tickets.",
         });
       }
-
-      const sessionRequesterId = Number(headerRequesterId);
 
       if (!ticketId || isNaN(ticketId)) {
         if (req.file) fs.unlinkSync(req.file.path);
@@ -583,11 +550,12 @@ app.post("/api/tickets/:id/attachments", (req: Request, res: Response) => {
         });
       }
 
-      // Strict ownership check
-      if (ticket.requesterId !== sessionRequesterId) {
+      // Strict ownership check: Requesters can only upload to own tickets
+      if (user.role === "REQUESTER" && ticket.requesterId !== user.id) {
         fs.unlinkSync(req.file.path);
         return res.status(403).json({
           error: "Forbidden",
+          code: "FORBIDDEN",
           message: "You do not have permission to attach files to this ticket.",
         });
       }
@@ -624,29 +592,18 @@ app.post("/api/tickets/:id/attachments", (req: Request, res: Response) => {
       console.error("Attachment upload error:", error);
       return res.status(500).json({ error: "Failed to upload attachment." });
     }
-  });
-});
+  }
+);
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Issue 9: Attachment Download
+// Lab 2 & Lab 3 — Issue 9 & Issue 13: Attachment Download
 // GET /api/attachments/:id/download
 // ---------------------------------------------------------------------------
-app.get("/api/attachments/:id/download", async (req: Request, res: Response) => {
+app.get("/api/attachments/:id/download", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const attachmentId = Number(req.params.id);
-    const headerRequesterId = req.headers["x-requester-id"];
-    const queryRequesterId = req.query.requesterId;
-    const rawRequesterId = headerRequesterId || queryRequesterId;
-
-    if (!rawRequesterId || isNaN(Number(rawRequesterId))) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header or requesterId query is required.",
-      });
-    }
-
-    const sessionRequesterId = Number(rawRequesterId);
 
     if (!attachmentId || isNaN(attachmentId)) {
       return res.status(400).json({ error: "Invalid attachmentId" });
@@ -670,11 +627,21 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
       });
     }
 
-    // Ownership check
-    if (attachment.ticket.requesterId !== sessionRequesterId) {
+    // Role check: Admin receives 403 Forbidden
+    if (user.role === "ADMINISTRATOR") {
       return res.status(403).json({
-        error: "Forbidden",
-        message: "You do not have permission to download this attachment.",
+        error: "Access denied. Administrators cannot download attachments.",
+        code: "FORBIDDEN",
+        message: "Access denied. Administrators cannot download attachments.",
+      });
+    }
+
+    // Ownership check: IT Staff can download any; Requester can only download owned
+    if (user.role === "REQUESTER" && attachment.ticket.requesterId !== user.id) {
+      return res.status(403).json({
+        error: "Access denied. You do not have permission to download this attachment.",
+        code: "FORBIDDEN",
+        message: "Access denied. You do not have permission to download this attachment.",
       });
     }
 
@@ -682,6 +649,7 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
     if (attachment.isRemoved) {
       return res.status(410).json({
         error: "Gone",
+        code: "GONE",
         message: "This attachment has been removed and cannot be downloaded.",
         removalReason: attachment.removalReason,
         removedAt: attachment.removedAt,
@@ -705,25 +673,24 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
 });
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Issue 9: Soft-Remove Attachment
+// Lab 2 & Lab 3 — Issue 9 & Issue 13: Soft-Remove Attachment
 // DELETE /api/tickets/:id/attachments/:attachmentId
 // ---------------------------------------------------------------------------
-app.delete("/api/tickets/:id/attachments/:attachmentId", async (req: Request, res: Response) => {
+app.delete("/api/tickets/:id/attachments/:attachmentId", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const ticketId = Number(req.params.id);
     const attachmentId = Number(req.params.attachmentId);
-    const headerRequesterId = req.headers["x-requester-id"];
     const { removalReason } = req.body || {};
 
-    if (!headerRequesterId || isNaN(Number(headerRequesterId))) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header is required.",
+    if (user.role === "ADMINISTRATOR") {
+      return res.status(403).json({
+        error: "Forbidden",
+        code: "FORBIDDEN",
+        message: "Administrators cannot remove attachments.",
       });
     }
-
-    const sessionRequesterId = Number(headerRequesterId);
 
     if (!ticketId || isNaN(ticketId) || !attachmentId || isNaN(attachmentId)) {
       return res.status(400).json({ error: "Invalid ticket or attachment ID" });
@@ -756,10 +723,11 @@ app.delete("/api/tickets/:id/attachments/:attachmentId", async (req: Request, re
       });
     }
 
-    // Ownership check
-    if (attachment.ticket.requesterId !== sessionRequesterId) {
+    // Ownership check: Requesters can only soft-delete attachments on owned tickets
+    if (user.role === "REQUESTER" && attachment.ticket.requesterId !== user.id) {
       return res.status(403).json({
         error: "Forbidden",
+        code: "FORBIDDEN",
         message: "You do not have permission to remove attachments from this ticket.",
       });
     }

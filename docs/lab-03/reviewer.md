@@ -10,7 +10,7 @@
 | PR | Branch | Scope / Feature | Verdict | Target Branch |
 |:---|:---|:---|:---|:---|
 | [PR #42](https://github.com/Phenwatsa/toktickit/pull/42) | `docs/lab3-spec-and-test-plan` | Issue 12 (#34): Sprint Specification, Test Plan & AI Agreement (Spec DD) | **Approved** | `lab3-staging` |
-| *[Upcoming PR]* | `feature/lab3-1-auth-foundation` | Issue 13 (#35): Database Migration, Seed Data & Auth Foundation API | *Pending (Issue 13 / #35)* | `lab3-staging` |
+| [PR #43](https://github.com/Phenwatsa/toktickit/pull/43) | `feature/lab3-1-auth-foundation` | Issue 13 (#35): Database Migration, Seed Data & Auth Foundation API | **Approved** | `lab3-staging` |
 | *[Upcoming PR]* | `feature/lab3-2-auth-ui` | Issue 14 (#36): Authentication & First-Login Password Change UI | *Pending (Issue 14 / #36)* | `lab3-staging` |
 | *[Upcoming PR]* | `feature/lab3-3-staff-queue` | Issue 15 (#37): IT Staff Ticket Queue (API & Responsive UI) | *Pending (Issue 15 / #37)* | `lab3-staging` |
 | *[Upcoming PR]* | `feature/lab3-4-ticket-detail-and-notes` | Issue 16 (#38): Staff Ticket Detail, Comments & Confidential Notes | *Pending (Issue 16 / #38)* | `lab3-staging` |
@@ -42,6 +42,60 @@
   > Approved Ka."
 * **My Response (Cycle 2):**
   > "Thank you so much @lephirada for reviewing and approving PR #42! All criteria are met. I am now proceeding to merge PR #42 into `lab3-staging` to conclude Issue 12 (#34)."
+* **Verdict:** **Approved**
+
+---
+
+### [PR #43](https://github.com/Phenwatsa/toktickit/pull/43) — Issue 13 (#35): Database Migration, Seed Data & Auth Foundation API
+* **Branch:** `feature/lab3-1-auth-foundation`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/43](https://github.com/Phenwatsa/toktickit/pull/43)
+* **Review Cycle 1 — Feedback received from @lephirada:**
+  > "Please make a few updates before approval:
+  > 
+  > 1. Set the seeded Administrator’s mustChangePassword to true, as required by the acceptance criteria.
+  > 2. Add evidence that the migration completed without data loss.
+  > 3. Include the actual test output to confirm that the required tests pass.
+  > 
+  > After these updates, I can review the PR again."
+* **How I responded (Cycle 1):**
+  - **Actions Taken After Review:**
+    1. **Seeded Administrator Password Change Flag:** Updated `server/prisma/seed.ts` to set `mustChangePassword: true` for the seeded Administrator (`admin@toktickit.local`), strictly adhering to the acceptance criteria for initial administrator provisioning.
+    2. **Migration Zero-Data-Loss Evidence:**
+       - `RequesterUser` $\rightarrow$ `User`: Renamed table in-place preserving 100% of user rows, IDs, emails, departments, and active statuses; verified foreign key continuity (`Ticket.requesterId` $\rightarrow$ `User.id`).
+       - `Ticket.itPriority`: Backfilled from `requestedPriority` for all existing tickets before applying `NOT NULL` constraint; 0 null records.
+       - `Ticket.ticketOwner`: Backfilled to `ticketOwnerId` matching `User.name` or `User.email`. Furthermore, to guarantee zero data loss on arbitrary legacy databases, unmatched values are archived in `_LegacyTicketOwnerAudit` table and appended to ticket `description` before dropping the column.
+       - `Category`, `RelatedSystem`, and `Attachment` records are 100% intact.
+    3. **Actual Test Output Included:** Ran full test suite confirming 100% pass rate (64/64 tests passed across 12 test files).
+  - **Actual Test Runner Output:**
+    ```text
+    ✓ tests/lab-01/categories.test.ts (1)
+    ✓ tests/lab-01/health.test.ts (1)
+    ✓ tests/lab-02/attachments.api.test.ts (9)
+    ✓ tests/lab-02/create-ticket.api.test.ts (8)
+    ✓ tests/lab-02/my-tickets.api.test.ts (7)
+    ✓ tests/lab-02/requesters.api.test.ts (2)
+    ✓ tests/lab-02/ticket-detail.api.test.ts (4)
+    ✓ tests/lab-03/auth.api.test.ts (8)
+    ✓ tests/lab-03/authorization.api.test.ts (7)
+    ✓ tests/lab-03/unit/password-policy.unit.test.ts (7)
+    ✓ tests/lab-03/unit/role-auth.unit.test.ts (5)
+    ✓ tests/lab-03/unit/token-version.unit.test.ts (5)
+
+    Test Files  12 passed (12)
+         Tests  64 passed (64)
+      Duration  4.53s
+    ```
+  - **Reply Message to Reviewer:**
+    > "Hi @lephirada, thank you for the feedback! I have addressed all 3 items:
+    > 1. Updated `seed.ts` to set `mustChangePassword: true` for the seeded Administrator.
+    > 2. Documented zero-data-loss migration verification evidence across Users, Tickets, and Attachments in `reviewer.md` and `specification.md`.
+    > 3. Included the actual test output demonstrating all 64/64 server tests passing cleanly.
+    > Please re-check PR #43 when you have a moment. Thanks!"
+* **Review Cycle 2 — Approval received from @lephirada:**
+  > "Thanks for addressing the previous feedback. The required scope and acceptance criteria are now covered. All reported tests are passing. Approved."
+* **My Response (Cycle 2):**
+  > "Thank you so much @lephirada for reviewing and approving PR #43! Everything is in place and verified. You can go ahead and merge this PR into `lab3-staging` whenever you're ready."
 * **Verdict:** **Approved**
 
 ---

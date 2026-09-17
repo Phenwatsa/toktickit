@@ -11,17 +11,52 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Lab 2 — Models & Enums for TokTickIT Requester Ticketing MVP
+// Lab 3 — Models & Enums for TokTickIT Sprint 3 (Spec DD)
 // ---------------------------------------------------------------------------
 
-model RequesterUser {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  department String
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  tickets    Ticket[]
+enum Role {
+  REQUESTER
+  IT_STAFF
+  ADMINISTRATOR
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  NEW
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_REQUESTER
+  RESOLVED
+  CLOSED
+  REOPENED
+  CANCELLED
+}
+
+model User {
+  id                 Int              @id @default(autoincrement())
+  name               String
+  email              String           @unique
+  passwordHash       String
+  role               Role             @default(REQUESTER)
+  department         String?
+  mustChangePassword Boolean          @default(false)
+  isActive           Boolean          @default(true)
+  tokenVersion       Int              @default(1)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  tickets            Ticket[]         @relation("RequesterTickets")
+  assignedTickets    Ticket[]         @relation("AssignedTickets")
+  publicComments     PublicComment[]
+  internalNotes      InternalNote[]
+
+  @@index([email])
+  @@index([role])
 }
 
 model Category {
@@ -41,43 +76,31 @@ model RelatedSystem {
   tickets     Ticket[]
 }
 
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum TicketStatus {
-  NEW
-  OPEN
-  IN_PROGRESS
-  PENDING
-  RESOLVED
-  CLOSED
-  CANCELLED
-}
-
 model Ticket {
-  id                Int           @id @default(autoincrement())
-  ticketNumber      String        @unique
-  summary           String
-  description       String
-  requestedPriority Priority      @default(MEDIUM)
-  itPriority        Priority?
-  currentStatus     TicketStatus  @default(NEW)
-  requesterId       Int
-  requester         RequesterUser @relation(fields: [requesterId], references: [id])
-  categoryId        Int
-  category          Category      @relation(fields: [categoryId], references: [id])
-  relatedSystemId   Int
-  relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id])
-  ticketOwner       String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  attachments       Attachment[]
+  id                     Int             @id @default(autoincrement())
+  ticketNumber           String          @unique
+  summary                String
+  description            String
+  requestedPriority      Priority        @default(MEDIUM)
+  itPriority             Priority        @default(MEDIUM)
+  currentStatus          TicketStatus    @default(NEW)
+  problemAppearsResolved Boolean         @default(false)
+  requesterId            Int
+  requester              User            @relation("RequesterTickets", fields: [requesterId], references: [id])
+  ticketOwnerId          Int?
+  ticketOwner            User?           @relation("AssignedTickets", fields: [ticketOwnerId], references: [id])
+  categoryId             Int
+  category               Category        @relation(fields: [categoryId], references: [id])
+  relatedSystemId        Int
+  relatedSystem          RelatedSystem   @relation(fields: [relatedSystemId], references: [id])
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  attachments            Attachment[]
+  publicComments         PublicComment[]
+  internalNotes          InternalNote[]
 
   @@index([requesterId])
+  @@index([ticketOwnerId])
   @@index([currentStatus])
   @@index([categoryId])
 }
@@ -94,6 +117,30 @@ model Attachment {
   removedAt     DateTime?
   removalReason String?
   createdAt     DateTime  @default(now())
+
+  @@index([ticketId])
+}
+
+model PublicComment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
 
   @@index([ticketId])
 }

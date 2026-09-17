@@ -10,12 +10,12 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 
 | Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
-| **API-01** | API | AC-01 | Valid user login with correct email and password | HTTP 200; returns JWT token and safe user profile (id, name, email, role, mustChangePassword) | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-02** | API | AC-05 | Login attempt with incorrect password | HTTP 401 Unauthorized; safe error `"Invalid email or password"` without leaking details | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-03** | API | AC-05 | Login attempt with deactivated account (`isActive: false`) | HTTP 401 Unauthorized; safe generic error response | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-04** | API | AC-02 | User with `mustChangePassword = true` changes password | HTTP 200; updates password hash, sets `mustChangePassword = false` | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-05** | API | AC-02 | Password change fails if new password does not meet complexity rules | HTTP 400 Bad Request; descriptive validation errors | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-06** | API | AC-03 | Requester queries ticket list (`GET /api/tickets`) with another `requesterId` in query/header, or attempts to access another user's ticket detail (`GET /api/tickets/:id`) | Ownership strictly derived from session `req.user.id`; foreign tickets excluded from list and unauthorized ticket detail access rejected with HTTP 403 Forbidden | `server/tests/lab-03/authorization.api.test.ts` | Planned |
+| **API-01** | API | AC-01 | Valid user login with correct email and password | HTTP 200; returns JWT token and safe user profile (id, name, email, role, mustChangePassword) | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-02** | API | AC-05 | Login attempt with incorrect password | HTTP 401 Unauthorized; safe error `"Invalid email or password"` without leaking details | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-03** | API | AC-05 | Login attempt with deactivated account (`isActive: false`) | HTTP 401 Unauthorized; safe generic error response | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-04** | API | AC-02 | User with `mustChangePassword = true` changes password | HTTP 200; updates password hash, sets `mustChangePassword = false` | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-05** | API | AC-02 | Password change fails if new password does not meet complexity rules | HTTP 400 Bad Request; descriptive validation errors | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-06** | API | AC-03 | Requester queries ticket list (`GET /api/tickets`) with another `requesterId` in query/header, or attempts to access another user's ticket detail (`GET /api/tickets/:id`) | Ownership strictly derived from session `req.user.id`; foreign tickets excluded from list and unauthorized ticket detail access rejected with HTTP 403 Forbidden | `server/tests/lab-03/authorization.api.test.ts` | Passing |
 | **API-07** | API | AC-06 | IT Staff queries ticket queue with search and filters | HTTP 200; returns paginated array of all system tickets with metadata | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
 | **API-08** | API | AC-15 | Unauthorized roles (Requester and Admin) attempt to access staff queue (`GET /api/staff/tickets`) | HTTP 403 Forbidden; zero queue data leaked | `server/tests/lab-03/staff-queue.api.test.ts` | Planned |
 | **API-09** | API | AC-07 | IT Staff claims unassigned ticket ownership | HTTP 200; ticket owner set to current authenticated staff ID | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Planned |
@@ -28,9 +28,9 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **API-16** | API | AC-13 | Admin attempts to deactivate own account | HTTP 400 Bad Request; self-deactivation blocked by safety guard | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | **API-17** | API | AC-14 | Admin attempts to deactivate or demote last active admin | HTTP 400 Bad Request; system retains at least one active administrator | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
 | **API-18** | API | AC-15 | Non-Admin attempts to call Admin User endpoints | HTTP 403 Forbidden for Requester and IT Staff | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-19** | API | AC-17 | Authenticated user retrieves current profile via `GET /api/auth/me` | HTTP 200 with user profile; HTTP 401 when token is missing or invalid | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-20** | API | AC-18 | User logs out via `POST /api/auth/logout` and previous token is revoked | Calling protected route with old token fails with HTTP 401 (`tokenVersion` mismatch) | `server/tests/lab-03/auth.api.test.ts` | Planned |
-| **API-21** | API | AC-20 | Requester B attempts to upload, download (`GET /api/attachments/:id/download`), or soft-delete attachments on Requester A's ticket | HTTP 403 Forbidden on upload, download, and soft-delete; attachments cross-user isolation strictly enforced | `server/tests/lab-03/authorization.api.test.ts` | Planned |
+| **API-19** | API | AC-17 | Authenticated user retrieves current profile via `GET /api/auth/me` | HTTP 200 with user profile; HTTP 401 when token is missing or invalid | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-20** | API | AC-18 | User logs out via `POST /api/auth/logout` and previous token is revoked | Calling protected route with old token fails with HTTP 401 (`tokenVersion` mismatch) | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-21** | API | AC-20 | Requester B attempts to upload, download (`GET /api/attachments/:id/download`), or soft-delete attachments on Requester A's ticket | HTTP 403 Forbidden on upload, download, and soft-delete; attachments cross-user isolation strictly enforced | `server/tests/lab-03/authorization.api.test.ts` | Passing |
 | **API-22** | API | AC-21 | Requester owner marks problem resolved via `PATCH /api/requester/tickets/:id/resolve-indication`; non-owner, IT Staff, and Admin attempts rejected | HTTP 200 with `problemAppearsResolved: true` and official status unchanged; HTTP 403 Forbidden for non-owner, Staff, and Admin; HTTP 404 for nonexistent ticket | `server/tests/lab-03/requester-resolution.api.test.ts` | Planned |
 
 ---
@@ -73,12 +73,12 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 
 | Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
-| **UNIT-01** | Unit | AC-02 | Password policy complexity rule validator (length $\ge 8$, upper, lower, digit) | Returns valid `true` on compliant passwords; returns `false` with precise violation codes on failure | `server/tests/lab-03/unit/password-policy.unit.test.ts` | Planned |
+| **UNIT-01** | Unit | AC-02 | Password policy complexity rule validator (length $\ge 8$, upper, lower, digit) | Returns valid `true` on compliant passwords; returns `false` with precise violation codes on failure | `server/tests/lab-03/unit/password-policy.unit.test.ts` | Passing |
 | **UNIT-02** | Unit | AC-09 | 8-status finite state machine transition validator | Valid transitions return `true`; illegal transitions (e.g. `IN_PROGRESS` $\rightarrow$ `CLOSED`) return `false` | `server/tests/lab-03/unit/status-transition.unit.test.ts` | Planned |
-| **UNIT-03** | Unit | AC-15 | Role-based authorization middleware permission checks | Verifies `requireRole` helper permits authorized roles and rejects unauthorized roles with 403 Forbidden | `server/tests/lab-03/unit/role-auth.unit.test.ts` | Planned |
+| **UNIT-03** | Unit | AC-15 | Role-based authorization middleware permission checks | Verifies `requireRole` helper permits authorized roles and rejects unauthorized roles with 403 Forbidden | `server/tests/lab-03/unit/role-auth.unit.test.ts` | Passing |
 | **UNIT-04** | Unit | AC-08 | Priority assignment helper upon ticket initialization | Verifies `itPriority` helper sets initial IT priority equal to `requestedPriority` (BR-11) | `server/tests/lab-03/unit/priority-init.unit.test.ts` | Planned |
 | **UNIT-05** | Unit | AC-13, AC-14 | Administrator safety guards (self-deactivation and last active admin check) | Prevents self-deactivation (`userId === targetId`) and blocking when sole active admin remaining | `server/tests/lab-03/unit/admin-guard.unit.test.ts` | Planned |
-| **UNIT-06** | Unit | AC-18 | JWT payload `tokenVersion` mismatch validator | Verifies token comparison rejects stale `tokenVersion` against active database version | `server/tests/lab-03/unit/token-version.unit.test.ts` | Planned |
+| **UNIT-06** | Unit | AC-18 | JWT payload `tokenVersion` mismatch validator | Verifies token comparison rejects stale `tokenVersion` against active database version | `server/tests/lab-03/unit/token-version.unit.test.ts` | Passing |
 
 ---
 
