@@ -36,7 +36,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
 
     // Get two distinct active requesters
     const requesters = await prisma.requesterUser.findMany({
-      where: { isActive: true },
+      where: { isActive: true, mustChangePassword: false },
       take: 2,
     });
     requesterAId = requesters[0].id;

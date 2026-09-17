@@ -36,7 +36,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
 
     // Get requesters
     const requesters = await prisma.requesterUser.findMany({
-      where: { isActive: true },
+      where: { isActive: true, mustChangePassword: false },
       take: 2,
     });
     requesterAId = requesters[0].id;

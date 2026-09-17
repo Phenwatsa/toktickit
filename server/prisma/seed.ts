@@ -148,7 +148,7 @@ async function main() {
       department: "IT Administration",
       role: "ADMINISTRATOR" as const,
       isActive: true,
-      mustChangePassword: false,
+      mustChangePassword: true,
     },
   ];
 

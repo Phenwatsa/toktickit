@@ -20,7 +20,7 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
 
     // Get an active requester
     const activeReq = await prisma.requesterUser.findFirst({
-      where: { isActive: true },
+      where: { isActive: true, mustChangePassword: false },
     });
     activeRequesterId = activeReq!.id;
     activeToken = generateToken(activeReq!);
