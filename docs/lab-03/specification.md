@@ -236,10 +236,19 @@ WHERE "passwordHash" IS NULL;
 -- Step 5: Enforce NOT NULL constraint on passwordHash
 ALTER TABLE "User" ALTER COLUMN "passwordHash" SET NOT NULL;
 
--- Step 6: Add Ticket operational fields
+-- Step 6: Add Ticket operational fields & backfill legacy ticketOwner to ticketOwnerId
 ALTER TABLE "Ticket" ADD COLUMN "itPriority" "Priority";
 ALTER TABLE "Ticket" ADD COLUMN "problemAppearsResolved" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "Ticket" ADD COLUMN "ticketOwnerId" INTEGER;
+
+-- Backfill legacy ticketOwner text column to ticketOwnerId FK before dropping column (zero data loss)
+UPDATE "Ticket" t
+SET "ticketOwnerId" = u."id"
+FROM "User" u
+WHERE t."ticketOwner" IS NOT NULL
+  AND (LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."name")) OR LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."email")));
+
+ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "ticketOwner";
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_ticketOwnerId_fkey" FOREIGN KEY ("ticketOwnerId") REFERENCES "User"("id") ON DELETE SET NULL;
 
 -- Step 7: Backfill itPriority for all existing tickets from requestedPriority (BR-11)
@@ -265,7 +274,14 @@ ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL;
 | *(New)* | `tokenVersion` | `Int` | Set to `1` (incremented upon logout for token invalidation) |
 | *(New)* | `updatedAt` | `DateTime` | Set to migration timestamp |
 
-### 7.4 Post-Migration Verification Checklist
+### 7.4 Ticket Field Mapping: Legacy `ticketOwner` $\rightarrow$ `ticketOwnerId`
+
+To strictly ensure zero data loss during schema evolution:
+- In Lab 2, `Ticket.ticketOwner` was an unconstrained nullable text field.
+- In Lab 3, operational ticket assignment is formalized via `Ticket.ticketOwnerId` (foreign key referencing `User(id)`).
+- **Migration Strategy**: Prior to dropping the legacy column, an SQL `UPDATE` maps any existing non-null `ticketOwner` strings to `ticketOwnerId` by matching against `User.name` or `User.email` (case-insensitive). Tickets without an assigned owner or legacy text that does not match a user safely retain `null` without data loss or foreign key violations.
+
+### 7.5 Post-Migration Verification Checklist
 Run an automated verification query script after migration:
 1. **Row Count Match**: Prior to executing the migration script, record the pre-migration count via `SELECT COUNT(*) FROM "RequesterUser"`. Post-migration, verify that `SELECT COUNT(*) FROM "User"` equals the recorded pre-migration count plus any newly seeded staff/admin users.
 2. **Foreign Key Integrity**: `SELECT COUNT(*) FROM "Ticket" WHERE "requesterId" NOT IN (SELECT id FROM "User")` must equal `0`.
@@ -273,7 +289,7 @@ Run an automated verification query script after migration:
 4. **Password Compliance**: `SELECT COUNT(*) FROM "User" WHERE "passwordHash" IS NULL` must equal `0`.
 5. **Rollback Strategy**: If migration fails or integrity checks fail, drop newly altered tables and restore from `backup_lab2_pre_migration.sql`.
 
-### 7.5 Evolved Prisma Schema
+### 7.6 Evolved Prisma Schema
 
 ```prisma
 enum Role {

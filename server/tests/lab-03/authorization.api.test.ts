@@ -19,6 +19,7 @@ describe("Lab 3 Authorization & Ownership REST API (authorization.api.test.ts)",
   let tokenRequesterB: string;
   let tokenStaff: string;
   let tokenAdmin: string;
+  let tokenPendingPasswordChange: string;
 
   let requesterAId: number;
   let requesterBId: number;
@@ -121,6 +122,26 @@ describe("Lab 3 Authorization & Ownership REST API (authorization.api.test.ts)",
       .post("/api/auth/login")
       .send({ email: "admin@toktickit.local", password: "Password123!" });
     tokenAdmin = resLoginAdmin.body.token;
+
+    // Ensure User with mustChangePassword = true
+    await prisma.user.upsert({
+      where: { email: "pending.authz@toktickit.local" },
+      update: { passwordHash, isActive: true, role: "REQUESTER", mustChangePassword: true },
+      create: {
+        name: "Pending Authz User",
+        email: "pending.authz@toktickit.local",
+        passwordHash,
+        role: "REQUESTER",
+        department: "Operations",
+        isActive: true,
+        mustChangePassword: true,
+      },
+    });
+
+    const resLoginPending = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "pending.authz@toktickit.local", password: "Password123!" });
+    tokenPendingPasswordChange = resLoginPending.body.token;
 
     // Clean up test tickets
     await prisma.ticket.deleteMany({
@@ -332,5 +353,103 @@ describe("Lab 3 Authorization & Ownership REST API (authorization.api.test.ts)",
 
     expect(goneRes.status).toBe(410);
     expect(goneRes.body).toHaveProperty("code", "GONE");
+  });
+
+  // -------------------------------------------------------------------------
+  // requirePasswordChanged Middleware Strict Enforcement
+  // -------------------------------------------------------------------------
+  it("enforces requirePasswordChanged: user with mustChangePassword = true is blocked with HTTP 403 PASSWORD_CHANGE_REQUIRED", async () => {
+    // 1. GET /api/tickets
+    const listRes = await request(app)
+      .get("/api/tickets")
+      .set("Authorization", `Bearer ${tokenPendingPasswordChange}`);
+    expect(listRes.status).toBe(403);
+    expect(listRes.body).toHaveProperty("code", "PASSWORD_CHANGE_REQUIRED");
+
+    // 2. GET /api/tickets/:id
+    const detailRes = await request(app)
+      .get(`/api/tickets/${ticketAId}`)
+      .set("Authorization", `Bearer ${tokenPendingPasswordChange}`);
+    expect(detailRes.status).toBe(403);
+    expect(detailRes.body).toHaveProperty("code", "PASSWORD_CHANGE_REQUIRED");
+
+    // 3. POST /api/tickets
+    const createRes = await request(app)
+      .post("/api/tickets")
+      .set("Authorization", `Bearer ${tokenPendingPasswordChange}`)
+      .send({
+        summary: "Blocked due to pending password change",
+        description: "This ticket creation must be blocked with HTTP 403.",
+        requestedPriority: "LOW",
+        categoryId: 1,
+        relatedSystemId: 1,
+      });
+    expect(createRes.status).toBe(403);
+    expect(createRes.body).toHaveProperty("code", "PASSWORD_CHANGE_REQUIRED");
+
+    // 4. POST /api/tickets/:id/attachments
+    const uploadRes = await request(app)
+      .post(`/api/tickets/${ticketAId}/attachments`)
+      .set("Authorization", `Bearer ${tokenPendingPasswordChange}`);
+    expect(uploadRes.status).toBe(403);
+    expect(uploadRes.body).toHaveProperty("code", "PASSWORD_CHANGE_REQUIRED");
+
+    // 5. GET /api/attachments/:id/download
+    const downloadRes = await request(app)
+      .get(`/api/attachments/${attachmentAId}/download`)
+      .set("Authorization", `Bearer ${tokenPendingPasswordChange}`);
+    expect(downloadRes.status).toBe(403);
+    expect(downloadRes.body).toHaveProperty("code", "PASSWORD_CHANGE_REQUIRED");
+
+    // 6. DELETE /api/tickets/:id/attachments/:attachmentId
+    const deleteRes = await request(app)
+      .delete(`/api/tickets/${ticketAId}/attachments/${attachmentAId}`)
+      .set("Authorization", `Bearer ${tokenPendingPasswordChange}`)
+      .send({ removalReason: "Should be blocked" });
+    expect(deleteRes.status).toBe(403);
+    expect(deleteRes.body).toHaveProperty("code", "PASSWORD_CHANGE_REQUIRED");
+  });
+
+  // -------------------------------------------------------------------------
+  // requireAuth Middleware Strict Enforcement (No Token / Invalid Token)
+  // -------------------------------------------------------------------------
+  it("enforces requireAuth: unauthenticated requests to functional endpoints return HTTP 401 UNAUTHORIZED", async () => {
+    // 1. GET /api/tickets without token
+    const listRes = await request(app).get("/api/tickets");
+    expect(listRes.status).toBe(401);
+    expect(listRes.body).toHaveProperty("code", "UNAUTHORIZED");
+
+    // 2. GET /api/tickets/:id without token
+    const detailRes = await request(app).get(`/api/tickets/${ticketAId}`);
+    expect(detailRes.status).toBe(401);
+    expect(detailRes.body).toHaveProperty("code", "UNAUTHORIZED");
+
+    // 3. POST /api/tickets without token
+    const createRes = await request(app).post("/api/tickets").send({
+      summary: "Unauthorized ticket creation",
+      description: "Must fail with 401 Unauthorized without Bearer token.",
+      requestedPriority: "LOW",
+      categoryId: 1,
+      relatedSystemId: 1,
+    });
+    expect(createRes.status).toBe(401);
+    expect(createRes.body).toHaveProperty("code", "UNAUTHORIZED");
+
+    // 4. POST /api/tickets/:id/attachments without token
+    const uploadRes = await request(app).post(`/api/tickets/${ticketAId}/attachments`);
+    expect(uploadRes.status).toBe(401);
+    expect(uploadRes.body).toHaveProperty("code", "UNAUTHORIZED");
+
+    // 5. GET /api/attachments/:id/download without token
+    const downloadRes = await request(app).get(`/api/attachments/${attachmentAId}/download`);
+    expect(downloadRes.status).toBe(401);
+    expect(downloadRes.body).toHaveProperty("code", "UNAUTHORIZED");
+
+    // 6. DELETE /api/tickets/:id/attachments/:attachmentId without token
+    const deleteRes = await request(app)
+      .delete(`/api/tickets/${ticketAId}/attachments/${attachmentAId}`)
+      .send({ removalReason: "No token" });
+    expect(deleteRes.status).toBe(401);
+    expect(deleteRes.body).toHaveProperty("code", "UNAUTHORIZED");
   });
 });

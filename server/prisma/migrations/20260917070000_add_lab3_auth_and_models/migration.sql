@@ -60,9 +60,19 @@ ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_requesterId_fkey" FOREIGN KEY ("requ
 UPDATE "Ticket" SET "itPriority" = "requestedPriority" WHERE "itPriority" IS NULL;
 ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL;
 
--- 7. Add problemAppearsResolved, ticketOwnerId, and remove old ticketOwner string column
+-- 7. Add problemAppearsResolved, ticketOwnerId, backfill ticketOwnerId from legacy ticketOwner, and remove old ticketOwner string column
 ALTER TABLE "Ticket" ADD COLUMN "problemAppearsResolved" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "Ticket" ADD COLUMN "ticketOwnerId" INTEGER;
+
+-- Backfill ticketOwnerId from legacy ticketOwner text before dropping the column.
+-- Matches against User.name or User.email (case-insensitive).
+-- Any legacy tickets without a matching user safely retain NULL ticketOwnerId without data loss.
+UPDATE "Ticket" t
+SET "ticketOwnerId" = u."id"
+FROM "User" u
+WHERE t."ticketOwner" IS NOT NULL
+  AND (LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."name")) OR LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."email")));
+
 ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "ticketOwner";
 
 -- Add foreign key and index for ticketOwnerId

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { generateToken } from "../../src/middleware/auth.js";
 
 // ---------------------------------------------------------------------------
 // Lab 2 — Issue 9: Ticket Detail API Tests (GET /api/tickets/:id)
@@ -10,6 +11,7 @@ import { getPrisma } from "../../src/prisma.js";
 describe("Issue 9 — GET /api/tickets/:id (Ticket Detail & Ownership)", () => {
   let requesterAId: number;
   let requesterBId: number;
+  let tokenA: string;
   let ticketAId: number;
   let ticketBId: number;
 
@@ -32,6 +34,7 @@ describe("Issue 9 — GET /api/tickets/:id (Ticket Detail & Ownership)", () => {
     });
     requesterAId = requesters[0].id;
     requesterBId = requesters[1].id;
+    tokenA = generateToken(requesters[0]);
 
     const category = await prisma.category.findFirst({ where: { isActive: true } });
     const system = await prisma.relatedSystem.findFirst({ where: { isActive: true } });
@@ -70,7 +73,7 @@ describe("Issue 9 — GET /api/tickets/:id (Ticket Detail & Ownership)", () => {
   it("returns HTTP 200 with full details and attachments for an owned ticket", async () => {
     const res = await request(app)
       .get(`/api/tickets/${ticketAId}`)
-      .set("x-requester-id", String(requesterAId));
+      .set("Authorization", `Bearer ${tokenA}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("id", ticketAId);
@@ -90,7 +93,7 @@ describe("Issue 9 — GET /api/tickets/:id (Ticket Detail & Ownership)", () => {
   it("rejects unauthorized access when Requester A tries to view Requester B's ticket (HTTP 403)", async () => {
     const res = await request(app)
       .get(`/api/tickets/${ticketBId}`)
-      .set("x-requester-id", String(requesterAId));
+      .set("Authorization", `Bearer ${tokenA}`);
 
     expect(res.status).toBe(403);
     expect(res.body).toHaveProperty("error", "Forbidden");
@@ -100,15 +103,15 @@ describe("Issue 9 — GET /api/tickets/:id (Ticket Detail & Ownership)", () => {
   it("returns HTTP 404 when ticket ID does not exist", async () => {
     const res = await request(app)
       .get("/api/tickets/999999")
-      .set("x-requester-id", String(requesterAId));
+      .set("Authorization", `Bearer ${tokenA}`);
 
     expect(res.status).toBe(404);
     expect(res.body).toHaveProperty("error");
   });
 
-  it("returns HTTP 400 when x-requester-id session header is missing", async () => {
+  it("returns HTTP 401 when authentication is missing", async () => {
     const res = await request(app).get(`/api/tickets/${ticketAId}`);
-    expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty("error", "Missing requester session");
+    expect(res.status).toBe(401);
+    expect(res.body).toHaveProperty("code", "UNAUTHORIZED");
   });
 });

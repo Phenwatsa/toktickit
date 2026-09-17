@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { generateToken } from "../../src/middleware/auth.js";
 
 // ---------------------------------------------------------------------------
 // Lab 2 — Issue 9: Attachments Lifecycle API Tests
@@ -12,6 +13,8 @@ import { getPrisma } from "../../src/prisma.js";
 describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", () => {
   let requesterAId: number;
   let requesterBId: number;
+  let tokenA: string;
+  let tokenB: string;
   let ticketId: number;
   let createdAttachmentId: number;
   const tempTestDir = path.join(process.cwd(), "scratch_test_files");
@@ -38,6 +41,8 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
     });
     requesterAId = requesters[0].id;
     requesterBId = requesters[1].id;
+    tokenA = generateToken(requesters[0]);
+    tokenB = generateToken(requesters[1]);
 
     // Clean up test ticket and its attachments if exist
     await prisma.ticket.deleteMany({
@@ -71,7 +76,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
 
     const res = await request(app)
       .post(`/api/tickets/${ticketId}/attachments`)
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .attach("file", filePath);
 
     expect(res.status).toBe(201);
@@ -88,7 +93,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
 
     const res = await request(app)
       .post(`/api/tickets/${ticketId}/attachments`)
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .attach("file", filePath);
 
     expect([400, 413]).toContain(res.status);
@@ -100,7 +105,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
 
     const res = await request(app)
       .post(`/api/tickets/${ticketId}/attachments`)
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .attach("file", filePath);
 
     expect([400, 415]).toContain(res.status);
@@ -112,7 +117,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
 
     const res = await request(app)
       .post(`/api/tickets/${ticketId}/attachments`)
-      .set("x-requester-id", String(requesterBId))
+      .set("Authorization", `Bearer ${tokenB}`)
       .attach("file", filePath);
 
     expect(res.status).toBe(403);
@@ -123,7 +128,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
   it("allows downloading an active attachment (HTTP 200)", async () => {
     const res = await request(app)
       .get(`/api/attachments/${createdAttachmentId}/download`)
-      .set("x-requester-id", String(requesterAId));
+      .set("Authorization", `Bearer ${tokenA}`);
 
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toContain("attachment");
@@ -132,7 +137,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
   it("rejects attachment download by unauthorized requester (HTTP 403)", async () => {
     const res = await request(app)
       .get(`/api/attachments/${createdAttachmentId}/download`)
-      .set("x-requester-id", String(requesterBId));
+      .set("Authorization", `Bearer ${tokenB}`);
 
     expect(res.status).toBe(403);
   });
@@ -141,7 +146,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
   it("rejects soft-removal when removalReason is missing or too short (< 3 chars)", async () => {
     const res = await request(app)
       .delete(`/api/tickets/${ticketId}/attachments/${createdAttachmentId}`)
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .send({ removalReason: " " });
 
     expect(res.status).toBe(400);
@@ -151,7 +156,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
   it("successfully soft-removes attachment with valid reason (HTTP 200)", async () => {
     const res = await request(app)
       .delete(`/api/tickets/${ticketId}/attachments/${createdAttachmentId}`)
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .send({ removalReason: "Attached incorrect file by mistake." });
 
     expect(res.status).toBe(200);
@@ -164,7 +169,7 @@ describe("Issue 9 — Attachments Lifecycle (Upload, Download & Soft-Removal)", 
   it("permanently blocks download for soft-removed attachment (HTTP 410 Gone)", async () => {
     const res = await request(app)
       .get(`/api/attachments/${createdAttachmentId}/download`)
-      .set("x-requester-id", String(requesterAId));
+      .set("Authorization", `Bearer ${tokenA}`);
 
     expect(res.status).toBe(410);
     expect(res.body).toHaveProperty("error", "Gone");

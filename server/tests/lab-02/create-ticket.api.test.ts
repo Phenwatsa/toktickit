@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { generateToken } from "../../src/middleware/auth.js";
 
 // ---------------------------------------------------------------------------
 // Lab 2 — Issue 7: Ticket Creation & Reference Data API Tests
@@ -9,6 +10,7 @@ import { getPrisma } from "../../src/prisma.js";
 
 describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
   let activeRequesterId: number;
+  let activeToken: string;
   let inactiveRequesterId: number;
   let categoryId: number;
   let relatedSystemId: number;
@@ -21,6 +23,7 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
       where: { isActive: true },
     });
     activeRequesterId = activeReq!.id;
+    activeToken = generateToken(activeReq!);
 
     // Get an inactive requester
     const inactiveReq = await prisma.requesterUser.findFirst({
@@ -80,6 +83,7 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
 
       const response = await request(app)
         .post("/api/tickets")
+        .set("Authorization", `Bearer ${activeToken}`)
         .send(payload);
 
       expect(response.status).toBe(201);
@@ -108,7 +112,12 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
 
       // Fire 5 concurrent requests simultaneously
       const responses = await Promise.all(
-        payloads.map((p) => request(app).post("/api/tickets").send(p))
+        payloads.map((p) =>
+          request(app)
+            .post("/api/tickets")
+            .set("Authorization", `Bearer ${activeToken}`)
+            .send(p)
+        )
       );
 
       // Verify all 5 were created successfully with 201
@@ -135,6 +144,7 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
 
       const response = await request(app)
         .post("/api/tickets")
+        .set("Authorization", `Bearer ${activeToken}`)
         .send(payload);
 
       expect(response.status).toBe(400);
@@ -156,6 +166,7 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
 
       const response = await request(app)
         .post("/api/tickets")
+        .set("Authorization", `Bearer ${activeToken}`)
         .send(payload);
 
       expect(response.status).toBe(400);
@@ -176,6 +187,7 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
 
       const response = await request(app)
         .post("/api/tickets")
+        .set("Authorization", `Bearer ${activeToken}`)
         .send(payload);
 
       expect(response.status).toBe(400);
@@ -194,6 +206,7 @@ describe("Issue 7 — Reference Data & Ticket Creation APIs", () => {
 
       const response = await request(app)
         .post("/api/tickets")
+        .set("Authorization", `Bearer ${activeToken}`)
         .send(payload);
 
       expect(response.status).toBe(400);

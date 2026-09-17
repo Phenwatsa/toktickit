@@ -3,73 +3,10 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import multer from "multer";
-import jwt from "jsonwebtoken";
 import { getPrisma } from "./prisma.js";
 import { generateUniqueTicketNumber } from "./services/ticketNumber.js";
 import { authRouter } from "./routes/auth.js";
-import { JWT_SECRET, compareTokenVersion } from "./middleware/auth.js";
-
-async function resolveRequestUser(req: Request): Promise<{
-  user: any | null;
-  isJwt: boolean;
-  errorStatus?: number;
-  errorPayload?: any;
-}> {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.substring("Bearer ".length).trim();
-    if (!token) {
-      return {
-        user: null,
-        isJwt: true,
-        errorStatus: 401,
-        errorPayload: { error: "Authentication required", code: "UNAUTHORIZED" },
-      };
-    }
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const prisma = getPrisma();
-      const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-      if (!user || !user.isActive || !compareTokenVersion(decoded.tokenVersion, user.tokenVersion)) {
-        return {
-          user: null,
-          isJwt: true,
-          errorStatus: 401,
-          errorPayload: { error: "Session expired or invalid", code: "UNAUTHORIZED" },
-        };
-      }
-      return { user, isJwt: true };
-    } catch {
-      return {
-        user: null,
-        isJwt: true,
-        errorStatus: 401,
-        errorPayload: { error: "Session expired or invalid", code: "UNAUTHORIZED" },
-      };
-    }
-  }
-
-  // Legacy Lab 2 x-requester-id fallback
-  const headerRequesterId = req.headers["x-requester-id"];
-  if (headerRequesterId && !isNaN(Number(headerRequesterId))) {
-    const prisma = getPrisma();
-    const user = await prisma.user.findUnique({ where: { id: Number(headerRequesterId) } });
-    if (user && user.isActive) {
-      return { user, isJwt: false };
-    }
-    return {
-      user: null,
-      isJwt: false,
-      errorStatus: 400,
-      errorPayload: {
-        error: "Invalid requester session",
-        message: "The session requester is inactive or does not exist.",
-      },
-    };
-  }
-
-  return { user: null, isJwt: false };
-}
+import { requireAuth, requirePasswordChanged } from "./middleware/auth.js";
 
 // Ensure uploads folder exists
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -211,9 +148,10 @@ app.get("/api/related-systems/active", async (_req: Request, res: Response) => {
 // Lab 2 & Lab 3 — Issue 7 & Issue 13: Create Ticket
 // POST /api/tickets
 // ---------------------------------------------------------------------------
-app.post("/api/tickets", async (req: Request, res: Response) => {
+app.post("/api/tickets", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const {
       requesterId,
       categoryId,
@@ -252,19 +190,24 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
       });
     }
 
-    // Resolve user session
-    const { user, isJwt, errorStatus, errorPayload } = await resolveRequestUser(req);
-    if (errorStatus && errorPayload) {
-      return res.status(errorStatus).json(errorPayload);
-    }
-
-    let parsedRequesterId: number;
-    if (isJwt && user) {
-      parsedRequesterId = user.id;
-    } else {
-      parsedRequesterId = Number(requesterId);
-      if (!parsedRequesterId || isNaN(parsedRequesterId)) {
+    let parsedRequesterId = user.id;
+    if (requesterId !== undefined && requesterId !== null) {
+      const parsed = Number(requesterId);
+      if (isNaN(parsed)) {
         details.push({ field: "requesterId", issue: "Valid requesterId is required." });
+      } else {
+        const targetRequester = await prisma.user.findUnique({ where: { id: parsed } });
+        if (!targetRequester || !targetRequester.isActive) {
+          return res.status(400).json({
+            error: "Invalid requester",
+            message: "The specified requester is inactive or does not exist.",
+          });
+        }
+        if (user.role === "REQUESTER") {
+          parsedRequesterId = user.id;
+        } else {
+          parsedRequesterId = parsed;
+        }
       }
     }
 
@@ -283,28 +226,6 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
         error: "Validation failed",
         message: "Please correct the input errors below.",
         details,
-      });
-    }
-
-    // Verify requester header matches body if provided (legacy)
-    if (!isJwt) {
-      const headerRequesterId = req.headers["x-requester-id"];
-      if (headerRequesterId && Number(headerRequesterId) !== parsedRequesterId) {
-        return res.status(400).json({
-          error: "Requester mismatch",
-          message: "The requester specified in the request does not match the active session.",
-        });
-      }
-    }
-
-    // Check entity existence and active status
-    const requester = user || (await prisma.user.findUnique({
-      where: { id: parsedRequesterId },
-    }));
-    if (!requester || !requester.isActive) {
-      return res.status(400).json({
-        error: "Invalid requester",
-        message: "The specified requester is inactive or does not exist.",
       });
     }
 
@@ -362,9 +283,10 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
 // Lab 2 & Lab 3 — Issue 8 & Issue 13: My Tickets List & Filtering
 // GET /api/tickets
 // ---------------------------------------------------------------------------
-app.get("/api/tickets", async (req: Request, res: Response) => {
+app.get("/api/tickets", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const {
       search,
       categoryId,
@@ -377,36 +299,11 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
       pageSize = "10",
     } = req.query;
 
-    const { user, isJwt, errorStatus, errorPayload } = await resolveRequestUser(req);
-    if (errorStatus && errorPayload) {
-      return res.status(errorStatus).json(errorPayload);
-    }
-
-    if (!user) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header is required to identify the current requester.",
-      });
-    }
-
-    if (!isJwt) {
-      // Legacy Lab 2 check
-      const queryRequesterId = req.query.requesterId;
-      if (queryRequesterId && Number(queryRequesterId) !== user.id) {
-        return res.status(403).json({
-          error: "Forbidden",
-          message: "You cannot access tickets belonging to another requester.",
-        });
-      }
-    }
-
-    // Strict session enforcement: strictly derived from session req.user.id
-    const sessionRequesterId = user.id;
-
     // Build Prisma where clause with strict tenant ownership derived from session
-    const where: any = {
-      requesterId: sessionRequesterId,
-    };
+    const where: any = {};
+    if (user.role === "REQUESTER") {
+      where.requesterId = user.id;
+    }
 
     // Keyword search (case-insensitive across ticketNumber and summary)
     if (search && typeof search === "string" && search.trim() !== "") {
@@ -526,22 +423,11 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
 // Lab 2 & Lab 3 — Issue 9 & Issue 13: Ticket Detail Inspection
 // GET /api/tickets/:id
 // ---------------------------------------------------------------------------
-app.get("/api/tickets/:id", async (req: Request, res: Response) => {
+app.get("/api/tickets/:id", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const ticketId = Number(req.params.id);
-
-    const { user, isJwt, errorStatus, errorPayload } = await resolveRequestUser(req);
-    if (errorStatus && errorPayload) {
-      return res.status(errorStatus).json(errorPayload);
-    }
-
-    if (!user) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header is required.",
-      });
-    }
 
     if (!ticketId || isNaN(ticketId)) {
       return res.status(400).json({ error: "Invalid ticketId" });
@@ -592,44 +478,38 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
 // Lab 2 & Lab 3 — Issue 9 & Issue 13: Attachment Binary Upload
 // POST /api/tickets/:id/attachments
 // ---------------------------------------------------------------------------
-app.post("/api/tickets/:id/attachments", (req: Request, res: Response) => {
-  upload.single("file")(req, res, async (err) => {
-    if (err) {
-      if (err.code === "LIMIT_FILE_SIZE") {
-        return res.status(413).json({
-          error: "Payload Too Large",
-          message: "Attachment exceeds maximum allowed size of 5 MB.",
+app.post(
+  "/api/tickets/:id/attachments",
+  requireAuth,
+  requirePasswordChanged,
+  (req: Request, res: Response, next) => {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(413).json({
+            error: "Payload Too Large",
+            message: "Attachment exceeds maximum allowed size of 5 MB.",
+          });
+        }
+        if (err.message === "UNSUPPORTED_MEDIA_TYPE") {
+          return res.status(415).json({
+            error: "Unsupported Media Type",
+            message: "Only JPG, PNG, WEBP, and PDF files are allowed.",
+          });
+        }
+        return res.status(400).json({
+          error: "Upload failed",
+          message: err.message || "Failed to process uploaded file.",
         });
       }
-      if (err.message === "UNSUPPORTED_MEDIA_TYPE") {
-        return res.status(415).json({
-          error: "Unsupported Media Type",
-          message: "Only JPG, PNG, WEBP, and PDF files are allowed.",
-        });
-      }
-      return res.status(400).json({
-        error: "Upload failed",
-        message: err.message || "Failed to process uploaded file.",
-      });
-    }
-
+      next();
+    });
+  },
+  async (req: Request, res: Response) => {
     try {
       const prisma = getPrisma();
+      const user = req.user!;
       const ticketId = Number(req.params.id);
-
-      const { user, isJwt, errorStatus, errorPayload } = await resolveRequestUser(req);
-      if (errorStatus && errorPayload) {
-        if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(errorStatus).json(errorPayload);
-      }
-
-      if (!user) {
-        if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(400).json({
-          error: "Missing requester session",
-          message: "A valid x-requester-id session header is required.",
-        });
-      }
 
       if (user.role === "ADMINISTRATOR") {
         if (req.file) fs.unlinkSync(req.file.path);
@@ -712,29 +592,18 @@ app.post("/api/tickets/:id/attachments", (req: Request, res: Response) => {
       console.error("Attachment upload error:", error);
       return res.status(500).json({ error: "Failed to upload attachment." });
     }
-  });
-});
+  }
+);
 
 // ---------------------------------------------------------------------------
 // Lab 2 & Lab 3 — Issue 9 & Issue 13: Attachment Download
 // GET /api/attachments/:id/download
 // ---------------------------------------------------------------------------
-app.get("/api/attachments/:id/download", async (req: Request, res: Response) => {
+app.get("/api/attachments/:id/download", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const attachmentId = Number(req.params.id);
-
-    const { user, isJwt, errorStatus, errorPayload } = await resolveRequestUser(req);
-    if (errorStatus && errorPayload) {
-      return res.status(errorStatus).json(errorPayload);
-    }
-
-    if (!user) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header or requesterId query is required.",
-      });
-    }
 
     if (!attachmentId || isNaN(attachmentId)) {
       return res.status(400).json({ error: "Invalid attachmentId" });
@@ -807,24 +676,13 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
 // Lab 2 & Lab 3 — Issue 9 & Issue 13: Soft-Remove Attachment
 // DELETE /api/tickets/:id/attachments/:attachmentId
 // ---------------------------------------------------------------------------
-app.delete("/api/tickets/:id/attachments/:attachmentId", async (req: Request, res: Response) => {
+app.delete("/api/tickets/:id/attachments/:attachmentId", requireAuth, requirePasswordChanged, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
+    const user = req.user!;
     const ticketId = Number(req.params.id);
     const attachmentId = Number(req.params.attachmentId);
     const { removalReason } = req.body || {};
-
-    const { user, isJwt, errorStatus, errorPayload } = await resolveRequestUser(req);
-    if (errorStatus && errorPayload) {
-      return res.status(errorStatus).json(errorPayload);
-    }
-
-    if (!user) {
-      return res.status(400).json({
-        error: "Missing requester session",
-        message: "A valid x-requester-id session header is required.",
-      });
-    }
 
     if (user.role === "ADMINISTRATOR") {
       return res.status(403).json({
