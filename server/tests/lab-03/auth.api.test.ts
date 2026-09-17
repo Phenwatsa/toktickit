@@ -68,6 +68,15 @@ describe("Lab 3 Auth REST API (auth.api.test.ts)", () => {
   });
 
   afterAll(async () => {
+    // Restore mustChangePassword test user so manual testing and seeds remain valid
+    const passwordHash = await bcrypt.hash(testPassword, 10);
+    await prisma.user.update({
+      where: { email: mustChangeUserEmail },
+      data: {
+        passwordHash,
+        mustChangePassword: true,
+      },
+    });
     await prisma.$disconnect();
   });
 

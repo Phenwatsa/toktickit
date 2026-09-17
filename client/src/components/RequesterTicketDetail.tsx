@@ -77,8 +77,10 @@ export function RequesterTicketDetail({
       OPEN: { label: "Open", className: "zen-badge-open" },
       IN_PROGRESS: { label: "In Progress", className: "zen-badge-in-progress" },
       PENDING: { label: "Pending", className: "zen-badge-pending" },
+      WAITING_FOR_REQUESTER: { label: "Waiting for Requester", className: "zen-badge-pending" },
       RESOLVED: { label: "Resolved", className: "zen-badge-resolved" },
       CLOSED: { label: "Closed", className: "zen-badge-closed" },
+      REOPENED: { label: "Reopened", className: "zen-badge-open" },
       CANCELLED: { label: "Cancelled", className: "zen-badge-cancelled" },
     };
     const c = config[status] || { label: status, className: "" };

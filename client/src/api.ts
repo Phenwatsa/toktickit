@@ -8,6 +8,10 @@ import {
   TicketFilterParams,
   PaginationMeta,
   Attachment,
+  Role,
+  User,
+  AuthResponse,
+  ChangePasswordPayload,
 } from "./types";
 export type {
   Category,
@@ -19,9 +23,115 @@ export type {
   TicketFilterParams,
   PaginationMeta,
   Attachment,
+  Role,
+  User,
+  AuthResponse,
+  ChangePasswordPayload,
 };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+export function getAuthToken(): string | null {
+  try {
+    return typeof window !== "undefined" ? localStorage.getItem("toktickit_auth_token") : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token: string | null): void {
+  try {
+    if (token) {
+      localStorage.setItem("toktickit_auth_token", token);
+    } else {
+      localStorage.removeItem("toktickit_auth_token");
+    }
+  } catch {
+    // Ignore storage errors in test / restricted environments
+  }
+}
+
+function getAuthHeaders(requesterId?: number): Record<string, string> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (requesterId !== undefined) {
+    headers["x-requester-id"] = String(requesterId);
+  }
+  return headers;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Auth API Handlers
+// ---------------------------------------------------------------------------
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Invalid email or password");
+  }
+  return data;
+}
+
+export async function logout(token?: string): Promise<{ message: string }> {
+  const authToken = token || getAuthToken();
+  const res = await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+  });
+
+  const data = await res.json().catch(() => ({ message: "Logged out" }));
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to logout");
+  }
+  return data;
+}
+
+export async function fetchCurrentUser(token?: string): Promise<{ user: User }> {
+  const authToken = token || getAuthToken();
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    headers: {
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch user profile");
+  }
+  return data;
+}
+
+export async function changePassword(
+  payload: ChangePasswordPayload,
+  token?: string
+): Promise<{ message: string; user: User }> {
+  const authToken = token || getAuthToken();
+  const res = await fetch(`${API_URL}/api/auth/change-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to change password");
+  }
+  return data;
+}
 
 export interface SystemStatus {
   online: boolean;
@@ -98,7 +208,7 @@ export async function createTicket(payload: CreateTicketPayload): Promise<Ticket
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-requester-id": String(payload.requesterId),
+      ...getAuthHeaders(payload.requesterId),
     },
     body: JSON.stringify(payload),
   });
@@ -148,7 +258,7 @@ export async function fetchMyTickets(params: TicketFilterParams): Promise<Ticket
 
   const res = await fetch(`${API_URL}/api/tickets?${query.toString()}`, {
     headers: {
-      "x-requester-id": String(params.requesterId),
+      ...getAuthHeaders(params.requesterId),
     },
     signal: params.signal,
   });
@@ -168,7 +278,7 @@ export async function fetchMyTickets(params: TicketFilterParams): Promise<Ticket
 export async function fetchTicketDetail(ticketId: number, requesterId: number): Promise<Ticket> {
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}`, {
     headers: {
-      "x-requester-id": String(requesterId),
+      ...getAuthHeaders(requesterId),
     },
   });
 
@@ -194,7 +304,7 @@ export async function uploadAttachment(
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
     method: "POST",
     headers: {
-      "x-requester-id": String(requesterId),
+      ...getAuthHeaders(requesterId),
     },
     body: formData,
   });
@@ -217,7 +327,7 @@ export async function downloadAttachment(
 ): Promise<void> {
   const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, {
     headers: {
-      "x-requester-id": String(requesterId),
+      ...getAuthHeaders(requesterId),
     },
   });
 
@@ -251,7 +361,7 @@ export async function softRemoveAttachment(
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      "x-requester-id": String(requesterId),
+      ...getAuthHeaders(requesterId),
     },
     body: JSON.stringify({ removalReason }),
   });

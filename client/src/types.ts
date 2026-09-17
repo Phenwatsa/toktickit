@@ -2,6 +2,32 @@
 // Lab 2 — TokTickIT Core TypeScript Interfaces
 // ---------------------------------------------------------------------------
 
+export type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  department?: string | null;
+  mustChangePassword: boolean;
+  isActive: boolean;
+  tokenVersion?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
+
 export interface RequesterUser {
   id: number;
   name: string;
@@ -29,9 +55,11 @@ export type TicketStatus =
   | "NEW"
   | "OPEN"
   | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
   | "PENDING"
   | "RESOLVED"
   | "CLOSED"
+  | "REOPENED"
   | "CANCELLED";
 
 export interface Attachment {
