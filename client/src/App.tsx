@@ -1,47 +1,102 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { RequesterProvider, useRequester } from "./context/RequesterContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { RequesterProvider } from "./context/RequesterContext";
 import { Header, AppView } from "./components/Header";
-import { RequesterSelector } from "./components/RequesterSelector";
+import { Login } from "./pages/Login";
+import { ChangePassword } from "./pages/ChangePassword";
 import { CreateTicket } from "./components/CreateTicket";
 import { MyTickets } from "./components/MyTickets";
 import { RequesterTicketDetail } from "./components/RequesterTicketDetail";
 import { checkSystem, Category } from "./api";
+import { Role } from "./types";
 import "./styles/zen-green.css";
 
 function MainApp() {
-  const { currentRequester } = useRequester();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
-  const [isChangingRequester, setIsChangingRequester] = useState<boolean>(false);
-  const [showConfirmChangeModal, setShowConfirmChangeModal] = useState<boolean>(false);
 
   // Legacy Lab 1 state
   const [legacyState, setLegacyState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [categories, setCategories] = useState<Category[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // Hash-based Browser Back/Forward Navigation Handler
+  // Role-based route guard helpers
+  const getDefaultViewForRole = useCallback((role?: Role): AppView => {
+    if (role === "IT_STAFF") return "staff-queue";
+    if (role === "ADMINISTRATOR") return "admin-users";
+    return "my-tickets";
+  }, []);
+
+  const getDefaultHashForRole = useCallback((role?: Role): string => {
+    if (role === "IT_STAFF") return "#/staff-queue";
+    if (role === "ADMINISTRATOR") return "#/admin-users";
+    return "#/my-tickets";
+  }, []);
+
+  const isViewPermittedForRole = useCallback((view: AppView, role?: Role): boolean => {
+    if (view === "legacy-check") return true;
+    if (role === "ADMINISTRATOR") {
+      return view === "admin-users";
+    }
+    if (role === "IT_STAFF") {
+      return view === "staff-queue";
+    }
+    return view === "my-tickets" || view === "ticket-detail" || view === "create-ticket";
+  }, []);
+
+  // Sync initial view based on role
+  useEffect(() => {
+    if (user) {
+      const defaultHash = getDefaultHashForRole(user.role);
+      const defaultView = getDefaultViewForRole(user.role);
+      const hash = window.location.hash || "";
+      if (hash === "#/login" || hash === "" || !isViewPermittedForRole(currentView, user.role)) {
+        setCurrentView(defaultView);
+        window.history.replaceState(null, "", defaultHash);
+      }
+    }
+  }, [user?.role, currentView, getDefaultHashForRole, getDefaultViewForRole, isViewPermittedForRole]);
+
+  // Hash-based Browser Back/Forward Navigation Handler with Route Guards
   const syncViewFromHash = useCallback(() => {
-    const hash = window.location.hash || "#/my-tickets";
+    const hash = window.location.hash || "";
+    let requestedView: AppView = getDefaultViewForRole(user?.role);
+    let ticketId: number | null = null;
+
     if (hash.startsWith("#/ticket/")) {
       const idStr = hash.replace("#/ticket/", "");
       const id = parseInt(idStr, 10);
       if (!isNaN(id)) {
-        setSelectedTicketId(id);
-        setCurrentView("ticket-detail");
-        return;
+        ticketId = id;
+        requestedView = "ticket-detail";
       }
+    } else if (hash === "#/create-ticket") {
+      requestedView = "create-ticket";
+    } else if (hash === "#/legacy-check") {
+      requestedView = "legacy-check";
+    } else if (hash === "#/staff-queue") {
+      requestedView = "staff-queue";
+    } else if (hash === "#/admin-users") {
+      requestedView = "admin-users";
+    } else if (hash === "#/my-tickets") {
+      requestedView = "my-tickets";
     }
-    if (hash === "#/create-ticket") {
-      setCurrentView("create-ticket");
+
+    // Route Guard: verify requestedView is strictly permitted for user's role
+    if (!isViewPermittedForRole(requestedView, user?.role)) {
+      const fallbackView = getDefaultViewForRole(user?.role);
+      const fallbackHash = getDefaultHashForRole(user?.role);
+      setCurrentView(fallbackView);
+      window.history.replaceState(null, "", fallbackHash);
       return;
     }
-    if (hash === "#/legacy-check") {
-      setCurrentView("legacy-check");
-      return;
+
+    if (ticketId !== null) {
+      setSelectedTicketId(ticketId);
     }
-    setCurrentView("my-tickets");
-  }, []);
+    setCurrentView(requestedView);
+  }, [user?.role, getDefaultHashForRole, getDefaultViewForRole, isViewPermittedForRole]);
 
   useEffect(() => {
     syncViewFromHash();
@@ -50,6 +105,13 @@ function MainApp() {
   }, [syncViewFromHash]);
 
   function navigateTo(view: AppView, ticketId?: number) {
+    if (!isViewPermittedForRole(view, user?.role)) {
+      const fallback = getDefaultViewForRole(user?.role);
+      setCurrentView(fallback);
+      window.location.hash = getDefaultHashForRole(user?.role);
+      return;
+    }
+
     setCurrentView(view);
     if (view === "ticket-detail" && ticketId) {
       setSelectedTicketId(ticketId);
@@ -58,6 +120,10 @@ function MainApp() {
       window.location.hash = "#/create-ticket";
     } else if (view === "legacy-check") {
       window.location.hash = "#/legacy-check";
+    } else if (view === "staff-queue") {
+      window.location.hash = "#/staff-queue";
+    } else if (view === "admin-users") {
+      window.location.hash = "#/admin-users";
     } else {
       window.location.hash = "#/my-tickets";
     }
@@ -76,136 +142,83 @@ function MainApp() {
     }
   }
 
-  // If no user is selected or changing user screen is active
-  if (!currentRequester || isChangingRequester) {
+  // 1. Initial Loading State
+  if (isLoading) {
     return (
-      <div className="min-vh-100 d-flex flex-column bg-light">
-        <header className="zen-header" style={{ padding: "0.75rem 1.5rem" }}>
-          <div className="zen-container d-flex align-items-center">
-            <div className="navbar-brand d-flex align-items-center gap-2">
-              <div
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "7px",
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  color: "#FFFFFF",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.15)",
-                  border: "1px solid rgba(255, 255, 255, 0.25)",
-                  flexShrink: 0,
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              </div>
-              <span style={{ fontWeight: 700, letterSpacing: "-0.01em", color: "#FFFFFF" }}>TokTickIT</span>
-            </div>
-          </div>
-        </header>
-        <main className="flex-grow-1 d-flex align-items-center justify-content-center">
-          <RequesterSelector
-            onContinue={() => setIsChangingRequester(false)}
-            onCancel={currentRequester ? () => setIsChangingRequester(false) : undefined}
-          />
-        </main>
+      <div
+        className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-light"
+        data-testid="app-loading"
+      >
+        <div
+          className="spinner-border text-success mb-3"
+          role="status"
+          style={{ width: "2.5rem", height: "2.5rem", color: "var(--zg-primary, #006B3C)" }}
+        />
+        <span style={{ color: "var(--zg-text-muted, #64748B)", fontWeight: 500 }}>
+          Loading TokTickIT...
+        </span>
       </div>
     );
   }
 
+  // 2. Unauthenticated -> Show Login View
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  // 3. Mandatory Password Change Intercept -> Show ChangePassword View
+  if (user?.mustChangePassword) {
+    return <ChangePassword />;
+  }
+
+  // 4. Authenticated Application Shell
   return (
-    <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: "var(--color-bg-page)" }}>
+    <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: "var(--color-bg-page, #F5F7F6)" }}>
       {/* Zen Green Navigation Header */}
-      <Header
-        currentView={currentView}
-        onNavigate={(view) => navigateTo(view)}
-        onChangeRequester={() => setShowConfirmChangeModal(true)}
-      />
+      <Header currentView={currentView} onNavigate={(view) => navigateTo(view)} />
 
-      {/* Confirmation Modal for Changing Requester */}
-      {showConfirmChangeModal && (
-        <div className="zen-modal-backdrop" data-testid="confirm-change-requester-modal">
-          <div className="zen-modal-content" style={{ maxWidth: 440 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  backgroundColor: "var(--color-warning-bg)",
-                  color: "var(--color-warning)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </div>
-              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--color-text-main)" }}>
-                Switch Development Requester?
-              </h3>
-            </div>
-
-            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem", lineHeight: 1.5, marginBottom: "1.5rem" }}>
-              Are you sure you want to switch to another requester account? Any unsaved form entries will be lost.
-            </p>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-              <button
-                type="button"
-                className="zen-btn-secondary"
-                onClick={() => setShowConfirmChangeModal(false)}
-                data-testid="cancel-change-requester-btn"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="zen-btn-primary"
-                onClick={() => {
-                  setShowConfirmChangeModal(false);
-                  setIsChangingRequester(true);
-                }}
-                data-testid="confirm-change-requester-btn"
-              >
-                Yes, Switch Requester
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content Area - Wide & Responsive */}
+      {/* Main Content Area */}
       <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1400, margin: "0 auto", width: "100%" }}>
-        {currentView === "my-tickets" && (
+        {/* Requester Views (Guarded) */}
+        {(user?.role === "REQUESTER" || !user?.role) && currentView === "my-tickets" && (
           <MyTickets
             onNavigateToCreate={() => navigateTo("create-ticket")}
             onSelectTicket={(ticketId) => navigateTo("ticket-detail", ticketId)}
           />
         )}
 
-        {currentView === "ticket-detail" && selectedTicketId !== null && (
+        {(user?.role === "REQUESTER" || !user?.role) && currentView === "ticket-detail" && selectedTicketId !== null && (
           <RequesterTicketDetail
             ticketId={selectedTicketId}
             onBack={() => navigateTo("my-tickets")}
           />
         )}
 
-        {currentView === "create-ticket" && (
-          <CreateTicket
-            onCancel={() => navigateTo("my-tickets")}
-          />
+        {(user?.role === "REQUESTER" || !user?.role) && currentView === "create-ticket" && (
+          <CreateTicket onCancel={() => navigateTo("my-tickets")} />
         )}
 
+        {/* IT Staff Views (Guarded) */}
+        {user?.role === "IT_STAFF" && currentView === "staff-queue" && (
+          <div className="zen-card text-center py-5" data-testid="staff-queue-placeholder">
+            <h2 className="h4 fw-bold mb-2">IT Staff Ticket Queue</h2>
+            <p className="text-muted mb-0">
+              Welcome, {user?.name}. Staff Ticket Queue interface is scheduled for Issue 15 (#37).
+            </p>
+          </div>
+        )}
+
+        {/* Administrator Views (Guarded) */}
+        {user?.role === "ADMINISTRATOR" && currentView === "admin-users" && (
+          <div className="zen-card text-center py-5" data-testid="admin-users-placeholder">
+            <h2 className="h4 fw-bold mb-2">Administrator User Management</h2>
+            <p className="text-muted mb-0">
+              Welcome, {user?.name}. Administrator user management interface is scheduled for Issue 17 (#39).
+            </p>
+          </div>
+        )}
+
+        {/* Legacy Lab 1 Health Check */}
         {currentView === "legacy-check" && (
           <div className="zen-card" style={{ maxWidth: 640, margin: "0 auto" }}>
             <h2 className="h5 fw-bold mb-3">Lab 1 Health Check Diagnostic</h2>
@@ -250,8 +263,10 @@ function MainApp() {
 
 export default function App() {
   return (
-    <RequesterProvider>
-      <MainApp />
-    </RequesterProvider>
+    <AuthProvider>
+      <RequesterProvider>
+        <MainApp />
+      </RequesterProvider>
+    </AuthProvider>
   );
 }

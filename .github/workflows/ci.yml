@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - lab2-staging
+      - lab3-staging
 
 jobs:
   client-tests:

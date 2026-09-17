@@ -1187,3 +1187,69 @@ body {
     gap: 0.75rem;
   }
 }
+
+/* ==========================================================================
+   Lab 3 — Apple-Style Zen Green Design System Extensions & Role Badges
+   ========================================================================== */
+:root {
+  --zg-primary: #006B3C;
+  --zg-primary-hover: #00502D;
+  --zg-secondary: #0B7A46;
+  --zg-pale-green: #EAF6EF;
+  --zg-bg-page: #F5F7F6;
+  --zg-bg-card: #FFFFFF;
+  --zg-text-primary: #1A202C;
+  --zg-text-muted: #64748B;
+  --zg-border: #E2E8F0;
+  --zg-amber-bg: #FEF3C7;
+  --zg-amber-border: #F59E0B;
+  --zg-amber-text: #92400E;
+  --zg-danger: #DC2626;
+  --zg-role-requester-bg: #F8FAFC;
+  --zg-role-requester-text: #1E293B;
+  --zg-role-staff-bg: #E0F2FE;
+  --zg-role-staff-text: #0369A1;
+  --zg-role-admin-bg: #EDE9FE;
+  --zg-role-admin-text: #6D28D9;
+}
+
+.zen-role-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.zen-role-requester {
+  background-color: var(--zg-role-requester-bg);
+  color: var(--zg-role-requester-text);
+  border: 1px solid #CBD5E1;
+}
+
+.zen-role-staff {
+  background-color: var(--zg-role-staff-bg);
+  color: var(--zg-role-staff-text);
+  border: 1px solid #7DD3FC;
+}
+
+.zen-role-admin {
+  background-color: var(--zg-role-admin-bg);
+  color: var(--zg-role-admin-text);
+  border: 1px solid #C4B5FD;
+}
+
+.zen-auth-card {
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+@media (max-width: 480px) {
+  .zen-auth-card {
+    padding: 1.5rem !important;
+  }
+}
+

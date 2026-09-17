@@ -16,6 +16,7 @@ describe("Lab 3 Auth REST API (auth.api.test.ts)", () => {
   const testPassword = "Password123!";
   const inactiveUserEmail = "alex.w@toktickit.local";
   const mustChangeUserEmail = "firstlogin.req@toktickit.local";
+  const logoutUserEmail = "michael.b@toktickit.local";
 
   beforeAll(async () => {
     // Ensure test user states are initialized
@@ -24,7 +25,7 @@ describe("Lab 3 Auth REST API (auth.api.test.ts)", () => {
     // Active user with mustChangePassword = false
     await prisma.user.upsert({
       where: { email: testRequesterEmail },
-      update: { passwordHash, isActive: true, mustChangePassword: false },
+      update: { passwordHash, isActive: true, mustChangePassword: false, tokenVersion: 1 },
       create: {
         name: "Jennifer Anderson",
         email: testRequesterEmail,
@@ -33,6 +34,23 @@ describe("Lab 3 Auth REST API (auth.api.test.ts)", () => {
         department: "Human Resources",
         isActive: true,
         mustChangePassword: false,
+        tokenVersion: 1,
+      },
+    });
+
+    // Dedicated user for logout testing to prevent tokenVersion mutation race conditions with other test suites
+    await prisma.user.upsert({
+      where: { email: logoutUserEmail },
+      update: { passwordHash, isActive: true, mustChangePassword: false, tokenVersion: 1 },
+      create: {
+        name: "Michael Brown",
+        email: logoutUserEmail,
+        passwordHash,
+        role: "REQUESTER",
+        department: "Marketing",
+        isActive: true,
+        mustChangePassword: false,
+        tokenVersion: 1,
       },
     });
 
@@ -68,6 +86,23 @@ describe("Lab 3 Auth REST API (auth.api.test.ts)", () => {
   });
 
   afterAll(async () => {
+    // Restore mustChangePassword test user so manual testing and seeds remain valid
+    const passwordHash = await bcrypt.hash(testPassword, 10);
+    await prisma.user.update({
+      where: { email: mustChangeUserEmail },
+      data: {
+        passwordHash,
+        mustChangePassword: true,
+      },
+    });
+    // Restore logoutUserEmail tokenVersion and active status
+    await prisma.user.update({
+      where: { email: logoutUserEmail },
+      data: {
+        tokenVersion: 1,
+        isActive: true,
+      },
+    });
     await prisma.$disconnect();
   });
 
@@ -283,7 +318,7 @@ describe("Lab 3 Auth REST API (auth.api.test.ts)", () => {
     // 1. Log in and get token
     const loginRes = await request(app)
       .post("/api/auth/login")
-      .send({ email: testRequesterEmail, password: testPassword });
+      .send({ email: logoutUserEmail, password: testPassword });
 
     const activeToken = loginRes.body.token;
 
@@ -313,7 +348,7 @@ describe("Lab 3 Auth REST API (auth.api.test.ts)", () => {
     // 5. Logging in again produces a fresh token with updated tokenVersion
     const freshLoginRes = await request(app)
       .post("/api/auth/login")
-      .send({ email: testRequesterEmail, password: testPassword });
+      .send({ email: logoutUserEmail, password: testPassword });
 
     expect(freshLoginRes.status).toBe(200);
     const freshToken = freshLoginRes.body.token;
