@@ -241,12 +241,35 @@ ALTER TABLE "Ticket" ADD COLUMN "itPriority" "Priority";
 ALTER TABLE "Ticket" ADD COLUMN "problemAppearsResolved" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "Ticket" ADD COLUMN "ticketOwnerId" INTEGER;
 
--- Backfill legacy ticketOwner text column to ticketOwnerId FK before dropping column (zero data loss)
+-- Create audit table to guarantee zero data loss for any unmatched legacy ticketOwner values
+CREATE TABLE IF NOT EXISTS "_LegacyTicketOwnerAudit" (
+    "ticketId" INTEGER PRIMARY KEY,
+    "legacyTicketOwner" TEXT NOT NULL,
+    "migratedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Backfill legacy ticketOwner text column to ticketOwnerId FK if user matches by name or email
 UPDATE "Ticket" t
 SET "ticketOwnerId" = u."id"
 FROM "User" u
 WHERE t."ticketOwner" IS NOT NULL
   AND (LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."name")) OR LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."email")));
+
+-- Preserve any unmatched legacy ticketOwner values into audit table before dropping the column
+INSERT INTO "_LegacyTicketOwnerAudit" ("ticketId", "legacyTicketOwner")
+SELECT "id", "ticketOwner"
+FROM "Ticket"
+WHERE "ticketOwner" IS NOT NULL 
+  AND TRIM("ticketOwner") != ''
+  AND "ticketOwnerId" IS NULL
+ON CONFLICT ("ticketId") DO NOTHING;
+
+-- Also append unmatched legacy owner context to ticket description so it remains preserved and visible in the application
+UPDATE "Ticket"
+SET "description" = "description" || E'\n\n[Legacy Migration: Prior unlinked ticket owner was "' || "ticketOwner" || '"]'
+WHERE "ticketOwner" IS NOT NULL
+  AND TRIM("ticketOwner") != ''
+  AND "ticketOwnerId" IS NULL;
 
 ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "ticketOwner";
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_ticketOwnerId_fkey" FOREIGN KEY ("ticketOwnerId") REFERENCES "User"("id") ON DELETE SET NULL;
@@ -277,9 +300,13 @@ ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL;
 ### 7.4 Ticket Field Mapping: Legacy `ticketOwner` $\rightarrow$ `ticketOwnerId`
 
 To strictly ensure zero data loss during schema evolution:
-- In Lab 2, `Ticket.ticketOwner` was an unconstrained nullable text field.
+- In Lab 2, `Ticket.ticketOwner` was an unconstrained nullable text field (in standard Lab 2 usage, it was unwritten by the client and backend `POST /api/tickets`, leaving existing records `NULL`).
 - In Lab 3, operational ticket assignment is formalized via `Ticket.ticketOwnerId` (foreign key referencing `User(id)`).
-- **Migration Strategy**: Prior to dropping the legacy column, an SQL `UPDATE` maps any existing non-null `ticketOwner` strings to `ticketOwnerId` by matching against `User.name` or `User.email` (case-insensitive). Tickets without an assigned owner or legacy text that does not match a user safely retain `null` without data loss or foreign key violations.
+- **Migration & Preservation Strategy**:
+  1. **User Mapping**: For any existing records where `ticketOwner` matches a user's name or email (case-insensitive), `ticketOwnerId` is populated with that user's ID.
+  2. **Audit Preservation**: To guarantee 100% zero data loss even on arbitrary legacy databases where `ticketOwner` contains free text unlinked to any user, all non-empty unmatched values are automatically archived into `_LegacyTicketOwnerAudit ("ticketId", "legacyTicketOwner", "migratedAt")`.
+  3. **Application Visibility**: Unmatched values are simultaneously appended to the ticket's `description` field (`[Legacy Migration: Prior unlinked ticket owner was "..."]`) so IT staff and users retain full context directly in the interface.
+  4. Only after audit archival and description preservation is the legacy column safely dropped.
 
 ### 7.5 Post-Migration Verification Checklist
 Run an automated verification query script after migration:

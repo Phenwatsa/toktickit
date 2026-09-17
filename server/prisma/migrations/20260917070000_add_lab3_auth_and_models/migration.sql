@@ -60,18 +60,40 @@ ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_requesterId_fkey" FOREIGN KEY ("requ
 UPDATE "Ticket" SET "itPriority" = "requestedPriority" WHERE "itPriority" IS NULL;
 ALTER TABLE "Ticket" ALTER COLUMN "itPriority" SET NOT NULL;
 
--- 7. Add problemAppearsResolved, ticketOwnerId, backfill ticketOwnerId from legacy ticketOwner, and remove old ticketOwner string column
+-- 7. Add problemAppearsResolved, ticketOwnerId, backfill ticketOwnerId from legacy ticketOwner, and preserve any unmatched legacy data
 ALTER TABLE "Ticket" ADD COLUMN "problemAppearsResolved" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "Ticket" ADD COLUMN "ticketOwnerId" INTEGER;
 
--- Backfill ticketOwnerId from legacy ticketOwner text before dropping the column.
+-- 7a. Create audit table to guarantee zero data loss for any unmatched legacy ticketOwner values
+CREATE TABLE IF NOT EXISTS "_LegacyTicketOwnerAudit" (
+    "ticketId" INTEGER PRIMARY KEY,
+    "legacyTicketOwner" TEXT NOT NULL,
+    "migratedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7b. Backfill ticketOwnerId from legacy ticketOwner text before dropping the column.
 -- Matches against User.name or User.email (case-insensitive).
--- Any legacy tickets without a matching user safely retain NULL ticketOwnerId without data loss.
 UPDATE "Ticket" t
 SET "ticketOwnerId" = u."id"
 FROM "User" u
 WHERE t."ticketOwner" IS NOT NULL
   AND (LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."name")) OR LOWER(TRIM(t."ticketOwner")) = LOWER(TRIM(u."email")));
+
+-- 7c. Preserve any unmatched legacy ticketOwner values into audit table before dropping the column
+INSERT INTO "_LegacyTicketOwnerAudit" ("ticketId", "legacyTicketOwner")
+SELECT "id", "ticketOwner"
+FROM "Ticket"
+WHERE "ticketOwner" IS NOT NULL 
+  AND TRIM("ticketOwner") != ''
+  AND "ticketOwnerId" IS NULL
+ON CONFLICT ("ticketId") DO NOTHING;
+
+-- 7d. Also append unmatched legacy owner context to ticket description so it remains preserved and visible in the application
+UPDATE "Ticket"
+SET "description" = "description" || E'\n\n[Legacy Migration: Prior unlinked ticket owner was "' || "ticketOwner" || '"]'
+WHERE "ticketOwner" IS NOT NULL
+  AND TRIM("ticketOwner") != ''
+  AND "ticketOwnerId" IS NULL;
 
 ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "ticketOwner";
 
