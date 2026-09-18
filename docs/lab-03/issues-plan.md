@@ -133,11 +133,11 @@ This document provides the definitive planning specification for GitHub Issues (
   - Claiming, reassigning, or editing ticket details (deferred to Issue 16 (#38)).
   - Internal notes and comments creation (deferred to Issue 16 (#38)).
 * **Acceptance Criteria:**
-  - [ ] Endpoint `GET /api/staff/tickets` returns paginated list of all system tickets for IT Staff, but returns 403 Forbidden for Requester and Administrator users.
-  - [ ] Search, filter by status/priority, and pagination metadata work accurately.
-  - [ ] Desktop table transforms smoothly to card layout on small viewports without horizontal scroll.
-  - [ ] Loading, Empty, and No-Results states display distinct, user-friendly Zen Green feedback.
-  - [ ] 100% of tests in `staff-queue.api.test.ts` and `StaffTicketQueue.test.tsx` pass.
+  - [x] Endpoint `GET /api/staff/tickets` returns paginated list of all system tickets for IT Staff, but returns 403 Forbidden for Requester and Administrator users.
+  - [x] Search, filter by status/priority, and pagination metadata work accurately.
+  - [x] Desktop table transforms smoothly to card layout on small viewports without horizontal scroll.
+  - [x] Loading, Empty, and No-Results states display distinct, user-friendly Zen Green feedback.
+  - [x] 100% of tests in `staff-queue.api.test.ts` and `StaffTicketQueue.test.tsx` pass.
 
 ---
 

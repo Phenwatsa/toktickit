@@ -6,6 +6,7 @@ import multer from "multer";
 import { getPrisma } from "./prisma.js";
 import { generateUniqueTicketNumber } from "./services/ticketNumber.js";
 import { authRouter } from "./routes/auth.js";
+import { staffRouter } from "./routes/staff.js";
 import { requireAuth, requirePasswordChanged } from "./middleware/auth.js";
 
 // Ensure uploads folder exists
@@ -52,6 +53,7 @@ export const app = express();
 app.use(cors());          // already wired: lets the Vite dev server call this API
 app.use(express.json());
 app.use("/api/auth", authRouter);
+app.use("/api/staff", staffRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check

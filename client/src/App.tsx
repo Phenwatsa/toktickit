@@ -4,6 +4,7 @@ import { RequesterProvider } from "./context/RequesterContext";
 import { Header, AppView } from "./components/Header";
 import { Login } from "./pages/Login";
 import { ChangePassword } from "./pages/ChangePassword";
+import { StaffTicketQueue } from "./pages/StaffTicketQueue";
 import { CreateTicket } from "./components/CreateTicket";
 import { MyTickets } from "./components/MyTickets";
 import { RequesterTicketDetail } from "./components/RequesterTicketDetail";
@@ -40,7 +41,7 @@ function MainApp() {
       return view === "admin-users";
     }
     if (role === "IT_STAFF") {
-      return view === "staff-queue";
+      return view === "staff-queue" || view === "ticket-detail";
     }
     return view === "my-tickets" || view === "ticket-detail" || view === "create-ticket";
   }, []);
@@ -178,7 +179,7 @@ function MainApp() {
       <Header currentView={currentView} onNavigate={(view) => navigateTo(view)} />
 
       {/* Main Content Area */}
-      <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1400, margin: "0 auto", width: "100%" }}>
+      <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1560, margin: "0 auto", width: "100%" }}>
         {/* Requester Views (Guarded) */}
         {(user?.role === "REQUESTER" || !user?.role) && currentView === "my-tickets" && (
           <MyTickets
@@ -200,12 +201,16 @@ function MainApp() {
 
         {/* IT Staff Views (Guarded) */}
         {user?.role === "IT_STAFF" && currentView === "staff-queue" && (
-          <div className="zen-card text-center py-5" data-testid="staff-queue-placeholder">
-            <h2 className="h4 fw-bold mb-2">IT Staff Ticket Queue</h2>
-            <p className="text-muted mb-0">
-              Welcome, {user?.name}. Staff Ticket Queue interface is scheduled for Issue 15 (#37).
-            </p>
-          </div>
+          <StaffTicketQueue
+            onSelectTicket={(ticketId) => navigateTo("ticket-detail", ticketId)}
+          />
+        )}
+
+        {user?.role === "IT_STAFF" && currentView === "ticket-detail" && selectedTicketId !== null && (
+          <RequesterTicketDetail
+            ticketId={selectedTicketId}
+            onBack={() => navigateTo("staff-queue")}
+          />
         )}
 
         {/* Administrator Views (Guarded) */}
