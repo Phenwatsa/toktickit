@@ -7,7 +7,10 @@ import { getPrisma } from "./prisma.js";
 import { generateUniqueTicketNumber } from "./services/ticketNumber.js";
 import { authRouter } from "./routes/auth.js";
 import { staffRouter } from "./routes/staff.js";
+import { commentsNotesRouter } from "./routes/commentsNotes.js";
+import { requesterOpsRouter } from "./routes/requesterOps.js";
 import { requireAuth, requirePasswordChanged } from "./middleware/auth.js";
+import { initializeTicketPriority } from "./utils/priorityInit.js";
 
 // Ensure uploads folder exists
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -54,6 +57,8 @@ app.use(cors());          // already wired: lets the Vite dev server call this A
 app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/staff", staffRouter);
+app.use("/api/tickets", commentsNotesRouter);
+app.use("/api/requester", requesterOpsRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
@@ -261,7 +266,7 @@ app.post("/api/tickets", requireAuth, requirePasswordChanged, async (req: Reques
         summary: trimmedSummary,
         description: trimmedDesc,
         requestedPriority,
-        itPriority: requestedPriority,
+        itPriority: initializeTicketPriority(requestedPriority),
         currentStatus: "NEW",
         requesterId: parsedRequesterId,
         categoryId: parsedCategoryId,

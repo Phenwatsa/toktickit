@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRequester } from "../context/RequesterContext";
+import { useAuth } from "../context/AuthContext";
 import {
   Ticket,
   Category,
@@ -15,6 +16,22 @@ interface MyTicketsProps {
 
 export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps) {
   const { currentRequester } = useRequester();
+  const { user } = useAuth();
+
+  const effectiveRequester = useMemo(() => {
+    if (user && user.role === "REQUESTER") {
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        department: user.department || "General",
+        isActive: user.isActive,
+      };
+    }
+    return currentRequester;
+  }, [user?.id, user?.name, user?.email, user?.department, user?.isActive, user?.role, currentRequester]);
+
+  const effectiveRequesterId = effectiveRequester?.id;
 
   // Data State
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -82,7 +99,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
 
   // Fetch Tickets
   const loadTickets = useCallback(async () => {
-    if (!currentRequester) return;
+    if (!effectiveRequesterId) return;
 
     setIsLoading(true);
     setError(null);
@@ -92,7 +109,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
       const sortOrder = parts[1] as "asc" | "desc";
 
       const res = await fetchMyTickets({
-        requesterId: currentRequester.id,
+        requesterId: effectiveRequesterId,
         search: debouncedSearch.trim() || undefined,
         categoryId: categoryId !== "" ? Number(categoryId) : undefined,
         priority: priority !== "ALL" ? priority : undefined,
@@ -116,7 +133,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
       setIsLoading(false);
     }
   }, [
-    currentRequester,
+    effectiveRequesterId,
     debouncedSearch,
     categoryId,
     priority,
@@ -302,7 +319,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
             My Support Tickets
           </h1>
           <p className="text-muted mb-0 small">
-            Showing tickets submitted by <strong>{currentRequester?.name}</strong>
+            Showing tickets submitted by <strong>{effectiveRequester?.name}</strong>
           </p>
         </div>
 

@@ -3,6 +3,7 @@ import {
   RelatedSystem,
   RequesterUser,
   Priority,
+  TicketStatus,
   Ticket,
   TicketsResponse,
   TicketFilterParams,
@@ -17,12 +18,18 @@ import {
   StaffQueuePagination,
   StaffTicketQueueResponse,
   StaffTicketQueueParams,
+  CommentAuthor,
+  PublicComment,
+  InternalNote,
+  StaffTicketDetailAttachment,
+  StaffTicketDetailData,
 } from "./types";
 export type {
   Category,
   RelatedSystem,
   RequesterUser,
   Priority,
+  TicketStatus,
   Ticket,
   TicketsResponse,
   TicketFilterParams,
@@ -37,6 +44,11 @@ export type {
   StaffQueuePagination,
   StaffTicketQueueResponse,
   StaffTicketQueueParams,
+  CommentAuthor,
+  PublicComment,
+  InternalNote,
+  StaffTicketDetailAttachment,
+  StaffTicketDetailData,
 };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -452,6 +464,191 @@ export async function fetchStaffMembers(): Promise<StaffTicketOwner[]> {
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || data.error || "Failed to fetch staff members");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 16: Staff Ticket Detail Operations API
+// ---------------------------------------------------------------------------
+
+export async function fetchStaffTicketDetail(ticketId: number): Promise<StaffTicketDetailData> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to load staff ticket detail");
+  }
+  return data.ticket;
+}
+
+export async function claimStaffTicket(ticketId: number): Promise<{ message: string; ticketOwner: StaffTicketOwner }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/claim`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to claim ticket");
+  }
+  return data;
+}
+
+export async function assignStaffTicket(
+  ticketId: number,
+  newOwnerId: number
+): Promise<{ message: string; ticketOwner: StaffTicketOwner }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/assign`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ newOwnerId }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to reassign ticket");
+  }
+  return data;
+}
+
+export async function updateStaffTicketPriority(
+  ticketId: number,
+  itPriority: Priority
+): Promise<{ message: string; itPriority: Priority }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/priority`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ itPriority }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update IT Priority");
+  }
+  return data;
+}
+
+export async function updateStaffTicketStatus(
+  ticketId: number,
+  status: TicketStatus
+): Promise<{ message: string; currentStatus: TicketStatus }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to transition ticket status");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 16: Public Comments & Internal Notes API
+// ---------------------------------------------------------------------------
+
+export async function fetchPublicComments(ticketId: number): Promise<PublicComment[]> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch public comments");
+  }
+  return data;
+}
+
+export async function createPublicComment(ticketId: number, content: string): Promise<PublicComment> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to post comment");
+  }
+  return data;
+}
+
+export async function fetchInternalNotes(ticketId: number): Promise<InternalNote[]> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/notes`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch internal notes");
+  }
+  return data;
+}
+
+export async function createInternalNote(ticketId: number, content: string): Promise<InternalNote> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/notes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to post internal note");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 16: Requester Resolution Indication API
+// ---------------------------------------------------------------------------
+
+export async function markProblemAppearsResolved(
+  ticketId: number
+): Promise<{ message: string; problemAppearsResolved: boolean }> {
+  const res = await fetch(`${API_URL}/api/requester/tickets/${ticketId}/resolve-indication`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to mark problem as resolved");
   }
   return data;
 }

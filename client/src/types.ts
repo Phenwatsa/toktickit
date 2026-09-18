@@ -88,6 +88,7 @@ export interface Ticket {
   category?: Category;
   relatedSystemId: number;
   relatedSystem?: RelatedSystem;
+  problemAppearsResolved?: boolean;
   ticketOwner?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -178,5 +179,62 @@ export interface StaffTicketQueueParams {
   page?: number;
   pageSize?: number;
   signal?: AbortSignal;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 16: Staff Ticket Detail, Comments & Internal Notes Types
+// ---------------------------------------------------------------------------
+
+export interface CommentAuthor {
+  id: number;
+  name: string;
+  role: Role;
+}
+
+export interface PublicComment {
+  id: number;
+  ticketId?: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface InternalNote {
+  id: number;
+  ticketId?: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface StaffTicketDetailAttachment {
+  id: number;
+  fileName: string;
+  originalName?: string;
+  fileSize: number;
+  sizeBytes?: number;
+  mimeType: string;
+  url: string;
+  createdAt?: string;
+}
+
+export interface StaffTicketDetailData {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  category: { id: number; name: string };
+  relatedSystem?: { id: number; name: string; description?: string | null } | null;
+  requestedPriority: Priority;
+  itPriority: Priority;
+  currentStatus: TicketStatus;
+  problemAppearsResolved: boolean;
+  requester: { id: number; name: string; email: string; department?: string | null };
+  ticketOwner: StaffTicketOwner | null;
+  createdAt: string;
+  updatedAt: string;
+  attachments: StaffTicketDetailAttachment[];
+  publicComments: PublicComment[];
+  internalNotes: InternalNote[];
 }
 

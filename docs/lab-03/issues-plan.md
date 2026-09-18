@@ -175,12 +175,12 @@ This document provides the definitive planning specification for GitHub Issues (
   - User administration screens (deferred to Issue 17 (#39)).
   - Editing or deleting comments/notes (append-only by requirement).
 * **Acceptance Criteria:**
-  - [ ] IT Staff can claim ownership, reassign to active staff, and adjust IT Priority.
-  - [ ] Status transitions adhere strictly to permitted state flow.
-  - [ ] Requesters can add and view Public Comments (AC-10), and indicate problem resolved (`PATCH /api/requester/tickets/:id/resolve-indication`), updating `problemAppearsResolved = true` while official ticket status is preserved, with non-owners and non-requesters forbidden (AC-21).
-  - [ ] Internal Notes are completely inaccessible and invisible to Requester and Administrator users via both UI and direct API calls (403 Forbidden).
-  - [ ] Comments and notes reject whitespace-only or empty submissions and persist creation timestamps and authors.
-  - [ ] All associated Supertest and Vitest test suites pass 100%.
+  - [x] IT Staff can claim ownership, reassign to active staff, and adjust IT Priority.
+  - [x] Status transitions adhere strictly to permitted state flow.
+  - [x] Requesters can add and view Public Comments (AC-10), and indicate problem resolved (`PATCH /api/requester/tickets/:id/resolve-indication`), updating `problemAppearsResolved = true` while official ticket status is preserved, with non-owners and non-requesters forbidden (AC-21).
+  - [x] Internal Notes are completely inaccessible and invisible to Requester and Administrator users via both UI and direct API calls (403 Forbidden).
+  - [x] Comments and notes reject whitespace-only or empty submissions and persist creation timestamps and authors.
+  - [x] All associated Supertest and Vitest test suites pass 100%.
 
 ---
 

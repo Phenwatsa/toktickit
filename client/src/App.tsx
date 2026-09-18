@@ -5,6 +5,7 @@ import { Header, AppView } from "./components/Header";
 import { Login } from "./pages/Login";
 import { ChangePassword } from "./pages/ChangePassword";
 import { StaffTicketQueue } from "./pages/StaffTicketQueue";
+import { StaffTicketDetail } from "./pages/StaffTicketDetail";
 import { CreateTicket } from "./components/CreateTicket";
 import { MyTickets } from "./components/MyTickets";
 import { RequesterTicketDetail } from "./components/RequesterTicketDetail";
@@ -207,7 +208,7 @@ function MainApp() {
         )}
 
         {user?.role === "IT_STAFF" && currentView === "ticket-detail" && selectedTicketId !== null && (
-          <RequesterTicketDetail
+          <StaffTicketDetail
             ticketId={selectedTicketId}
             onBack={() => navigateTo("staff-queue")}
           />
