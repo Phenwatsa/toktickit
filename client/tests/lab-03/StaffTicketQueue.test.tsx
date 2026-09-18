@@ -202,6 +202,26 @@ describe("StaffTicketQueue Component (StaffTicketQueue.test.tsx)", () => {
       expect(within(card102).getByText("Cannot access VPN from home")).toBeInTheDocument();
     });
 
+    it("filters tickets by Requested Priority on desktop filter bar", async () => {
+      const user = userEvent.setup();
+      render(<StaffTicketQueue />);
+
+      await screen.findByTestId("ticket-row-101");
+
+      const reqPrioritySelect = screen.getByTestId("staff-queue-req-priority-filter");
+      expect(reqPrioritySelect).toBeInTheDocument();
+
+      await user.selectOptions(reqPrioritySelect, "HIGH");
+
+      await waitFor(() => {
+        expect(api.fetchStaffTickets).toHaveBeenCalledWith(
+          expect.objectContaining({
+            requestedPriority: "HIGH",
+          })
+        );
+      });
+    });
+
     it("opens and closes mobile filter popup modal and triggers filtering", async () => {
       const user = userEvent.setup();
       render(<StaffTicketQueue />);
@@ -222,6 +242,10 @@ describe("StaffTicketQueue Component (StaffTicketQueue.test.tsx)", () => {
       const mobileStatus = screen.getByTestId("staff-queue-mobile-status-filter");
       await user.selectOptions(mobileStatus, "IN_PROGRESS");
 
+      // Select requested priority inside modal
+      const mobileReqPriority = screen.getByTestId("staff-queue-mobile-req-priority-filter");
+      await user.selectOptions(mobileReqPriority, "URGENT");
+
       // Apply filters
       const applyBtn = screen.getByRole("button", { name: "Apply Filters" });
       await user.click(applyBtn);
@@ -231,6 +255,7 @@ describe("StaffTicketQueue Component (StaffTicketQueue.test.tsx)", () => {
         expect(api.fetchStaffTickets).toHaveBeenCalledWith(
           expect.objectContaining({
             status: "IN_PROGRESS",
+            requestedPriority: "URGENT",
           })
         );
       });

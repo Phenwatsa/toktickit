@@ -508,6 +508,36 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
             </select>
           </div>
 
+          {/* Priority Filter (Requested Priority) */}
+          <div className="staff-filter-select staff-filter-req-priority">
+            <select
+              className="form-select form-select-sm"
+              value={requestedPriority}
+              onChange={(e) => {
+                setRequestedPriority(e.target.value);
+                setCurrentPage(1);
+              }}
+              data-testid="staff-queue-req-priority-filter"
+              aria-label="Filter by Requested Priority"
+              style={{
+                borderRadius: "8px",
+                borderColor: "#E2E8F0",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                height: "38px",
+                width: "100%",
+                color: "#334155",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <option value="ALL">All Req Priorities</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </div>
+
           {/* Priority Filter (IT Priority) */}
           <div className="staff-filter-select staff-filter-priority">
             <select
@@ -716,6 +746,29 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                       {c.name}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              {/* Requested Priority */}
+              <div>
+                <label className="zen-form-label" style={{ fontSize: "0.8rem", marginBottom: "0.25rem" }}>
+                  Requested Priority
+                </label>
+                <select
+                  className="zen-filter-select w-100"
+                  value={requestedPriority}
+                  onChange={(e) => {
+                    setRequestedPriority(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  data-testid="staff-queue-mobile-req-priority-filter"
+                  aria-label="Filter by Requested Priority"
+                >
+                  <option value="ALL">All Req Priorities</option>
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
                 </select>
               </div>
 
@@ -942,9 +995,9 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
             transition: "opacity 0.2s ease",
           }}
         >
-          {/* Desktop Table View */}
+          {/* Desktop Table View (>= 1200px) */}
           <div
-            className="table-responsive d-none d-md-block"
+            className="table-responsive d-none d-xl-block"
             style={{
               maxHeight: "calc(100vh - 275px)",
               overflowY: "auto",
@@ -1250,21 +1303,21 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
             </table>
           </div>
 
-          {/* Mobile Responsive Cards View (< 768px) */}
-          <div className="d-block d-md-none p-3">
-            <div className="d-flex flex-column gap-3">
+          {/* Responsive Cards View (< 1200px: Mobile & Tablet) */}
+          <div className="d-block d-xl-none p-3">
+            <div className="row g-3">
               {tickets.map((t) => (
-                <div
-                  key={t.id}
-                  className="card border shadow-sm"
-                  data-testid={`ticket-card-${t.id}`}
-                  onClick={() => handleTicketClick(t.id)}
-                  style={{
-                    borderRadius: "var(--radius-card)",
-                    cursor: "pointer",
-                    transition: "box-shadow 0.15s ease",
-                  }}
-                >
+                <div key={t.id} className="col-12 col-md-6">
+                  <div
+                    className="card border shadow-sm h-100"
+                    data-testid={`ticket-card-${t.id}`}
+                    onClick={() => handleTicketClick(t.id)}
+                    style={{
+                      borderRadius: "var(--radius-card)",
+                      cursor: "pointer",
+                      transition: "box-shadow 0.15s ease",
+                    }}
+                  >
                   <div className="card-body p-3">
                     <div className="d-flex justify-content-between align-items-center mb-2">
                       <span className="fw-bold text-primary" style={{ fontSize: "0.9rem" }}>
@@ -1351,7 +1404,8 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
             </div>
           </div>
 

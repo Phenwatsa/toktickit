@@ -1316,19 +1316,20 @@ body {
 
 .staff-filter-status { order: 4; }
 .staff-filter-category { order: 5; }
-.staff-filter-priority { order: 6; }
-.staff-filter-owner { order: 7; }
+.staff-filter-req-priority { order: 6; }
+.staff-filter-priority { order: 7; }
+.staff-filter-owner { order: 8; }
 
-/* Medium / Tablet (768px - 1199px): All 4 dropdowns side-by-side in Row 2 (25% each) */
+/* Medium / Tablet (768px - 1199px): Dropdowns wrap neatly */
 @media (min-width: 768px) and (max-width: 1199.98px) {
   .staff-filter-select {
-    flex: 1 1 calc(25% - 0.5rem);
-    width: calc(25% - 0.5rem);
-    min-width: 120px;
+    flex: 1 1 calc(33.333% - 0.5rem);
+    width: calc(33.333% - 0.5rem);
+    min-width: 130px;
   }
 }
 
-/* Wide Desktop (>= 1200px): Exactly Image 1 (Single Row) */
+/* Wide Desktop (>= 1200px): Exactly Single Row */
 @media (min-width: 1200px) {
   .staff-filter-bar {
     flex-wrap: nowrap;
@@ -1340,11 +1341,12 @@ body {
     flex: 1 1 auto;
     order: 1;
   }
-  .staff-filter-status { order: 2; flex: 0 0 145px; width: 145px; }
-  .staff-filter-category { order: 3; flex: 0 0 145px; width: 145px; }
-  .staff-filter-priority { order: 4; flex: 0 0 145px; width: 145px; }
-  .staff-filter-owner { order: 5; flex: 0 0 150px; width: 150px; }
-  .staff-filter-reset { order: 6; flex: 0 0 auto; }
+  .staff-filter-status { order: 2; flex: 0 0 135px; width: 135px; }
+  .staff-filter-category { order: 3; flex: 0 0 140px; width: 140px; }
+  .staff-filter-req-priority { order: 4; flex: 0 0 140px; width: 140px; }
+  .staff-filter-priority { order: 5; flex: 0 0 140px; width: 140px; }
+  .staff-filter-owner { order: 6; flex: 0 0 145px; width: 145px; }
+  .staff-filter-reset { order: 7; flex: 0 0 auto; }
 }
 
 .staff-filter-bar-mobile {
