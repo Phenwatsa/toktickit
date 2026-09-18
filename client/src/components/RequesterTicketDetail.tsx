@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Ticket, Priority, TicketStatus } from "../types";
 import { useRequester } from "../context/RequesterContext";
+import { useAuth } from "../context/AuthContext";
 import { fetchTicketDetail } from "../api";
 import { AttachmentSection } from "./AttachmentSection";
 
@@ -14,17 +15,20 @@ export function RequesterTicketDetail({
   onBack,
 }: RequesterTicketDetailProps) {
   const { currentRequester } = useRequester();
+  const { user } = useAuth();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const effectiveUserId = user?.id ?? currentRequester?.id;
+
   const loadTicketDetail = useCallback(async () => {
-    if (!currentRequester) return;
+    if (!effectiveUserId) return;
 
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchTicketDetail(ticketId, currentRequester.id);
+      const data = await fetchTicketDetail(ticketId, effectiveUserId);
       setTicket(data);
     } catch (err) {
       setError(
@@ -33,7 +37,7 @@ export function RequesterTicketDetail({
     } finally {
       setIsLoading(false);
     }
-  }, [ticketId, currentRequester]);
+  }, [ticketId, effectiveUserId]);
 
   useEffect(() => {
     loadTicketDetail();

@@ -122,3 +122,61 @@ export interface TicketFilterParams {
   pageSize?: number;
   signal?: AbortSignal;
 }
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 15: Staff Queue Types
+// ---------------------------------------------------------------------------
+
+export interface StaffTicketOwner {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface StaffTicketItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: Priority;
+  itPriority?: Priority | null;
+  currentStatus: TicketStatus;
+  category: {
+    id: number;
+    name: string;
+  };
+  requester?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  ticketOwner: StaffTicketOwner | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffQueuePagination {
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
+export interface StaffTicketQueueResponse {
+  data: StaffTicketItem[];
+  pagination: StaffQueuePagination;
+}
+
+export interface StaffTicketQueueParams {
+  search?: string;
+  status?: string;
+  categoryId?: number | "";
+  requestedPriority?: string;
+  itPriority?: string;
+  ownerId?: string | number;
+  sortBy?: "createdAt" | "updatedAt" | "ticketNumber" | "itPriority";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+  signal?: AbortSignal;
+}
+

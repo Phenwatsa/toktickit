@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Attachment } from "../types";
 import { useRequester } from "../context/RequesterContext";
+import { useAuth } from "../context/AuthContext";
 import { uploadAttachment, downloadAttachment, softRemoveAttachment } from "../api";
 
 interface AttachmentSectionProps {
@@ -23,6 +24,8 @@ export function AttachmentSection({
   onAttachmentChange,
 }: AttachmentSectionProps) {
   const { currentRequester } = useRequester();
+  const { user } = useAuth();
+  const effectiveUserId = user?.id ?? currentRequester?.id;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Upload state
@@ -102,7 +105,7 @@ export function AttachmentSection({
   // Handle file selection & upload
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !currentRequester) return;
+    if (!file || !effectiveUserId) return;
 
     setUploadError(null);
 
@@ -129,7 +132,7 @@ export function AttachmentSection({
 
     setIsUploading(true);
     try {
-      await uploadAttachment(ticketId, currentRequester.id, file);
+      await uploadAttachment(ticketId, effectiveUserId, file);
       if (fileInputRef.current) fileInputRef.current.value = "";
       onAttachmentChange();
     } catch (err) {
@@ -141,10 +144,10 @@ export function AttachmentSection({
 
   // Handle Download
   async function handleDownload(att: Attachment) {
-    if (!currentRequester) return;
+    if (!effectiveUserId) return;
     setDownloadingId(att.id);
     try {
-      await downloadAttachment(att.id, currentRequester.id, att.originalName);
+      await downloadAttachment(att.id, effectiveUserId, att.originalName);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Download failed.");
     } finally {
@@ -155,7 +158,7 @@ export function AttachmentSection({
   // Handle Soft-Remove Submit
   async function handleConfirmRemove(e: React.FormEvent) {
     e.preventDefault();
-    if (!targetAttachment || !currentRequester) return;
+    if (!targetAttachment || !effectiveUserId) return;
 
     const trimmed = removalReason.trim();
     if (trimmed.length < 3) {
@@ -166,7 +169,7 @@ export function AttachmentSection({
     setIsRemoving(true);
     setRemovalError(null);
     try {
-      await softRemoveAttachment(ticketId, targetAttachment.id, currentRequester.id, trimmed);
+      await softRemoveAttachment(ticketId, targetAttachment.id, effectiveUserId, trimmed);
       setTargetAttachment(null);
       setRemovalReason("");
       onAttachmentChange();

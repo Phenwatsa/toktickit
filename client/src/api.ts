@@ -12,6 +12,11 @@ import {
   User,
   AuthResponse,
   ChangePasswordPayload,
+  StaffTicketOwner,
+  StaffTicketItem,
+  StaffQueuePagination,
+  StaffTicketQueueResponse,
+  StaffTicketQueueParams,
 } from "./types";
 export type {
   Category,
@@ -27,6 +32,11 @@ export type {
   User,
   AuthResponse,
   ChangePasswordPayload,
+  StaffTicketOwner,
+  StaffTicketItem,
+  StaffQueuePagination,
+  StaffTicketQueueResponse,
+  StaffTicketQueueParams,
 };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -372,3 +382,77 @@ export async function softRemoveAttachment(
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 15: Staff Ticket Queue API Handlers
+// ---------------------------------------------------------------------------
+
+export async function fetchStaffTickets(
+  params: StaffTicketQueueParams = {}
+): Promise<StaffTicketQueueResponse> {
+  const query = new URLSearchParams();
+
+  if (params.search && params.search.trim()) {
+    query.set("search", params.search.trim());
+  }
+  if (params.status && params.status !== "ALL") {
+    query.set("status", params.status);
+  }
+  if (params.categoryId !== undefined && params.categoryId !== "") {
+    query.set("categoryId", String(params.categoryId));
+  }
+  if (params.requestedPriority && params.requestedPriority !== "ALL") {
+    query.set("requestedPriority", params.requestedPriority);
+  }
+  if (params.itPriority && params.itPriority !== "ALL") {
+    query.set("itPriority", params.itPriority);
+  }
+  if (params.ownerId !== undefined && params.ownerId !== "" && params.ownerId !== "ALL") {
+    query.set("ownerId", String(params.ownerId));
+  }
+  if (params.sortBy) {
+    query.set("sortBy", params.sortBy);
+  }
+  if (params.sortOrder) {
+    query.set("sortOrder", params.sortOrder);
+  }
+  if (params.page) {
+    query.set("page", String(params.page));
+  }
+  if (params.pageSize) {
+    query.set("pageSize", String(params.pageSize));
+  }
+
+  const queryString = query.toString();
+  const url = `${API_URL}/api/staff/tickets${queryString ? `?${queryString}` : ""}`;
+
+  const res = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    signal: params.signal,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch staff tickets");
+  }
+  return data;
+}
+
+export async function fetchStaffMembers(): Promise<StaffTicketOwner[]> {
+  const res = await fetch(`${API_URL}/api/staff/members`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch staff members");
+  }
+  return data;
+}
+

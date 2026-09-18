@@ -139,6 +139,78 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     setCurrentPage(1);
   }
 
+  function handleHeaderSort(column: "createdAt" | "ticketNumber") {
+    if (column === "createdAt") {
+      setSortOption((prev) => (prev === "createdAt_desc" ? "createdAt_asc" : "createdAt_desc"));
+    } else {
+      setSortOption((prev) => (prev === "ticketNumber_asc" ? "ticketNumber_desc" : "ticketNumber_asc"));
+    }
+    setCurrentPage(1);
+  }
+
+  const renderSortIndicator = (column: "createdAt" | "ticketNumber") => {
+    let active = false;
+    let order = "desc";
+    if (column === "createdAt") {
+      active = sortOption.startsWith("createdAt");
+      order = sortOption === "createdAt_asc" ? "asc" : "desc";
+    } else if (column === "ticketNumber") {
+      active = sortOption.startsWith("ticketNumber");
+      order = sortOption === "ticketNumber_asc" ? "asc" : "desc";
+    }
+
+    if (!active) {
+      return (
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#94A3B8"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ marginLeft: "0.35rem", verticalAlign: "-2px", flexShrink: 0, display: "inline-block" }}
+          aria-hidden="true"
+        >
+          <path d="m7 15 5 5 5-5" />
+          <path d="m7 9 5-5 5 5" />
+        </svg>
+      );
+    }
+    return order === "asc" ? (
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--color-primary, #006B3C)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ marginLeft: "0.35rem", verticalAlign: "-2px", flexShrink: 0, display: "inline-block" }}
+        aria-hidden="true"
+      >
+        <path d="m18 15-6-6-6 6" />
+      </svg>
+    ) : (
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--color-primary, #006B3C)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ marginLeft: "0.35rem", verticalAlign: "-2px", flexShrink: 0, display: "inline-block" }}
+        aria-hidden="true"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    );
+  };
+
   function formatDate(dateStr: string): string {
     try {
       return new Intl.DateTimeFormat("en-US", {
@@ -174,8 +246,10 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
       OPEN: "zen-badge-open",
       IN_PROGRESS: "zen-badge-in-progress",
       PENDING: "zen-badge-pending",
+      WAITING_FOR_REQUESTER: "zen-badge-pending",
       RESOLVED: "zen-badge-resolved",
       CLOSED: "zen-badge-closed",
+      REOPENED: "zen-badge-open",
       CANCELLED: "zen-badge-cancelled",
     };
     const labelMap: Record<string, string> = {
@@ -183,14 +257,17 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
       OPEN: "Open",
       IN_PROGRESS: "In Progress",
       PENDING: "Pending",
+      WAITING_FOR_REQUESTER: "Waiting for Requester",
       RESOLVED: "Resolved",
       CLOSED: "Closed",
+      REOPENED: "Reopened",
       CANCELLED: "Cancelled",
     };
     return (
       <span
         className={`zen-badge ${classNameMap[s] || "zen-badge-new"}`}
-        data-testid={`badge-status-${s.toLowerCase().replace("_", "-")}`}
+        data-testid={`badge-status-${s.toLowerCase().replace(/_/g, "-")}`}
+        style={s === "WAITING_FOR_REQUESTER" ? { whiteSpace: "normal", display: "inline-block", maxWidth: 110, lineHeight: 1.2, textAlign: "center", padding: "0.25rem 0.4rem" } : undefined}
       >
         {labelMap[s] || s}
       </span>
@@ -198,47 +275,81 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
   }
 
   return (
-    <div style={{ paddingBottom: "3rem" }}>
-      {/* Header & Title */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
+    <div className="zen-container py-3" style={{ paddingBottom: "3rem" }}>
+      {/* Page Header */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
         <div>
-          <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.35rem", fontWeight: 700, color: "var(--color-text-main)", letterSpacing: "-0.02em" }}>
+          <h1 className="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 34,
+                height: 34,
+                borderRadius: 8,
+                backgroundColor: "var(--color-pale-green)",
+                color: "var(--color-primary)",
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                <path d="M9 12h6" />
+                <path d="M9 16h6" />
+              </svg>
+            </span>
             My Support Tickets
           </h1>
-          <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
+          <p className="text-muted mb-0 small">
             Showing tickets submitted by <strong>{currentRequester?.name}</strong>
           </p>
         </div>
 
-        <button
-          type="button"
-          className="zen-btn-primary"
-          onClick={onNavigateToCreate}
-          data-testid="create-ticket-top-btn"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Create New Ticket
-        </button>
+        <div className="d-flex align-items-center gap-2">
+          {pagination.totalItems > 0 && (
+            <span
+              className="badge bg-light text-dark border px-3 py-2"
+              style={{ fontSize: "0.85rem", fontWeight: 600 }}
+              data-testid="total-records-badge"
+            >
+              Total Tickets: {pagination.totalItems}
+            </span>
+          )}
+          <button
+            type="button"
+            className="zen-btn-primary"
+            onClick={onNavigateToCreate}
+            data-testid="create-ticket-top-btn"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create New Ticket
+          </button>
+        </div>
       </div>
 
-      {/* Filter and Search Bar Card */}
-      <div className="zen-card" style={{ marginBottom: "1.25rem", padding: "0.85rem 1rem" }} data-testid="filter-bar">
-        {/* Desktop Single-Row Filter Bar */}
-        <div className="zen-filter-bar-desktop">
+      {/* Filter and Search Bar */}
+      <div
+        className="zen-card mb-4"
+        style={{
+          padding: "1rem 1.25rem",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: "12px",
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+        }}
+        data-testid="filter-bar"
+      >
+        {/* Desktop Filter Bar (>= 768px) */}
+        <div className="staff-filter-bar staff-filter-bar-desktop d-none d-md-flex">
           {/* Search Input */}
-          <div className="zen-search-wrapper">
-            <span className="zen-search-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </span>
+          <div className="staff-filter-search">
             <input
               type="text"
-              className="zen-search-input"
+              className="form-control form-control-sm"
               placeholder="Search ticket # or summary..."
               value={search}
               onChange={(e) => {
@@ -246,108 +357,230 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                 setCurrentPage(1);
               }}
               data-testid="search-input"
+              style={{
+                borderRadius: "8px",
+                borderColor: "#E2E8F0",
+                backgroundColor: "#F8FAFC",
+                paddingLeft: "2.1rem",
+                fontSize: "0.85rem",
+                height: "38px",
+                width: "100%",
+                transition: "all 0.15s ease",
+              }}
             />
+            <span
+              style={{
+                position: "absolute",
+                left: "0.75rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--color-text-muted)",
+                pointerEvents: "none",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                }}
+                style={{
+                  position: "absolute",
+                  right: "0.6rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  color: "var(--color-text-muted)",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  padding: 0,
+                }}
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Reset Filters Action */}
+          <div className="staff-filter-reset">
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              data-testid="clear-filters-btn"
+              style={{
+                backgroundColor: hasActiveFilters ? "var(--color-pale-green, #EAF6EF)" : "#F8FAFC",
+                color: hasActiveFilters ? "var(--color-primary, #006B3C)" : "#94A3B8",
+                border: hasActiveFilters ? "1px solid #C4E6D2" : "1px solid #E2E8F0",
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.83rem",
+                padding: "0 0.95rem",
+                height: "38px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                whiteSpace: "nowrap",
+                cursor: hasActiveFilters ? "pointer" : "not-allowed",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              <span>Reset Filters</span>
+            </button>
+          </div>
+
+          {/* Responsive Line Break to keep Search + Reset together */}
+          <div className="staff-filter-break" />
+
+          {/* Status Filter */}
+          <div className="staff-filter-select staff-filter-status">
+            <select
+              id="filterStatus"
+              className="form-select form-select-sm"
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Filter by Status"
+              data-testid="status-filter"
+              style={{
+                borderRadius: "8px",
+                borderColor: "#E2E8F0",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                height: "38px",
+                width: "100%",
+                color: "#334155",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="NEW">New</option>
+              <option value="OPEN">Open</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="PENDING">Pending</option>
+              <option value="WAITING_FOR_REQUESTER">Waiting for Requester</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="CLOSED">Closed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
           </div>
 
           {/* Category Filter */}
-          <select
-            id="filterCategory"
-            className="zen-filter-select"
-            value={categoryId}
-            onChange={(e) => {
-              setCategoryId(e.target.value ? Number(e.target.value) : "");
-              setCurrentPage(1);
-            }}
-            aria-label="Filter by Category"
-            data-testid="category-filter"
-          >
-            <option value="">All Categories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="staff-filter-select staff-filter-category">
+            <select
+              id="filterCategory"
+              className="form-select form-select-sm"
+              value={categoryId}
+              onChange={(e) => {
+                setCategoryId(e.target.value ? Number(e.target.value) : "");
+                setCurrentPage(1);
+              }}
+              aria-label="Filter by Category"
+              data-testid="category-filter"
+              style={{
+                borderRadius: "8px",
+                borderColor: "#E2E8F0",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                height: "38px",
+                width: "100%",
+                color: "#334155",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <option value="">All Categories</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Priority Filter */}
-          <select
-            id="filterPriority"
-            className="zen-filter-select"
-            value={priority}
-            onChange={(e) => {
-              setPriority(e.target.value);
-              setCurrentPage(1);
-            }}
-            aria-label="Filter by Priority"
-            data-testid="priority-filter"
-          >
-            <option value="ALL">All Priorities</option>
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="URGENT">Urgent</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            id="filterStatus"
-            className="zen-filter-select"
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setCurrentPage(1);
-            }}
-            aria-label="Filter by Status"
-            data-testid="status-filter"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="NEW">New</option>
-            <option value="OPEN">Open</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="PENDING">Pending</option>
-            <option value="RESOLVED">Resolved</option>
-            <option value="CLOSED">Closed</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
+          <div className="staff-filter-select staff-filter-priority">
+            <select
+              id="filterPriority"
+              className="form-select form-select-sm"
+              value={priority}
+              onChange={(e) => {
+                setPriority(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Filter by Priority"
+              data-testid="priority-filter"
+              style={{
+                borderRadius: "8px",
+                borderColor: "#E2E8F0",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                height: "38px",
+                width: "100%",
+                color: "#334155",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <option value="ALL">All Priorities</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </div>
 
           {/* Sort Control */}
-          <select
-            id="filterSort"
-            className="zen-filter-select"
-            value={sortOption}
-            onChange={(e) => {
-              setSortOption(e.target.value);
-              setCurrentPage(1);
-            }}
-            aria-label="Sort tickets"
-            data-testid="sort-select"
-          >
-            <option value="createdAt_desc">Date (Newest)</option>
-            <option value="createdAt_asc">Date (Oldest)</option>
-            <option value="ticketNumber_asc">Ticket # (Asc)</option>
-            <option value="ticketNumber_desc">Ticket # (Desc)</option>
-            <option value="updatedAt_desc">Updated</option>
-          </select>
-
-          {/* Clear Filters Button */}
-          <button
-            type="button"
-            className="zen-btn-clear-filters"
-            onClick={handleClearFilters}
-            disabled={!hasActiveFilters}
-            data-testid="clear-filters-btn"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-            Clear Filters
-          </button>
+          <div className="staff-filter-select staff-filter-owner">
+            <select
+              id="filterSort"
+              className="form-select form-select-sm"
+              value={sortOption}
+              onChange={(e) => {
+                setSortOption(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Sort tickets"
+              data-testid="sort-select"
+              style={{
+                borderRadius: "8px",
+                borderColor: "#E2E8F0",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                height: "38px",
+                width: "100%",
+                color: "#334155",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <option value="createdAt_desc">Date (Newest)</option>
+              <option value="createdAt_asc">Date (Oldest)</option>
+              <option value="ticketNumber_asc">Ticket # (Asc)</option>
+              <option value="ticketNumber_desc">Ticket # (Desc)</option>
+              <option value="updatedAt_desc">Recently Updated</option>
+            </select>
+          </div>
         </div>
 
-        {/* Mobile Filter Bar: Compact Search + Filter Modal Button */}
-        <div className="zen-filter-bar-mobile">
-          <div className="zen-search-wrapper">
+        {/* Mobile Filter Bar (< 768px): Compact Search + Filter Modal Button */}
+        <div className="staff-filter-bar-mobile d-flex d-md-none align-items-center gap-2 w-100">
+          <div className="zen-search-wrapper" style={{ flex: 1 }}>
             <span className="zen-search-icon">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" />
@@ -633,41 +866,170 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
         )
       ) : (
         /* Populated Table View */
-        <div className="zen-table-container" data-testid="tickets-table-card">
-          <div className="zen-table-responsive">
-            <table className="zen-table" data-testid="tickets-table">
+        <div
+          className="zen-card p-0 overflow-hidden shadow-sm"
+          data-testid="tickets-table-card"
+          style={{
+            backgroundColor: "#FFFFFF",
+            opacity: isLoading ? 0.65 : 1,
+            transition: "opacity 0.2s ease",
+          }}
+        >
+          <div
+            className="table-responsive"
+            style={{
+              maxHeight: "calc(100vh - 275px)",
+              overflowY: "auto",
+              overflowX: "auto",
+            }}
+          >
+            <table
+              className="zen-table mb-0 w-100"
+              style={{
+                tableLayout: "fixed",
+                width: "100%",
+                minWidth: "1080px",
+                fontSize: "0.875rem",
+              }}
+              data-testid="tickets-table"
+            >
+              <colgroup>
+                <col style={{ width: 140 }} />
+                <col style={{ width: 110 }} />
+                <col />
+                <col style={{ width: 130 }} />
+                <col style={{ width: 110 }} />
+                <col style={{ width: 125 }} />
+                <col style={{ width: 90 }} />
+              </colgroup>
               <thead>
                 <tr>
-                  <th style={{ width: "16%", whiteSpace: "nowrap" }}>Ticket No.</th>
-                  <th style={{ width: "13%", whiteSpace: "nowrap" }}>Date Created</th>
-                  <th style={{ width: "33%" }}>Summary</th>
-                  <th style={{ width: "16%", whiteSpace: "nowrap" }}>Category</th>
-                  <th style={{ width: "9%", whiteSpace: "nowrap" }}>Priority</th>
-                  <th style={{ width: "8%", whiteSpace: "nowrap" }}>Status</th>
-                  <th style={{ width: "5%", textAlign: "right", whiteSpace: "nowrap" }}>Action</th>
+                  <th
+                    style={{
+                      cursor: "pointer",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
+                    }}
+                    onClick={() => handleHeaderSort("ticketNumber")}
+                    data-testid="sort-ticketNumber"
+                  >
+                    Ticket # {renderSortIndicator("ticketNumber")}
+                  </th>
+                  <th
+                    style={{
+                      cursor: "pointer",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
+                    }}
+                    onClick={() => handleHeaderSort("createdAt")}
+                    data-testid="sort-createdAt"
+                  >
+                    Created {renderSortIndicator("createdAt")}
+                  </th>
+                  <th
+                    style={{
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                    }}
+                  >
+                    Summary
+                  </th>
+                  <th
+                    style={{
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Category
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "center",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Priority
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "center",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "center",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {tickets.map((t) => (
-                  <tr key={t.id} data-testid={`ticket-row-${t.id}`}>
+                  <tr
+                    key={t.id}
+                    data-testid={`ticket-row-${t.id}`}
+                    onClick={() => onSelectTicket && onSelectTicket(t.id)}
+                    style={{ cursor: "pointer" }}
+                  >
                     {/* Ticket Number */}
-                    <td style={{ whiteSpace: "nowrap" }}>
+                    <td className="fw-semibold text-primary" style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       <span className="zen-ticket-number">
                         {t.ticketNumber}
                       </span>
                     </td>
 
                     {/* Date Created */}
-                    <td style={{ fontSize: "0.8rem", color: "#64748B", whiteSpace: "nowrap" }}>
+                    <td className="text-muted" style={{ fontSize: "0.85rem", whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       {formatDate(t.createdAt)}
                     </td>
 
                     {/* Summary */}
-                    <td>
-                      <div className="zen-ticket-summary" style={{ maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <td style={{ verticalAlign: "middle" }}>
+                      <div
+                        className="text-dark fw-medium"
+                        style={{
+                          wordBreak: "break-word",
+                          lineHeight: 1.35,
+                        }}
+                      >
                         {t.summary}
                       </div>
-                      <div className="zen-ticket-meta">
+                      <div className="zen-ticket-meta" style={{ marginTop: "3px" }}>
                         <span>System: {t.relatedSystem?.name || "General"}</span>
                         {t.attachmentsCount !== undefined && t.attachmentsCount > 0 && (
                           <span style={{ backgroundColor: "#F1F5F9", padding: "1px 6px", borderRadius: "4px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "2px" }}>
@@ -679,26 +1041,29 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                     </td>
 
                     {/* Category */}
-                    <td style={{ fontSize: "0.85rem", color: "#334155", whiteSpace: "nowrap" }}>
+                    <td style={{ color: "#334155", verticalAlign: "middle", whiteSpace: "nowrap" }}>
                       {t.category?.name || "General"}
                     </td>
 
                     {/* Requested Priority */}
-                    <td>
+                    <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       {renderPriorityBadge(t.requestedPriority)}
                     </td>
 
                     {/* Current Status */}
-                    <td>
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
                       {renderStatusBadge(t.currentStatus)}
                     </td>
 
                     {/* Action Button */}
-                    <td style={{ textAlign: "right" }}>
+                    <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.75rem 1rem" }}>
                       <button
                         type="button"
                         className="zen-btn-view"
-                        onClick={() => onSelectTicket && onSelectTicket(t.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectTicket && onSelectTicket(t.id);
+                        }}
                         title="View details"
                         data-testid={`view-ticket-${t.id}`}
                       >
@@ -712,34 +1077,39 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
           </div>
 
           {/* Pagination Footer */}
-          <div className="zen-pagination">
-            <div data-testid="pagination-info">
+          <div
+            className="zen-pagination d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 p-3 border-top"
+            style={{ backgroundColor: "#FAFCFA" }}
+          >
+            <div className="text-muted small" data-testid="pagination-info">
               Showing <strong>{tickets.length > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0}</strong> to{" "}
               <strong>{Math.min(pagination.page * pagination.pageSize, pagination.totalItems)}</strong> of{" "}
               <strong>{pagination.totalItems}</strong> tickets
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div className="d-flex align-items-center gap-2">
               <button
                 type="button"
-                className="zen-btn-secondary"
+                className="btn btn-outline-secondary btn-sm"
                 disabled={!pagination.hasPrevPage}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 data-testid="pagination-prev-btn"
-                style={{ fontSize: "0.8rem", padding: "0.25rem 0.65rem" }}
+                style={{ fontSize: "0.8rem", padding: "0.25rem 0.65rem", borderRadius: "var(--radius-btn)" }}
               >
                 Previous
               </button>
+
               <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#334155" }}>
                 Page {pagination.page} of {pagination.totalPages || 1}
               </span>
+
               <button
                 type="button"
-                className="zen-btn-secondary"
+                className="btn btn-outline-secondary btn-sm"
                 disabled={!pagination.hasNextPage}
                 onClick={() => setCurrentPage((p) => p + 1)}
                 data-testid="pagination-next-btn"
-                style={{ fontSize: "0.8rem", padding: "0.25rem 0.65rem" }}
+                style={{ fontSize: "0.8rem", padding: "0.25rem 0.65rem", borderRadius: "var(--radius-btn)" }}
               >
                 Next
               </button>
