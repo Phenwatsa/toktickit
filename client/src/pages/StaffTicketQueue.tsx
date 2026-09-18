@@ -956,20 +956,21 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
               style={{
                 tableLayout: "fixed",
                 width: "100%",
-                minWidth: "1160px",
+                minWidth: "1190px",
                 fontSize: "0.875rem",
               }}
             >
               <colgroup>
-                <col style={{ width: 140 }} />
-                <col style={{ width: 110 }} />
-                <col />
                 <col style={{ width: 130 }} />
+                <col style={{ width: 100 }} />
+                <col style={{ width: 100 }} />
+                <col style={{ width: 250, minWidth: 240 }} />
                 <col style={{ width: 120 }} />
-                <col style={{ width: 135 }} />
-                <col style={{ width: 125 }} />
-                <col style={{ width: 130 }} />
-                <col style={{ width: 90 }} />
+                <col style={{ width: 100 }} />
+                <col style={{ width: 110 }} />
+                <col style={{ width: 105 }} />
+                <col style={{ width: 115 }} />
+                <col style={{ width: 75 }} />
               </colgroup>
               <thead>
                 <tr>
@@ -1003,11 +1004,26 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                   </th>
                   <th
                     style={{
+                      cursor: "pointer",
                       position: "sticky",
                       top: 0,
                       zIndex: 5,
                       backgroundColor: "#F8FAFC",
                       boxShadow: "0 1px 0 var(--color-border)",
+                    }}
+                    onClick={() => handleSort("updatedAt")}
+                    data-testid="sort-updatedAt"
+                  >
+                    Updated {renderSortIndicator("updatedAt")}
+                  </th>
+                  <th
+                    style={{
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      backgroundColor: "#F8FAFC",
+                      boxShadow: "0 1px 0 var(--color-border)",
+                      minWidth: 240,
                     }}
                   >
                     Summary
@@ -1104,12 +1120,15 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                     <td className="text-muted" style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       {formatDate(t.createdAt)}
                     </td>
-                    <td style={{ verticalAlign: "middle" }}>
+                    <td className="text-muted" style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
+                      {formatDate(t.updatedAt || t.createdAt)}
+                    </td>
+                    <td style={{ verticalAlign: "middle", minWidth: 240 }}>
                       <div
                         className="text-dark fw-medium"
                         style={{
                           wordBreak: "break-word",
-                          lineHeight: 1.35,
+                          lineHeight: 1.4,
                         }}
                       >
                         {t.summary}

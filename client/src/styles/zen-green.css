@@ -1342,7 +1342,7 @@ body {
   }
   .staff-filter-status { order: 2; flex: 0 0 145px; width: 145px; }
   .staff-filter-category { order: 3; flex: 0 0 145px; width: 145px; }
-  .staff-filter-priority { order: 4; flex: 0 0 135px; width: 135px; }
+  .staff-filter-priority { order: 4; flex: 0 0 145px; width: 145px; }
   .staff-filter-owner { order: 5; flex: 0 0 150px; width: 150px; }
   .staff-filter-reset { order: 6; flex: 0 0 auto; }
 }

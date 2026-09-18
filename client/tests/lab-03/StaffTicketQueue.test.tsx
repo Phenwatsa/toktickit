@@ -161,13 +161,26 @@ describe("StaffTicketQueue Component (StaffTicketQueue.test.tsx)", () => {
         );
       });
 
-      // Click again to toggle desc
-      await user.click(sortTicketNumber);
+      // Click sort by Updated Date
+      const sortUpdatedAt = screen.getByTestId("sort-updatedAt");
+      await user.click(sortUpdatedAt);
 
       await waitFor(() => {
         expect(api.fetchStaffTickets).toHaveBeenCalledWith(
           expect.objectContaining({
-            sortBy: "ticketNumber",
+            sortBy: "updatedAt",
+            sortOrder: "asc",
+          })
+        );
+      });
+
+      // Click again to toggle desc
+      await user.click(sortUpdatedAt);
+
+      await waitFor(() => {
+        expect(api.fetchStaffTickets).toHaveBeenCalledWith(
+          expect.objectContaining({
+            sortBy: "updatedAt",
             sortOrder: "desc",
           })
         );
