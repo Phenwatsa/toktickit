@@ -13,7 +13,7 @@
 | [PR #43](https://github.com/Phenwatsa/toktickit/pull/43) | `feature/lab3-1-auth-foundation` | Issue 13 (#35): Database Migration, Seed Data & Auth Foundation API | **Approved** | `lab3-staging` |
 | [PR #44](https://github.com/Phenwatsa/toktickit/pull/44) | `feature/lab3-2-auth-ui` | Issue 14 (#36): Authentication & First-Login Password Change UI | **Approved** | `lab3-staging` |
 | [PR #45](https://github.com/Phenwatsa/toktickit/pull/45) | `feature/lab3-3-staff-queue` | Issue 15 (#37): IT Staff Ticket Queue (API & Responsive UI) | **Approved** | `lab3-staging` |
-| *[Upcoming PR]* | `feature/lab3-4-ticket-detail-and-notes` | Issue 16 (#38): Staff Ticket Detail, Comments & Confidential Notes | *Pending (Issue 16 / #38)* | `lab3-staging` |
+| [PR #46](https://github.com/Phenwatsa/toktickit/pull/46) | `feature/lab3-4-ticket-detail-and-notes` | Issue 16 (#38): Staff Ticket Detail, Comments & Confidential Notes | **Approved** | `lab3-staging` |
 | *[Upcoming PR]* | `feature/lab3-5-admin-user-management` | Issue 17 (#39): Minimalist Administrator User Management | *Pending (Issue 17 / #39)* | `lab3-staging` |
 | *[Upcoming PR]* | `feature/lab3-6-e2e-and-responsive` | Issue 18 (#40): End-to-End Testing, Responsive Audit & Visual Artifacts | *Pending (Issue 18 / #40)* | `lab3-staging` |
 | *[Upcoming PR]* | `docs/lab3-documentation` | Issue 19 (#41): Release Integration, Reviewer Consolidation & Final Docs | *Pending (Issue 19 / #41)* | `lab3-staging` $\rightarrow$ `main` |
@@ -153,6 +153,20 @@
   > "I reviewed the latest updates against the acceptance criteria. Approved."
 * **My Response (Cycle 2):**
   > "Thank you so much @lephirada for reviewing and approving PR #45! All acceptance criteria and responsive requirements are verified. You can go ahead and merge this PR into `lab3-staging` whenever you're ready."
+* **Verdict:** **Approved**
+
+---
+
+### [PR #46](https://github.com/Phenwatsa/toktickit/pull/46) — Issue 16 (#38): IT Staff Ticket Operations, Public Comments & Internal Notes
+* **Branch:** `feature/lab3-4-ticket-detail-and-notes`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/46](https://github.com/Phenwatsa/toktickit/pull/46)
+* **Review Cycle 1 — Feedback received from @lephirada:**
+  > "Reviewed the latest changes against the acceptance criteria. The required staff ticket operations, comments, internal notes, requester resolution action, frontend updates, and tests are implemented. CI is also passing.
+  > 
+  > Approved."
+* **My Response (Cycle 1):**
+  > "Thank you so much @lephirada for reviewing and approving PR #46! All staff ticket operations, public comments, internal notes, requester resolution indication, responsive frontend views, and tests are confirmed. Proceeding to merge PR #46 into `lab3-staging`."
 * **Verdict:** **Approved**
 
 ---

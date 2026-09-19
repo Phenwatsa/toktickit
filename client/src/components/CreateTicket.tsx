@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRequester } from "../context/RequesterContext";
+import { useAuth } from "../context/AuthContext";
 import {
   Category,
   RelatedSystem,
@@ -36,6 +37,21 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
 
 export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
   const { currentRequester } = useRequester();
+  const { user } = useAuth();
+
+  const effectiveRequester = useMemo(() => {
+    if (user && user.role === "REQUESTER") {
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        department: user.department || "General",
+        isActive: user.isActive,
+      };
+    }
+    return currentRequester;
+  }, [user?.id, user?.name, user?.email, user?.department, user?.isActive, user?.role, currentRequester]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -173,7 +189,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
       return;
     }
 
-    if (!currentRequester) {
+    if (!effectiveRequester) {
       setServerError("No active development requester selected. Please select a requester first.");
       return;
     }
@@ -181,7 +197,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
     setIsSubmitting(true);
     try {
       const newTicket = await createTicket({
-        requesterId: currentRequester.id,
+        requesterId: effectiveRequester.id,
         categoryId: Number(categoryId),
         relatedSystemId: Number(relatedSystemId),
         requestedPriority: requestedPriority as Priority,
@@ -193,7 +209,7 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
           try {
-            await uploadAttachment(newTicket.id, currentRequester.id, file);
+            await uploadAttachment(newTicket.id, effectiveRequester.id, file);
           } catch (uploadErr) {
             console.error("Failed to upload attachment during ticket creation:", uploadErr);
           }
@@ -339,9 +355,9 @@ export function CreateTicket({ onSuccess, onCancel }: CreateTicketProps) {
                 Requester (Read-Only)
               </div>
               <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0F172A" }}>
-                {currentRequester ? currentRequester.name : "None"}
+                {effectiveRequester ? effectiveRequester.name : "None"}
                 <span style={{ fontSize: "0.75rem", color: "#64748B", fontWeight: 400, marginLeft: "0.4rem" }}>
-                  ({currentRequester ? currentRequester.department : ""})
+                  ({effectiveRequester ? effectiveRequester.department : ""})
                 </span>
               </div>
             </div>

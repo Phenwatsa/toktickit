@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Ticket, Priority, TicketStatus } from "../types";
 import { useRequester } from "../context/RequesterContext";
 import { useAuth } from "../context/AuthContext";
-import { fetchTicketDetail } from "../api";
+import { fetchTicketDetail, markProblemAppearsResolved } from "../api";
 import { AttachmentSection } from "./AttachmentSection";
+import { CommentsNotesSection } from "./CommentsNotesSection";
 
 interface RequesterTicketDetailProps {
   ticketId: number;
@@ -19,6 +20,8 @@ export function RequesterTicketDetail({
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState<boolean>(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
 
   const effectiveUserId = user?.id ?? currentRequester?.id;
 
@@ -42,6 +45,20 @@ export function RequesterTicketDetail({
   useEffect(() => {
     loadTicketDetail();
   }, [loadTicketDetail]);
+
+  async function handleMarkResolved() {
+    if (!ticket) return;
+    setIsResolving(true);
+    setResolveError(null);
+    try {
+      await markProblemAppearsResolved(ticket.id);
+      setTicket((prev) => (prev ? { ...prev, problemAppearsResolved: true } : null));
+    } catch (err) {
+      setResolveError(err instanceof Error ? err.message : "Failed to mark problem as resolved");
+    } finally {
+      setIsResolving(false);
+    }
+  }
 
   function formatDate(dateStr: string): string {
     try {
@@ -193,6 +210,77 @@ export function RequesterTicketDetail({
         </div>
       </div>
 
+      {/* Problem Appears Resolved Banner / Action */}
+      {ticket.problemAppearsResolved ? (
+        <div
+          className="alert alert-success d-flex align-items-center gap-2 mb-3"
+          data-testid="requester-resolved-indicator"
+          style={{ fontSize: "0.875rem", borderRadius: "8px", border: "1px solid #10B981" }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#059669"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+            aria-hidden="true"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+          <span>
+            <strong>You indicated this problem appears resolved.</strong> IT Support will verify and close the ticket.
+          </span>
+        </div>
+      ) : (
+        ticket.currentStatus !== "CLOSED" &&
+        ticket.currentStatus !== "CANCELLED" && (
+          <div className="d-flex justify-content-end mb-3" data-testid="resolve-action-container">
+            {resolveError && (
+              <span className="text-danger me-2 align-self-center" style={{ fontSize: "0.825rem" }}>
+                {resolveError}
+              </span>
+            )}
+            <button
+              type="button"
+              className="zen-btn-secondary"
+              onClick={handleMarkResolved}
+              disabled={isResolving}
+              data-testid="mark-resolved-btn"
+              style={{
+                borderColor: "#10B981",
+                color: "#065F46",
+                backgroundColor: "#ECFDF5",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>{isResolving ? "Marking..." : "Problem Appears Resolved"}</span>
+            </button>
+          </div>
+        )
+      )}
+
       {/* Ticket Attributes Metadata Grid with Divided Sub-cards */}
       <div
         className="zen-card"
@@ -306,6 +394,12 @@ export function RequesterTicketDetail({
         ticketId={ticket.id}
         attachments={ticket.attachments}
         onAttachmentChange={loadTicketDetail}
+      />
+
+      {/* Public Comments Component (Requester View) */}
+      <CommentsNotesSection
+        ticketId={ticket.id}
+        isStaff={false}
       />
     </div>
   );
