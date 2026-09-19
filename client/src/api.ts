@@ -23,6 +23,9 @@ import {
   InternalNote,
   StaffTicketDetailAttachment,
   StaffTicketDetailData,
+  AdminUser,
+  CreateUserPayload,
+  UpdateUserPayload,
 } from "./types";
 export type {
   Category,
@@ -49,6 +52,9 @@ export type {
   InternalNote,
   StaffTicketDetailAttachment,
   StaffTicketDetailData,
+  AdminUser,
+  CreateUserPayload,
+  UpdateUserPayload,
 };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -649,6 +655,103 @@ export async function markProblemAppearsResolved(
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || data.error || "Failed to mark problem as resolved");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 17: Admin User Management API
+// ---------------------------------------------------------------------------
+
+export async function fetchAdminUsers(
+  params: { search?: string; role?: string } = {}
+): Promise<AdminUser[]> {
+  const query = new URLSearchParams();
+  if (params.search && params.search.trim()) {
+    query.set("search", params.search.trim());
+  }
+  if (params.role && params.role !== "ALL") {
+    query.set("role", params.role);
+  }
+
+  const queryString = query.toString();
+  const url = `${API_URL}/api/admin/users${queryString ? `?${queryString}` : ""}`;
+
+  const res = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || data.message || "Failed to fetch users");
+  }
+  return data;
+}
+
+export async function createAdminUser(payload: CreateUserPayload): Promise<AdminUser> {
+  const res = await fetch(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.error || data.message || "Failed to create user");
+    error.code = data.code;
+    error.details = data.details;
+    throw error;
+  }
+  return data;
+}
+
+export async function updateAdminUser(
+  id: number,
+  payload: UpdateUserPayload
+): Promise<AdminUser> {
+  const res = await fetch(`${API_URL}/api/admin/users/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.error || data.message || "Failed to update user");
+    error.code = data.code;
+    throw error;
+  }
+  return data;
+}
+
+export async function resetAdminUserPassword(
+  id: number,
+  newInitialPassword: string
+): Promise<{ message: string; mustChangePassword: boolean }> {
+  const res = await fetch(`${API_URL}/api/admin/users/${id}/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ newInitialPassword }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.error || data.message || "Failed to reset password");
+    error.code = data.code;
+    error.details = data.details;
+    throw error;
   }
   return data;
 }

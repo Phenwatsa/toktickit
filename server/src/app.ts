@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth.js";
 import { staffRouter } from "./routes/staff.js";
 import { commentsNotesRouter } from "./routes/commentsNotes.js";
 import { requesterOpsRouter } from "./routes/requesterOps.js";
+import { adminRouter } from "./routes/admin.js";
 import { requireAuth, requirePasswordChanged } from "./middleware/auth.js";
 import { initializeTicketPriority } from "./utils/priorityInit.js";
 
@@ -59,6 +60,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/staff", staffRouter);
 app.use("/api/tickets", commentsNotesRouter);
 app.use("/api/requester", requesterOpsRouter);
+app.use("/api/admin/users", adminRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check

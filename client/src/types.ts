@@ -238,3 +238,36 @@ export interface StaffTicketDetailData {
   internalNotes: InternalNote[];
 }
 
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 17: Admin User Management Types
+// ---------------------------------------------------------------------------
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  department: string | null;
+  role: Role;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  department?: string;
+  role: Role;
+  isActive?: boolean;
+  initialPassword: string;
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  department?: string | null;
+  role?: Role;
+  isActive?: boolean;
+}
+
