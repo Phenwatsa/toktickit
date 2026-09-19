@@ -214,12 +214,12 @@ This document provides the definitive planning specification for GitHub Issues (
   - Multi-role assignments, profile photo uploads, department hierarchies.
   - Email dispatching for passwords (local manual display only).
 * **Acceptance Criteria:**
-  - [ ] Non-administrators (Requester and IT Staff) receive 403 Forbidden when calling Admin APIs or navigating to `/admin/users`.
-  - [ ] Administrator can create a user with a single role; the new user is flagged to change password on first login.
-  - [ ] Duplicate email submission is rejected with clear error feedback.
-  - [ ] System strictly rejects attempts by an admin to deactivate themselves or the last active admin.
-  - [ ] User list search and role filter operate responsively without table layout clipping.
-  - [ ] 100% of tests in `users-admin.api.test.ts` and `UserManagement.test.tsx` pass.
+  - [x] Non-administrators (Requester and IT Staff) receive 403 Forbidden when calling Admin APIs or navigating to `/admin/users`.
+  - [x] Administrator can create a user with a single role; the new user is flagged to change password on first login.
+  - [x] Duplicate email submission is rejected with clear error feedback.
+  - [x] System strictly rejects attempts by an admin to deactivate themselves or the last active admin.
+  - [x] User list search and role filter operate responsively without table layout clipping.
+  - [x] 100% of tests in `users-admin.api.test.ts` and `UserManagement.test.tsx` pass.
 
 ---
 

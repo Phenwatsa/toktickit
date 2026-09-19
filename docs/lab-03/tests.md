@@ -23,11 +23,11 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **API-11** | API | AC-09 | IT Staff attempts invalid status transition (`IN_PROGRESS` to `CLOSED`) | HTTP 400 Bad Request; transition blocked according to transition rules | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Passing |
 | **API-12** | API | AC-10 | Requester and IT Staff exchange Public Comments on ticket | HTTP 201; comment created, visible to both Requester and Staff | `server/tests/lab-03/comments-notes.api.test.ts` | Passing |
 | **API-13** | API | AC-04 | Unauthorized roles (Requester and Admin) attempt to read or post Internal Notes | HTTP 403 Forbidden; zero note content or metadata returned | `server/tests/lab-03/comments-notes.api.test.ts` | Passing |
-| **API-14** | API | AC-11 | Admin creates new user with one role and initial password | HTTP 201; user created with `mustChangePassword = true` | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-15** | API | AC-12 | Admin attempts to create user with duplicate email | HTTP 409 Conflict; duplicate email error message | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-16** | API | AC-13 | Admin attempts to deactivate own account | HTTP 400 Bad Request; self-deactivation blocked by safety guard | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-17** | API | AC-14 | Admin attempts to deactivate or demote last active admin | HTTP 400 Bad Request; system retains at least one active administrator | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
-| **API-18** | API | AC-15 | Non-Admin attempts to call Admin User endpoints | HTTP 403 Forbidden for Requester and IT Staff | `server/tests/lab-03/users-admin.api.test.ts` | Planned |
+| **API-14** | API | AC-11 | Admin creates new user with one role and initial password | HTTP 201; user created with `mustChangePassword = true` | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-15** | API | AC-12 | Admin attempts to create user with duplicate email | HTTP 409 Conflict; duplicate email error message | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-16** | API | AC-13 | Admin attempts to deactivate own account | HTTP 400 Bad Request; self-deactivation blocked by safety guard | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-17** | API | AC-14 | Admin attempts to deactivate or demote last active admin | HTTP 400 Bad Request; system retains at least one active administrator | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-18** | API | AC-15 | Non-Admin attempts to call Admin User endpoints | HTTP 403 Forbidden for Requester and IT Staff | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
 | **API-19** | API | AC-17 | Authenticated user retrieves current profile via `GET /api/auth/me` | HTTP 200 with user profile; HTTP 401 when token is missing or invalid | `server/tests/lab-03/auth.api.test.ts` | Passing |
 | **API-20** | API | AC-18 | User logs out via `POST /api/auth/logout` and previous token is revoked | Calling protected route with old token fails with HTTP 401 (`tokenVersion` mismatch) | `server/tests/lab-03/auth.api.test.ts` | Passing |
 | **API-21** | API | AC-20 | Requester B attempts to upload, download (`GET /api/attachments/:id/download`), or soft-delete attachments on Requester A's ticket | HTTP 403 Forbidden on upload, download, and soft-delete; attachments cross-user isolation strictly enforced | `server/tests/lab-03/authorization.api.test.ts` | Passing |
@@ -46,9 +46,9 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **UI-05** | UI | AC-06 | Staff Ticket Queue handles empty state and no-results search filter | Displays empty illustration / message with "Reset Filters" action | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Passing |
 | **UI-06** | UI | AC-07, AC-08 | Ticket Detail renders operational controls (Claim, Reassign, IT Priority) | Operational buttons trigger appropriate callbacks | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Passing |
 | **UI-07** | UI | AC-04, AC-10 | Ticket Detail enforces confidentiality of Internal Notes & renders Public Comments | When viewed by Requester, Internal Notes are completely absent; when viewed by Staff, both render with clear visual distinction | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Passing |
-| **UI-08** | UI | AC-11 | Admin User Management displays user list and open Create User modal | Form renders name, email, role radio buttons, and initial password | `client/tests/lab-03/UserManagement.test.tsx` | Planned |
-| **UI-09** | UI | AC-13 | Admin User Management disables deactivation for current admin row | Active toggle switch is disabled with explanatory tooltip | `client/tests/lab-03/UserManagement.test.tsx` | Planned |
-| **UI-10** | UI | AC-19 | Role-based navigation renders strictly permitted links per role | Requester sees My Tickets/Create Ticket; Staff sees Ticket Queue; Admin sees User Management | `client/tests/lab-03/Navigation.test.tsx` | Planned |
+| **UI-08** | UI | AC-11 | Admin User Management displays user list and open Create User modal | Form renders name, email, role radio buttons, and initial password | `client/tests/lab-03/UserManagement.test.tsx` | Passing |
+| **UI-09** | UI | AC-13 | Admin User Management disables deactivation for current admin row | Active toggle switch is disabled with explanatory tooltip | `client/tests/lab-03/UserManagement.test.tsx` | Passing |
+| **UI-10** | UI | AC-19 | Role-based navigation renders strictly permitted links per role | Requester sees My Tickets/Create Ticket; Staff sees Ticket Queue; Admin sees User Management | `client/tests/lab-03/Navigation.test.tsx` | Passing |
 | **UI-11** | UI | AC-21 | Requester Ticket Detail renders "Problem Appears Resolved" button and updates indicator | Button click triggers PATCH request and displays resolved indicator without altering official status badge | `client/tests/lab-03/RequesterTicketDetail.test.tsx` | Passing |
 
 ---
@@ -77,7 +77,7 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **UNIT-02** | Unit | AC-09 | 8-status finite state machine transition validator | Valid transitions return `true`; illegal transitions (e.g. `IN_PROGRESS` $\rightarrow$ `CLOSED`) return `false` | `server/tests/lab-03/unit/status-transition.unit.test.ts` | Passing |
 | **UNIT-03** | Unit | AC-15 | Role-based authorization middleware permission checks | Verifies `requireRole` helper permits authorized roles and rejects unauthorized roles with 403 Forbidden | `server/tests/lab-03/unit/role-auth.unit.test.ts` | Passing |
 | **UNIT-04** | Unit | AC-08 | Priority assignment helper upon ticket initialization | Verifies `itPriority` helper sets initial IT priority equal to `requestedPriority` (BR-11) | `server/tests/lab-03/unit/priority-init.unit.test.ts` | Passing |
-| **UNIT-05** | Unit | AC-13, AC-14 | Administrator safety guards (self-deactivation and last active admin check) | Prevents self-deactivation (`userId === targetId`) and blocking when sole active admin remaining | `server/tests/lab-03/unit/admin-guard.unit.test.ts` | Planned |
+| **UNIT-05** | Unit | AC-13, AC-14 | Administrator safety guards (self-deactivation and last active admin check) | Prevents self-deactivation (`userId === targetId`) and blocking when sole active admin remaining | `server/tests/lab-03/unit/admin-guard.unit.test.ts` | Passing |
 | **UNIT-06** | Unit | AC-18 | JWT payload `tokenVersion` mismatch validator | Verifies token comparison rejects stale `tokenVersion` against active database version | `server/tests/lab-03/unit/token-version.unit.test.ts` | Passing |
 
 ---

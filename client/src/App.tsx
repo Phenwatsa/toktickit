@@ -6,6 +6,7 @@ import { Login } from "./pages/Login";
 import { ChangePassword } from "./pages/ChangePassword";
 import { StaffTicketQueue } from "./pages/StaffTicketQueue";
 import { StaffTicketDetail } from "./pages/StaffTicketDetail";
+import { UserManagement } from "./pages/UserManagement";
 import { CreateTicket } from "./components/CreateTicket";
 import { MyTickets } from "./components/MyTickets";
 import { RequesterTicketDetail } from "./components/RequesterTicketDetail";
@@ -216,12 +217,7 @@ function MainApp() {
 
         {/* Administrator Views (Guarded) */}
         {user?.role === "ADMINISTRATOR" && currentView === "admin-users" && (
-          <div className="zen-card text-center py-5" data-testid="admin-users-placeholder">
-            <h2 className="h4 fw-bold mb-2">Administrator User Management</h2>
-            <p className="text-muted mb-0">
-              Welcome, {user?.name}. Administrator user management interface is scheduled for Issue 17 (#39).
-            </p>
-          </div>
+          <UserManagement />
         )}
 
         {/* Legacy Lab 1 Health Check */}
