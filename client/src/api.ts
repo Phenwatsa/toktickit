@@ -143,7 +143,7 @@ export async function fetchCurrentUser(token?: string): Promise<{ user: User }> 
 export async function changePassword(
   payload: ChangePasswordPayload,
   token?: string
-): Promise<{ message: string; user: User }> {
+): Promise<{ message: string; user?: User }> {
   const authToken = token || getAuthToken();
   const res = await fetch(`${API_URL}/api/auth/change-password`, {
     method: "POST",
@@ -151,7 +151,12 @@ export async function changePassword(
       "Content-Type": "application/json",
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      currentPassword: payload.currentPassword,
+      newPassword: payload.newPassword,
+      confirmPassword: payload.confirmNewPassword || (payload as any).confirmPassword,
+      confirmNewPassword: payload.confirmNewPassword,
+    }),
   });
 
   const data = await res.json();

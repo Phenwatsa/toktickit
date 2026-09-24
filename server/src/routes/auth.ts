@@ -127,7 +127,8 @@ authRouter.get("/me", requireAuth, async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 authRouter.post("/change-password", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { currentPassword, newPassword, confirmPassword } = req.body || {};
+    const { currentPassword, newPassword } = req.body || {};
+    const confirmPassword = req.body?.confirmPassword || req.body?.confirmNewPassword;
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       return res.status(400).json({
@@ -174,6 +175,15 @@ authRouter.post("/change-password", requireAuth, async (req: Request, res: Respo
     return res.status(200).json({
       message: "Password changed successfully",
       mustChangePassword: false,
+      user: {
+        id: req.user!.id,
+        name: req.user!.name,
+        email: req.user!.email,
+        role: req.user!.role,
+        department: req.user!.department,
+        mustChangePassword: false,
+        isActive: req.user!.isActive,
+      },
     });
   } catch (error) {
     console.error("Change password error:", error);
