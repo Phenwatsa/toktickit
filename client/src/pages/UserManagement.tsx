@@ -735,6 +735,7 @@ export function UserManagement() {
                   style={{
                     tableLayout: "fixed",
                     width: "100%",
+                    minWidth: "860px",
                     fontSize: "0.85rem",
                   }}
                   data-testid="users-table"

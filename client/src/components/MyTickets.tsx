@@ -1015,18 +1015,19 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                 style={{
                   tableLayout: "fixed",
                   width: "100%",
+                  minWidth: "860px",
                   fontSize: "0.85rem",
                 }}
                 data-testid="tickets-table"
               >
                 <colgroup>
-                  <col style={{ width: "14%", minWidth: 130 }} /> {/* Ticket # */}
-                  <col style={{ width: "11%", minWidth: 105 }} /> {/* Created */}
-                  <col style={{ width: "34%", minWidth: 220 }} /> {/* Summary */}
-                  <col style={{ width: "16%", minWidth: 155 }} /> {/* Category */}
-                  <col style={{ width: "9%", minWidth: 90 }} />   {/* Priority */}
-                  <col style={{ width: "8%", minWidth: 85 }} />   {/* Status */}
-                  <col style={{ width: "8%", minWidth: 95 }} />   {/* Action */}
+                  <col style={{ width: 150 }} /> {/* Ticket # */}
+                  <col style={{ width: 110 }} /> {/* Created */}
+                  <col style={{ minWidth: 200 }} /> {/* Summary */}
+                  <col style={{ width: 160 }} /> {/* Category */}
+                  <col style={{ width: 95 }} />   {/* Priority */}
+                  <col style={{ width: 85 }} />   {/* Status */}
+                  <col style={{ width: 85 }} />   {/* Action */}
                 </colgroup>
                 <thead>
                   <tr>

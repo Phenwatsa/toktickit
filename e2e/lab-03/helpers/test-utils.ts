@@ -31,7 +31,9 @@ export async function captureScreenshot(
 ): Promise<void> {
   ensureScreenshotsDir();
   const filePath = path.join(SCREENSHOTS_BASE_DIR, category, filename.endsWith(".png") ? filename : `${filename}.png`);
-  await page.screenshot({ path: filePath, fullPage: true });
+  await page.waitForTimeout(400);
+  const hasModal = (await page.locator('.modal, [role="dialog"], [data-testid$="modal"], .modal-backdrop').count()) > 0;
+  await page.screenshot({ path: filePath, fullPage: !hasModal });
 }
 
 /**
