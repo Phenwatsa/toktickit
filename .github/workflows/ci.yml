@@ -129,11 +129,13 @@ jobs:
           npm --prefix client ci
 
       - name: Run Migrations & Seed Database
+        working-directory: server
         env:
           DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public
         run: |
-          npx --prefix server prisma migrate deploy
-          npm --prefix server run prisma:seed
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run prisma:seed
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
