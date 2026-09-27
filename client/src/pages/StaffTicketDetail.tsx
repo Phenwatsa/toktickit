@@ -15,6 +15,7 @@ import {
   updateStaffTicketStatus,
 } from "../api";
 import { CommentsNotesSection } from "../components/CommentsNotesSection";
+import { AttachmentPreviewModal } from "../components/AttachmentPreviewModal";
 
 interface StaffTicketDetailProps {
   ticketId: number;
@@ -50,6 +51,7 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
   const [targetStatus, setTargetStatus] = useState<TicketStatus | "">("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isConfirmingStatus, setIsConfirmingStatus] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<any | null>(null);
 
   const loadTicketData = useCallback(async () => {
     setIsLoading(true);
@@ -400,21 +402,41 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
               Reassign Owner
             </label>
             <div className="d-flex gap-1">
-              <select
-                className="form-select form-select-sm"
-                value={selectedOwnerId}
-                onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : "")}
-                disabled={isReassigning || isClosedOrCancelled}
-                data-testid="reassign-owner-select"
-                style={{ height: "38px", borderRadius: "8px", fontSize: "0.825rem" }}
-              >
-                <option value="">Select IT Staff...</option>
-                {staffMembers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} {m.id === user?.id ? "(You)" : ""}
-                  </option>
-                ))}
-              </select>
+              <div style={{ position: "relative", flex: 1 }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: "0.65rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none",
+                    color: selectedOwnerId === user?.id ? "var(--color-primary, #006B3C)" : "#94A3B8",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    transition: "color 0.15s ease",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <select
+                  className="form-select form-select-sm"
+                  value={selectedOwnerId}
+                  onChange={(e) => setSelectedOwnerId(e.target.value ? Number(e.target.value) : "")}
+                  disabled={isReassigning || isClosedOrCancelled}
+                  data-testid="reassign-owner-select"
+                  style={{ height: "38px", borderRadius: "8px", fontSize: "0.825rem", paddingLeft: "1.9rem" }}
+                >
+                  <option value="">Select IT Staff...</option>
+                  {staffMembers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.id === user?.id ? "(You)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
                 type="button"
                 className="zen-btn-secondary"
@@ -656,10 +678,10 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
             {ticket.attachments.map((att) => (
               <div
                 key={att.id}
-                className="d-flex justify-content-between align-items-center p-2 border rounded"
+                className="d-flex flex-wrap justify-content-between align-items-center p-2 border rounded gap-2"
                 style={{ backgroundColor: "#FFFFFF" }}
               >
-                <div className="d-flex align-items-center gap-2">
+                <div className="d-flex align-items-center gap-2" style={{ minWidth: 0, flex: "1 1 auto" }}>
                   <svg
                     width="15"
                     height="15"
@@ -674,24 +696,79 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
                   >
                     <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                   </svg>
-                  <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>{att.fileName || att.originalName}</span>
-                  <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>
-                    ({Math.round((att.fileSize || att.sizeBytes || 0) / 1024)} KB)
-                  </span>
+                  <div style={{ minWidth: 0, overflow: "hidden" }}>
+                    <span
+                      style={{
+                        fontSize: "0.875rem",
+                        fontWeight: 500,
+                        display: "inline-block",
+                        maxWidth: "100%",
+                        textOverflow: "ellipsis",
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        verticalAlign: "middle",
+                      }}
+                      title={att.fileName || att.originalName}
+                    >
+                      {att.fileName || att.originalName}
+                    </span>
+                    <span style={{ fontSize: "0.75rem", color: "#94A3B8", marginLeft: "0.35rem", whiteSpace: "nowrap" }}>
+                      ({Math.round((att.fileSize || att.sizeBytes || 0) / 1024)} KB)
+                    </span>
+                  </div>
                 </div>
-                <a
-                  href={`/api/attachments/${att.id}/download`}
-                  className="zen-btn-secondary"
-                  style={{ fontSize: "0.775rem", padding: "0.25rem 0.65rem", textDecoration: "none" }}
-                  download
-                >
-                  Download
-                </a>
+                <div className="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+                  <button
+                    type="button"
+                    className="zen-btn-primary"
+                    onClick={() => setPreviewAttachment(att)}
+                    data-testid={`preview-btn-${att.id}`}
+                    style={{
+                      fontSize: "0.775rem",
+                      padding: "0.25rem 0.65rem",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                    }}
+                    title="Preview document without downloading"
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Preview
+                  </button>
+                  <a
+                    href={`/api/attachments/${att.id}/download`}
+                    className="zen-btn-secondary"
+                    style={{ fontSize: "0.775rem", padding: "0.25rem 0.65rem", textDecoration: "none" }}
+                    download
+                  >
+                    Download
+                  </a>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Attachment Preview Modal Popup */}
+      <AttachmentPreviewModal
+        isOpen={!!previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        attachment={previewAttachment}
+      />
 
       {/* Comments & Notes Section (Dual-Panel for Staff) */}
       <CommentsNotesSection

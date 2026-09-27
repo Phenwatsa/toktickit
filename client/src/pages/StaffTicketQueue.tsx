@@ -191,12 +191,45 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
       ? `badge-requested-priority-${p.toLowerCase()}`
       : `badge-it-priority-${p.toLowerCase()}`;
 
+    const renderIcon = () => {
+      switch (p) {
+        case "URGENT":
+          return (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+          );
+        case "HIGH":
+          return (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          );
+        case "MEDIUM":
+          return (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <line x1="5" y1="9" x2="19" y2="9" />
+              <line x1="5" y1="15" x2="19" y2="15" />
+            </svg>
+          );
+        case "LOW":
+        default:
+          return (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          );
+      }
+    };
+
     return (
       <span
         className={`zen-badge ${classNameMap[p] || "zen-badge-priority-low"}`}
         data-testid={testId}
+        style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", justifyContent: "center" }}
       >
-        {p.charAt(0) + p.slice(1).toLowerCase()}
+        {renderIcon()}
+        <span>{p.charAt(0) + p.slice(1).toLowerCase()}</span>
       </span>
     );
   }
@@ -348,259 +381,283 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
       >
         {/* Desktop Filter Bar (>= 768px) */}
         <div className="staff-filter-bar staff-filter-bar-desktop d-none d-md-flex">
-          {/* Search Input */}
-          <div className="staff-filter-search">
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Search ticket # or summary..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              data-testid="staff-queue-search-input"
-              style={{
-                borderRadius: "8px",
-                borderColor: "#E2E8F0",
-                backgroundColor: "#F8FAFC",
-                paddingLeft: "2.1rem",
-                fontSize: "0.85rem",
-                height: "38px",
-                width: "100%",
-                transition: "all 0.15s ease",
-              }}
-            />
-            <span
-              style={{
-                position: "absolute",
-                left: "0.75rem",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--color-text-muted)",
-                pointerEvents: "none",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </span>
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
+          {/* Row 1: Search | Reset Filters */}
+          <div className="staff-filter-row-top">
+            {/* Search Input */}
+            <div className="staff-filter-search">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Search ticket # or summary..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                data-testid="staff-queue-search-input"
+                style={{
+                  borderRadius: "8px",
+                  borderColor: "#E2E8F0",
+                  backgroundColor: "#F8FAFC",
+                  paddingLeft: "2.1rem",
+                  fontSize: "0.85rem",
+                  height: "38px",
+                  width: "100%",
+                  transition: "all 0.15s ease",
+                }}
+              />
+              <span
                 style={{
                   position: "absolute",
-                  right: "0.6rem",
+                  left: "0.75rem",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
                   color: "var(--color-text-muted)",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
-                  padding: 0,
+                  pointerEvents: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
                 }}
-                title="Clear search"
               >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Reset Filters Action */}
-          <div className="staff-filter-reset">
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={handleResetFilters}
-              disabled={!hasActiveFilters}
-              data-testid="staff-queue-reset-filters-btn"
-              style={{
-                backgroundColor: hasActiveFilters ? "var(--color-pale-green, #EAF6EF)" : "#F8FAFC",
-                color: hasActiveFilters ? "var(--color-primary, #006B3C)" : "#94A3B8",
-                border: hasActiveFilters ? "1px solid #C4E6D2" : "1px solid #E2E8F0",
-                borderRadius: "8px",
-                fontWeight: 600,
-                fontSize: "0.83rem",
-                padding: "0 0.95rem",
-                height: "38px",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.35rem",
-                whiteSpace: "nowrap",
-                cursor: hasActiveFilters ? "pointer" : "not-allowed",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
-              <span>Reset Filters</span>
-            </button>
-          </div>
-
-          {/* Responsive Line Break to keep Search + Reset together */}
-          <div className="staff-filter-break" />
-
-          {/* Status Filter */}
-          <div className="staff-filter-select staff-filter-status">
-            <select
-              className="form-select form-select-sm"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setCurrentPage(1);
-              }}
-              data-testid="staff-queue-status-filter"
-              style={{
-                borderRadius: "8px",
-                borderColor: "#E2E8F0",
-                fontSize: "0.85rem",
-                fontWeight: 500,
-                height: "38px",
-                width: "100%",
-                color: "#334155",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="NEW">New</option>
-              <option value="OPEN">Open</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="WAITING_FOR_REQUESTER">Waiting for Requester</option>
-              <option value="RESOLVED">Resolved</option>
-              <option value="CLOSED">Closed</option>
-              <option value="REOPENED">Reopened</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </div>
-
-          {/* Category Filter */}
-          <div className="staff-filter-select staff-filter-category">
-            <select
-              className="form-select form-select-sm"
-              value={categoryId}
-              onChange={(e) => {
-                setCategoryId(e.target.value === "" ? "" : Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              data-testid="staff-queue-category-filter"
-              style={{
-                borderRadius: "8px",
-                borderColor: "#E2E8F0",
-                fontSize: "0.85rem",
-                fontWeight: 500,
-                height: "38px",
-                width: "100%",
-                color: "#334155",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <option value="">All Categories</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Priority Filter (Requested Priority) */}
-          <div className="staff-filter-select staff-filter-req-priority">
-            <select
-              className="form-select form-select-sm"
-              value={requestedPriority}
-              onChange={(e) => {
-                setRequestedPriority(e.target.value);
-                setCurrentPage(1);
-              }}
-              data-testid="staff-queue-req-priority-filter"
-              aria-label="Filter by Requested Priority"
-              style={{
-                borderRadius: "8px",
-                borderColor: "#E2E8F0",
-                fontSize: "0.85rem",
-                fontWeight: 500,
-                height: "38px",
-                width: "100%",
-                color: "#334155",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <option value="ALL">All Req Priorities</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
-            </select>
-          </div>
-
-          {/* Priority Filter (IT Priority) */}
-          <div className="staff-filter-select staff-filter-priority">
-            <select
-              className="form-select form-select-sm"
-              value={itPriority}
-              onChange={(e) => {
-                setItPriority(e.target.value);
-                setCurrentPage(1);
-              }}
-              data-testid="staff-queue-it-priority-filter"
-              style={{
-                borderRadius: "8px",
-                borderColor: "#E2E8F0",
-                fontSize: "0.85rem",
-                fontWeight: 500,
-                height: "38px",
-                width: "100%",
-                color: "#334155",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <option value="ALL">All IT Priorities</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
-            </select>
-          </div>
-
-          {/* Owner Filter */}
-          <div className="staff-filter-select staff-filter-owner">
-            <select
-              className="form-select form-select-sm"
-              value={ownerId}
-              onChange={(e) => {
-                setOwnerId(e.target.value);
-                setCurrentPage(1);
-              }}
-              data-testid="staff-queue-owner-filter"
-              style={{
-                borderRadius: "8px",
-                borderColor: "#E2E8F0",
-                fontSize: "0.85rem",
-                fontWeight: 500,
-                height: "38px",
-                width: "100%",
-                color: "#334155",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <option value="ALL">All Owners</option>
-              <option value="unassigned">Unassigned</option>
-              {user && (
-                <option value={String(user.id)}>Assigned to Me ({user.name})</option>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </span>
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  style={{
+                    position: "absolute",
+                    right: "0.6rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    color: "var(--color-text-muted)",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    padding: 0,
+                  }}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
               )}
-              {staffMembers
-                .filter((m) => m.id !== user?.id)
-                .map((m) => (
-                  <option key={m.id} value={String(m.id)}>
-                    {m.name}
+            </div>
+
+            {/* Reset Filters Action */}
+            <div className="staff-filter-reset">
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={handleResetFilters}
+                disabled={!hasActiveFilters}
+                data-testid="staff-queue-reset-filters-btn"
+                style={{
+                  backgroundColor: hasActiveFilters ? "var(--color-pale-green, #EAF6EF)" : "#F8FAFC",
+                  color: hasActiveFilters ? "var(--color-primary, #006B3C)" : "#94A3B8",
+                  border: hasActiveFilters ? "1px solid #C4E6D2" : "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  fontSize: "0.83rem",
+                  padding: "0 0.95rem",
+                  height: "38px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.35rem",
+                  whiteSpace: "nowrap",
+                  cursor: hasActiveFilters ? "pointer" : "not-allowed",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                </svg>
+                <span>Reset Filters</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Status | Category | Req Priority | IT Priority | Owner */}
+          <div className="staff-filter-row-bottom">
+            {/* Status Filter */}
+            <div className="staff-filter-select staff-filter-status">
+              <select
+                className="form-select form-select-sm"
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+                data-testid="staff-queue-status-filter"
+                style={{
+                  borderRadius: "8px",
+                  borderColor: "#E2E8F0",
+                  fontSize: "0.83rem",
+                  fontWeight: 500,
+                  height: "38px",
+                  width: "100%",
+                  color: "#334155",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="NEW">New</option>
+                <option value="OPEN">Open</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="WAITING_FOR_REQUESTER">Waiting for Requester</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
+                <option value="REOPENED">Reopened</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+
+            {/* Category Filter */}
+            <div className="staff-filter-select staff-filter-category">
+              <select
+                className="form-select form-select-sm"
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value === "" ? "" : Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                data-testid="staff-queue-category-filter"
+                style={{
+                  borderRadius: "8px",
+                  borderColor: "#E2E8F0",
+                  fontSize: "0.83rem",
+                  fontWeight: 500,
+                  height: "38px",
+                  width: "100%",
+                  color: "#334155",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <option value="">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
-            </select>
+              </select>
+            </div>
+
+            {/* Priority Filter (Requested Priority) */}
+            <div className="staff-filter-select staff-filter-req-priority">
+              <select
+                className="form-select form-select-sm"
+                value={requestedPriority}
+                onChange={(e) => {
+                  setRequestedPriority(e.target.value);
+                  setCurrentPage(1);
+                }}
+                data-testid="staff-queue-req-priority-filter"
+                aria-label="Filter by Requested Priority"
+                style={{
+                  borderRadius: "8px",
+                  borderColor: "#E2E8F0",
+                  fontSize: "0.83rem",
+                  fontWeight: 500,
+                  height: "38px",
+                  width: "100%",
+                  color: "#334155",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <option value="ALL">All Req Priorities</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+
+            {/* Priority Filter (IT Priority) */}
+            <div className="staff-filter-select staff-filter-priority">
+              <select
+                className="form-select form-select-sm"
+                value={itPriority}
+                onChange={(e) => {
+                  setItPriority(e.target.value);
+                  setCurrentPage(1);
+                }}
+                data-testid="staff-queue-it-priority-filter"
+                style={{
+                  borderRadius: "8px",
+                  borderColor: "#E2E8F0",
+                  fontSize: "0.83rem",
+                  fontWeight: 500,
+                  height: "38px",
+                  width: "100%",
+                  color: "#334155",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <option value="ALL">All IT Priorities</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+
+            {/* Owner Filter */}
+            <div className="staff-filter-select staff-filter-owner">
+              <div style={{ position: "relative", width: "100%" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: "0.65rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none",
+                    color: ownerId === String(user?.id) ? "var(--color-primary, #006B3C)" : "#94A3B8",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    transition: "color 0.15s ease",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <select
+                  className="form-select form-select-sm"
+                  value={ownerId}
+                  onChange={(e) => {
+                    setOwnerId(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  data-testid="staff-queue-owner-filter"
+                  style={{
+                    borderRadius: "8px",
+                    borderColor: "#E2E8F0",
+                    fontSize: "0.83rem",
+                    fontWeight: 500,
+                    height: "38px",
+                    width: "100%",
+                    paddingLeft: "1.9rem",
+                    color: "#334155",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <option value="ALL">All Owners</option>
+                  <option value="unassigned">Unassigned</option>
+                  {user && (
+                    <option value={String(user.id)}>Assigned to Me ({user.name})</option>
+                  )}
+                  {staffMembers
+                    .filter((m) => m.id !== user?.id)
+                    .map((m) => (
+                      <option key={m.id} value={String(m.id)}>
+                        {m.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1001,7 +1058,7 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
             style={{
               maxHeight: "calc(100vh - 275px)",
               overflowY: "auto",
-              overflowX: "auto",
+              overflowX: "hidden",
             }}
           >
             <table
@@ -1009,68 +1066,80 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
               style={{
                 tableLayout: "fixed",
                 width: "100%",
-                minWidth: "1190px",
-                fontSize: "0.875rem",
+                fontSize: "0.85rem",
               }}
             >
               <colgroup>
-                <col style={{ width: 130 }} />
-                <col style={{ width: 100 }} />
-                <col style={{ width: 100 }} />
-                <col style={{ width: 250, minWidth: 240 }} />
-                <col style={{ width: 120 }} />
-                <col style={{ width: 100 }} />
-                <col style={{ width: 110 }} />
-                <col style={{ width: 105 }} />
-                <col style={{ width: 115 }} />
-                <col style={{ width: 75 }} />
+                <col style={{ width: 125 }} /> {/* Ticket # */}
+                <col style={{ width: 95 }} />  {/* Created */}
+                <col style={{ width: 95 }} />  {/* Updated */}
+                <col style={{ width: 195, minWidth: 160 }} /> {/* Summary */}
+                <col style={{ width: 105 }} /> {/* Category */}
+                <col style={{ width: 95 }} />  {/* Req Priority */}
+                <col style={{ width: 95 }} />  {/* IT Priority */}
+                <col style={{ width: 85 }} />  {/* Status */}
+                <col style={{ width: 105 }} /> {/* Owner */}
+                <col style={{ width: 65 }} />  {/* Action */}
               </colgroup>
               <thead>
                 <tr>
                   <th
                     style={{
+                      textAlign: "center",
                       cursor: "pointer",
                       position: "sticky",
                       top: 0,
                       zIndex: 5,
                       backgroundColor: "#F8FAFC",
                       boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
                     }}
                     onClick={() => handleSort("ticketNumber")}
                     data-testid="sort-ticketNumber"
                   >
-                    Ticket # {renderSortIndicator("ticketNumber")}
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.25rem" }}>
+                      Ticket # {renderSortIndicator("ticketNumber")}
+                    </span>
                   </th>
                   <th
                     style={{
+                      textAlign: "center",
                       cursor: "pointer",
                       position: "sticky",
                       top: 0,
                       zIndex: 5,
                       backgroundColor: "#F8FAFC",
                       boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
                     }}
                     onClick={() => handleSort("createdAt")}
                     data-testid="sort-createdAt"
                   >
-                    Created {renderSortIndicator("createdAt")}
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.25rem" }}>
+                      Created {renderSortIndicator("createdAt")}
+                    </span>
                   </th>
                   <th
                     style={{
+                      textAlign: "center",
                       cursor: "pointer",
                       position: "sticky",
                       top: 0,
                       zIndex: 5,
                       backgroundColor: "#F8FAFC",
                       boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
                     }}
                     onClick={() => handleSort("updatedAt")}
                     data-testid="sort-updatedAt"
                   >
-                    Updated {renderSortIndicator("updatedAt")}
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.25rem" }}>
+                      Updated {renderSortIndicator("updatedAt")}
+                    </span>
                   </th>
                   <th
                     style={{
+                      textAlign: "center",
                       position: "sticky",
                       top: 0,
                       zIndex: 5,
@@ -1083,11 +1152,13 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                   </th>
                   <th
                     style={{
+                      textAlign: "center",
                       position: "sticky",
                       top: 0,
                       zIndex: 5,
                       backgroundColor: "#F8FAFC",
                       boxShadow: "0 1px 0 var(--color-border)",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     Category
@@ -1107,6 +1178,7 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                   </th>
                   <th
                     style={{
+                      textAlign: "center",
                       cursor: "pointer",
                       position: "sticky",
                       top: 0,
@@ -1118,7 +1190,7 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                     onClick={() => handleSort("itPriority")}
                     data-testid="sort-itPriority"
                   >
-                    <span style={{ display: "inline-flex", alignItems: "center" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.25rem" }}>
                       IT Priority {renderSortIndicator("itPriority")}
                     </span>
                   </th>
@@ -1136,6 +1208,7 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                   </th>
                   <th
                     style={{
+                      textAlign: "center",
                       position: "sticky",
                       top: 0,
                       zIndex: 5,
@@ -1167,8 +1240,18 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                     onClick={() => handleTicketClick(t.id)}
                     style={{ cursor: "pointer" }}
                   >
-                    <td className="fw-semibold text-primary" style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
-                      {t.ticketNumber}
+                    <td style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
+                      <span
+                        className="zen-ticket-number"
+                        style={{
+                          color: "var(--color-primary, #006B3C)",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
+                        {t.ticketNumber}
+                      </span>
                     </td>
                     <td className="text-muted" style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       {formatDate(t.createdAt)}
@@ -1208,7 +1291,7 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                     <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       {renderPriorityBadge(t.requestedPriority, true)}
                     </td>
-                    <td style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
+                    <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       {t.itPriority ? (
                         renderPriorityBadge(t.itPriority, false)
                       ) : (
@@ -1283,7 +1366,7 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                         </span>
                       )}
                     </td>
-                    <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.75rem 1rem" }}>
+                    <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.75rem 0.4rem" }}>
                       <button
                         type="button"
                         className="zen-btn-view"
@@ -1320,7 +1403,10 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
                   >
                   <div className="card-body p-3">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="fw-bold text-primary" style={{ fontSize: "0.9rem" }}>
+                      <span
+                        className="zen-ticket-number fw-bold"
+                        style={{ color: "var(--color-primary, #006B3C)", fontSize: "0.9rem" }}
+                      >
                         {t.ticketNumber}
                       </span>
                       {renderStatusBadge(t.currentStatus)}
