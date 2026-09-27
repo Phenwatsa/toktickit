@@ -64,7 +64,59 @@ test.describe("Lab 3 IT Staff Ticket Operations E2E Suite", () => {
     await page.click('[data-testid="staff-queue-reset-filters-btn"]');
     await page.waitForTimeout(300);
 
-    // Search for non-existent ticket to trigger No Results empty state
+    // 6. Pagination Verification (Acceptance: Page Navigation, Next/Prev, Item Count, Page Size)
+    const paginationInfo = page.locator('[data-testid="pagination-info"]');
+    await expect(paginationInfo).toBeVisible();
+    await expect(paginationInfo).toContainText("Showing 1 to 10 of");
+    await expect(page.locator('text=Page 1 of')).toBeVisible();
+
+    const prevBtn = page.locator('[data-testid="pagination-prev-btn"]');
+    const nextBtn = page.locator('[data-testid="pagination-next-btn"]');
+    await expect(prevBtn).toBeDisabled();
+    await expect(nextBtn).toBeEnabled();
+
+    // Capture ticket numbers on page 1
+    const rows = page.locator('[data-testid="tickets-table"] tbody tr');
+    await expect(rows).toHaveCount(10);
+    const page1TicketTexts = await page.locator('[data-testid="tickets-table"] tbody tr .zen-ticket-number').allTextContents();
+    expect(page1TicketTexts.length).toBe(10);
+
+    // Click Next Page
+    await nextBtn.click();
+    await expect(paginationInfo).toContainText("Showing 11 to");
+    await expect(page.locator('text=Page 2 of')).toBeVisible();
+    await expect(prevBtn).toBeEnabled();
+
+    const page2Rows = page.locator('[data-testid="tickets-table"] tbody tr');
+    await expect(page2Rows.first()).toBeVisible();
+    const page2TicketTexts = await page.locator('[data-testid="tickets-table"] tbody tr .zen-ticket-number').allTextContents();
+    expect(page2TicketTexts.length).toBeGreaterThan(0);
+    // Ensure no overlap between page 1 and page 2 tickets
+    expect(page1TicketTexts.some((num) => page2TicketTexts.includes(num))).toBe(false);
+
+    // Click Previous Page back to Page 1
+    await prevBtn.click();
+    await expect(paginationInfo).toContainText("Showing 1 to 10 of");
+    await expect(page.locator('text=Page 1 of')).toBeVisible();
+    await expect(prevBtn).toBeDisabled();
+    await expect(nextBtn).toBeEnabled();
+    await expect(rows).toHaveCount(10);
+
+    // Change Page Size to 25
+    await page.selectOption('[data-testid="page-size-select"]', "25");
+    await page.waitForTimeout(400);
+
+    await expect(paginationInfo).toContainText("Showing 1 to");
+    await expect(prevBtn).toBeDisabled();
+    const countPage25 = await page.locator('[data-testid="tickets-table"] tbody tr').count();
+    expect(countPage25).toBeGreaterThanOrEqual(10);
+
+    // Reset Page Size back to 10
+    await page.selectOption('[data-testid="page-size-select"]', "10");
+    await page.waitForTimeout(300);
+    await expect(paginationInfo).toContainText("Showing 1 to 10 of");
+
+    // 7. Search for non-existent ticket to trigger No Results empty state
     await page.fill('[data-testid="staff-queue-search-input"]', "NONEXISTENT_TKT_QUERY_9999");
     await page.waitForTimeout(400); // debounce
     await expect(page.locator('[data-testid="staff-queue-no-results"]')).toBeVisible();
@@ -91,10 +143,12 @@ test.describe("Lab 3 IT Staff Ticket Operations E2E Suite", () => {
     await loginAs(page, "alice.staff@toktickit.local", "Password123!");
     await expect(page).toHaveURL(/#\/staff-queue/);
 
-    // Open first ticket in the queue
-    const firstViewBtn = page.locator('button.zen-btn-view:has-text("View")').first();
-    await expect(firstViewBtn).toBeVisible({ timeout: 10000 });
-    await firstViewBtn.click();
+    // Open ticket requested by Jennifer Anderson (TKT-2026-000101) so Requester view can later verify confidentiality
+    await page.fill('[data-testid="staff-queue-search-input"]', "Cannot access Office 365");
+    await page.waitForTimeout(400);
+    const jenniferTicketRow = page.locator('tr:has-text("Cannot access Office 365")').first();
+    await expect(jenniferTicketRow).toBeVisible({ timeout: 10000 });
+    await jenniferTicketRow.locator('button.zen-btn-view:has-text("View")').click();
 
     // 2. Ticket Detail Overview
     await page.waitForSelector('[data-testid="staff-ticket-detail-view"]');
@@ -114,10 +168,12 @@ test.describe("Lab 3 IT Staff Ticket Operations E2E Suite", () => {
     // 4. Operational Action: Update IT Priority
     const prioritySelect = page.locator('[data-testid="it-priority-select"]');
     if (await prioritySelect.isEnabled()) {
-      await prioritySelect.selectOption("URGENT");
+      const currentPriority = await prioritySelect.inputValue();
+      const newPriority = currentPriority === "URGENT" ? "HIGH" : "URGENT";
+      await prioritySelect.selectOption(newPriority);
       await page.click('[data-testid="update-priority-btn"]');
       await expect(page.locator('[data-testid="action-success-alert"]')).toBeVisible();
-      await expect(page.locator('[data-testid="badge-it-priority-urgent"]')).toBeVisible();
+      await expect(page.locator(`[data-testid="badge-it-priority-${newPriority.toLowerCase()}"]`)).toBeVisible();
     }
 
     // 5. Operational Action: Status Transition with Confirmation Modal

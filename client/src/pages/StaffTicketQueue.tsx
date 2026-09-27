@@ -1063,6 +1063,7 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
           >
             <table
               className="zen-table mb-0 w-100"
+              data-testid="tickets-table"
               style={{
                 tableLayout: "fixed",
                 width: "100%",
