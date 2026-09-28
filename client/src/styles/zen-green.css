@@ -1184,6 +1184,28 @@ body {
     padding: 0.5rem 1rem;
   }
 
+  .zen-create-ticket-top-btn {
+    min-height: 34px !important;
+    height: 34px !important;
+    font-size: 0.82rem !important;
+    padding: 0.35rem 0.75rem !important;
+    white-space: nowrap !important;
+  }
+
+  .zen-total-tickets-badge {
+    min-height: 34px !important;
+    height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    font-size: 0.8rem !important;
+    padding: 0.35rem 0.65rem !important;
+    white-space: nowrap !important;
+  }
+
+  .zen-header-actions-group {
+    width: auto;
+  }
+
   .zen-table th,
   .zen-table td {
     padding: 0.75rem 0.75rem;
@@ -1196,6 +1218,20 @@ body {
     text-align: center;
     gap: 0.75rem;
   }
+}
+
+@media (max-width: 576px) {
+  .zen-header-actions-group {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+}
+
+.zen-header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
 }
 
 /* ==========================================================================
@@ -1279,74 +1315,106 @@ body {
    ========================================================================== */
 .staff-filter-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.65rem;
+  width: 100%;
+}
+
+.staff-filter-row-top {
+  display: flex;
   align-items: center;
+  gap: 0.65rem;
   width: 100%;
 }
 
 .staff-filter-search {
   position: relative;
   flex: 1 1 auto;
-  min-width: 180px;
-  order: 1;
+  min-width: 0;
 }
 
 .staff-filter-reset {
   flex: 0 0 auto;
-  order: 2;
+}
+
+.staff-filter-row-bottom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.staff-filter-select {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.staff-filter-select select {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .staff-filter-break {
-  flex-basis: 100%;
-  width: 100%;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  border: none;
-  order: 3;
-}
-
-/* Base / Mobile (< 768px): 2 filters per row (50% / 50%) */
-.staff-filter-select {
-  flex: 1 1 calc(50% - 0.35rem);
-  width: calc(50% - 0.35rem);
-  min-width: 130px;
-}
-
-.staff-filter-status { order: 4; }
-.staff-filter-category { order: 5; }
-.staff-filter-req-priority { order: 6; }
-.staff-filter-priority { order: 7; }
-.staff-filter-owner { order: 8; }
-
-/* Medium / Tablet (768px - 1199px): Dropdowns wrap neatly */
-@media (min-width: 768px) and (max-width: 1199.98px) {
-  .staff-filter-select {
-    flex: 1 1 calc(33.333% - 0.5rem);
-    width: calc(33.333% - 0.5rem);
-    min-width: 130px;
-  }
+  display: none;
 }
 
 /* Wide Desktop (>= 1200px): Exactly Single Row */
 @media (min-width: 1200px) {
   .staff-filter-bar {
+    flex-direction: row;
     flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
   }
-  .staff-filter-break {
-    display: none;
+
+  .staff-filter-row-top,
+  .staff-filter-row-bottom {
+    display: contents;
   }
+
   .staff-filter-search {
-    flex: 1 1 auto;
     order: 1;
+    flex: 1 1 auto;
+    min-width: 160px;
+    max-width: 440px;
   }
-  .staff-filter-status { order: 2; flex: 0 0 135px; width: 135px; }
-  .staff-filter-category { order: 3; flex: 0 0 140px; width: 140px; }
-  .staff-filter-req-priority { order: 4; flex: 0 0 140px; width: 140px; }
-  .staff-filter-priority { order: 5; flex: 0 0 140px; width: 140px; }
-  .staff-filter-owner { order: 6; flex: 0 0 145px; width: 145px; }
-  .staff-filter-reset { order: 7; flex: 0 0 auto; }
+
+  .staff-filter-status {
+    order: 2;
+    flex: 1 1 135px;
+    min-width: 125px;
+  }
+
+  .staff-filter-category {
+    order: 3;
+    flex: 1 1 150px;
+    min-width: 135px;
+  }
+
+  .staff-filter-req-priority {
+    order: 4;
+    flex: 1 1 140px;
+    min-width: 130px;
+  }
+
+  .staff-filter-priority {
+    order: 5;
+    flex: 1 1 135px;
+    min-width: 125px;
+  }
+
+  .staff-filter-owner {
+    order: 6;
+    flex: 1 1 150px;
+    min-width: 135px;
+  }
+
+  .staff-filter-reset {
+    order: 7;
+    flex: 0 0 auto;
+  }
 }
 
 .staff-filter-bar-mobile {

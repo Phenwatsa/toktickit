@@ -79,7 +79,7 @@ export function setAuthToken(token: string | null): void {
   }
 }
 
-function getAuthHeaders(requesterId?: number): Record<string, string> {
+export function getAuthHeaders(requesterId?: number): Record<string, string> {
   const token = getAuthToken();
   const headers: Record<string, string> = {};
   if (token) {
@@ -89,6 +89,24 @@ function getAuthHeaders(requesterId?: number): Record<string, string> {
     headers["x-requester-id"] = String(requesterId);
   }
   return headers;
+}
+
+export async function fetchAttachmentBlob(
+  attachmentId: number,
+  requesterId?: number
+): Promise<{ blob: Blob; mimeType: string }> {
+  const headers = getAuthHeaders(requesterId);
+  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/download`, {
+    headers,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || "Failed to load attachment");
+  }
+
+  const blob = await res.blob();
+  return { blob, mimeType: res.headers.get("content-type") || blob.type };
 }
 
 // ---------------------------------------------------------------------------
@@ -143,7 +161,7 @@ export async function fetchCurrentUser(token?: string): Promise<{ user: User }> 
 export async function changePassword(
   payload: ChangePasswordPayload,
   token?: string
-): Promise<{ message: string; user: User }> {
+): Promise<{ message: string; user?: User }> {
   const authToken = token || getAuthToken();
   const res = await fetch(`${API_URL}/api/auth/change-password`, {
     method: "POST",
@@ -151,7 +169,12 @@ export async function changePassword(
       "Content-Type": "application/json",
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      currentPassword: payload.currentPassword,
+      newPassword: payload.newPassword,
+      confirmPassword: payload.confirmNewPassword || (payload as any).confirmPassword,
+      confirmNewPassword: payload.confirmNewPassword,
+    }),
   });
 
   const data = await res.json();

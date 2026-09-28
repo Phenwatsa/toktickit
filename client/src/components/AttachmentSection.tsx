@@ -3,6 +3,7 @@ import { Attachment } from "../types";
 import { useRequester } from "../context/RequesterContext";
 import { useAuth } from "../context/AuthContext";
 import { uploadAttachment, downloadAttachment, softRemoveAttachment } from "../api";
+import { AttachmentPreviewModal } from "./AttachmentPreviewModal";
 
 interface AttachmentSectionProps {
   ticketId: number;
@@ -40,6 +41,7 @@ export function AttachmentSection({
 
   // Downloading state
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
 
   const activeAttachments = attachments.filter((att) => !att.isRemoved);
   const removedAttachments = attachments.filter((att) => att.isRemoved);
@@ -279,15 +281,17 @@ export function AttachmentSection({
               data-testid={`attachment-item-${att.id}`}
               style={{
                 display: "flex",
+                flexWrap: "wrap",
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "0.75rem 1rem",
                 backgroundColor: "var(--color-surface)",
                 border: "1px solid var(--color-border)",
                 borderRadius: "8px",
+                gap: "0.6rem",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0, flex: "1 1 auto" }}>
                 {renderFileIcon(att.mimeType)}
                 <div style={{ minWidth: 0 }}>
                   <div
@@ -310,7 +314,37 @@ export function AttachmentSection({
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0, marginLeft: "auto" }}>
+                <button
+                  type="button"
+                  className="zen-btn-primary"
+                  onClick={() => setPreviewAttachment(att)}
+                  data-testid={`preview-btn-${att.id}`}
+                  style={{
+                    fontSize: "0.8rem",
+                    padding: "0.35rem 0.65rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.35rem",
+                  }}
+                  title="Preview document without downloading"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  Preview
+                </button>
                 <button
                   type="button"
                   className="zen-btn-secondary"
@@ -606,6 +640,13 @@ export function AttachmentSection({
           </div>
         </div>
       )}
+
+      {/* Attachment Preview Modal Popup */}
+      <AttachmentPreviewModal
+        isOpen={!!previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        attachment={previewAttachment}
+      />
     </div>
   );
 }

@@ -57,15 +57,15 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 
 | Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
-| **E2E-01** | E2E | AC-01, AC-18 | Complete authentication flow (Login $\rightarrow$ Dashboard $\rightarrow$ Logout $\rightarrow$ Session Revocation) | User logs in, sees customized role navbar, logs out, redirected to login, old session dead | `e2e/lab-03/authentication.spec.ts` | Planned |
-| **E2E-02** | E2E | AC-02 | First-login mandatory password change intercept and continuation | User with initial password is forced to change password before app opens | `e2e/lab-03/authentication.spec.ts` | Planned |
-| **E2E-03** | E2E | AC-06, AC-19 | IT Staff end-to-end queue navigation, search, filter, and role nav | Queue loads, filters narrow results, clicking ticket opens detail view | `e2e/lab-03/staff-ticket-flow.spec.ts` | Planned |
-| **E2E-04** | E2E | AC-07, AC-08, AC-09, AC-10 | IT Staff claims ticket, updates priority, transitions status, posts comment/note | Full operational flow persists across page refresh | `e2e/lab-03/staff-ticket-flow.spec.ts` | Planned |
-| **E2E-05** | E2E | AC-04, AC-10 | Requester logs in, inspects ticket, verifies Internal Notes are hidden | Internal Notes container is completely absent; comments work | `e2e/lab-03/staff-ticket-flow.spec.ts` | Planned |
-| **E2E-06** | E2E | AC-11, AC-12, AC-13, AC-19 | Admin creates user, duplicate email check, attempts self-deactivation, resets password | Full admin lifecycle verified in UI with security rules | `e2e/lab-03/user-administration.spec.ts` | Planned |
-| **E2E-07** | E2E | AC-03, AC-20 | Lab 2 Requester Regression: create ticket, list my tickets, attachments | All Lab 2 features function without the mock requester selector | `e2e/lab-03/requester-regression.spec.ts` | Planned |
-| **E2E-08** | E2E | AC-16 | Cross-viewport responsive audit (Desktop, Tablet, Mobile) | Zero horizontal overflow (`scrollWidth === clientWidth`) across all screens | `e2e/lab-03/responsive.spec.ts` | Planned |
-| **E2E-09** | E2E | AC-21 | Requester marks problem resolved, verifying indication persists while ticket status remains active | Flag `problemAppearsResolved` displays true in Requester view and IT Staff queue/detail, official status remains `OPEN` or `IN_PROGRESS` | `e2e/lab-03/requester-resolution.spec.ts` | Planned |
+| **E2E-01** | E2E | AC-01, AC-18 | Complete authentication flow (Login $\rightarrow$ Dashboard $\rightarrow$ Logout $\rightarrow$ Session Revocation) | User logs in, sees customized role navbar, logs out, redirected to login, old session dead | `e2e/lab-03/authentication.spec.ts` | Passing |
+| **E2E-02** | E2E | AC-02 | First-login mandatory password change intercept and continuation | User with initial password is forced to change password before app opens | `e2e/lab-03/authentication.spec.ts` | Passing |
+| **E2E-03** | E2E | AC-06, AC-19 | IT Staff end-to-end queue navigation, search, filter, and role nav | Queue loads, filters narrow results, clicking ticket opens detail view | `e2e/lab-03/staff-ticket-flow.spec.ts` | Passing |
+| **E2E-04** | E2E | AC-07, AC-08, AC-09, AC-10 | IT Staff claims ticket, updates priority, transitions status, posts comment/note | Full operational flow persists across page refresh | `e2e/lab-03/staff-ticket-flow.spec.ts` | Passing |
+| **E2E-05** | E2E | AC-04, AC-10 | Requester logs in, inspects ticket, verifies Internal Notes are hidden | Internal Notes container is completely absent; comments work | `e2e/lab-03/staff-ticket-flow.spec.ts` | Passing |
+| **E2E-06** | E2E | AC-11, AC-12, AC-13, AC-19 | Admin creates user, duplicate email check, attempts self-deactivation, resets password | Full admin lifecycle verified in UI with security rules | `e2e/lab-03/user-administration.spec.ts` | Passing |
+| **E2E-07** | E2E | AC-03, AC-20 | Lab 2 Requester Regression: create ticket, list my tickets, attachments | All Lab 2 features function without the mock requester selector | `e2e/lab-03/requester-regression.spec.ts` | Passing |
+| **E2E-08** | E2E | AC-16 | Cross-viewport responsive audit (Desktop, Tablet, Mobile) | Zero horizontal overflow (`scrollWidth === clientWidth`) across all screens | `e2e/lab-03/responsive.spec.ts` | Passing |
+| **E2E-09** | E2E | AC-21 | Requester marks problem resolved, verifying indication persists while ticket status remains active | Flag `problemAppearsResolved` displays true in Requester view and IT Staff queue/detail, official status remains `OPEN` or `IN_PROGRESS` | `e2e/lab-03/requester-resolution.spec.ts` | Passing |
 
 ---
 

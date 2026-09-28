@@ -7,6 +7,7 @@ on:
       - main
       - lab2-staging
       - lab3-staging
+      - 'feature/**'
 
 jobs:
   client-tests:
@@ -87,3 +88,71 @@ jobs:
 
       - name: Build backend
         run: npm run build
+
+  e2e-tests:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: toktickit
+          POSTGRES_PASSWORD: toktickit
+          POSTGRES_DB: toktickit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix server ci
+          npm --prefix client ci
+
+      - name: Run Migrations & Seed Database
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run prisma:seed
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests (Playwright)
+        env:
+          CI: true
+          DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public
+          JWT_SECRET: your-jwt-secret-key-change-in-production
+          PORT: 3000
+        run: npm run test:e2e
+
+      - name: Upload Playwright Test Results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+

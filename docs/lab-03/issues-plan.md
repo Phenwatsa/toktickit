@@ -27,10 +27,10 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Out-of-Scope:**
   - Writing or modifying any runtime production code or test implementation code.
 * **Acceptance Criteria:**
-  - [ ] All specification documents are committed and merged to `lab3-staging` via PR #42 before any implementation code is authored.
-  - [ ] Every Functional Requirement (FR-01 to FR-15) maps directly to governing Business Rules (BR) and testable Acceptance Criteria (AC-01 to AC-21).
-  - [ ] The Central Authorization Matrix strictly distinguishes operations permitted for Requester, IT Staff, and Administrator.
-  - [ ] Planned test IDs in `tests.md` cover 100% of defined Acceptance Criteria with zero traceability gaps.
+  - [x] All specification documents are committed and merged to `lab3-staging` via PR #42 before any implementation code is authored.
+  - [x] Every Functional Requirement (FR-01 to FR-15) maps directly to governing Business Rules (BR) and testable Acceptance Criteria (AC-01 to AC-21).
+  - [x] The Central Authorization Matrix strictly distinguishes operations permitted for Requester, IT Staff, and Administrator.
+  - [x] Planned test IDs in `tests.md` cover 100% of defined Acceptance Criteria with zero traceability gaps.
 
 ---
 
@@ -66,13 +66,13 @@ This document provides the definitive planning specification for GitHub Issues (
   - Frontend login forms, UI components, or client-side navigation (deferred to Issue 14 (#36)).
   - IT Staff Ticket Queue or Detail endpoints (deferred to Issue 15 (#37) & Issue 16 (#38)).
 * **Acceptance Criteria:**
-  - [ ] Migration runs cleanly against existing Lab 2 database without data loss.
-  - [ ] Seed script is idempotent and can be executed multiple times without unique constraint violations.
-  - [ ] Passwords are never stored or logged in plaintext.
-  - [ ] Authentication API returns generic, safe error messages upon invalid credentials.
-  - [ ] Inactive accounts are strictly blocked from authenticating.
-  - [ ] Users with `mustChangePassword = true` successfully update their password and clear the flag.
-  - [ ] 100% of tests in `auth.api.test.ts`, `authorization.api.test.ts`, and associated unit test suites pass.
+  - [x] Migration runs cleanly against existing Lab 2 database without data loss.
+  - [x] Seed script is idempotent and can be executed multiple times without unique constraint violations.
+  - [x] Passwords are never stored or logged in plaintext.
+  - [x] Authentication API returns generic, safe error messages upon invalid credentials.
+  - [x] Inactive accounts are strictly blocked from authenticating.
+  - [x] Users with `mustChangePassword = true` successfully update their password and clear the flag.
+  - [x] 100% of tests in `auth.api.test.ts`, `authorization.api.test.ts`, and associated unit test suites pass.
 
 ---
 
@@ -103,12 +103,12 @@ This document provides the definitive planning specification for GitHub Issues (
   - IT Staff Queue and Detail screen development (deferred to Issue 15 (#37) & Issue 16 (#38)).
   - Administrator user management screens (deferred to Issue 17 (#39)).
 * **Acceptance Criteria:**
-  - [ ] Simulated requester selector is completely removed from UI.
-  - [ ] User can log in with valid credentials and receive appropriate feedback on invalid credentials.
-  - [ ] Users flagged with `mustChangePassword` are confined to the password change screen and cannot navigate away until a valid new password is saved.
-  - [ ] Navigation bar dynamically reflects current user identity, role badge, and permitted links.
-  - [ ] Clicking Logout clears authentication state and redirects to the Login screen.
-  - [ ] 100% of Vitest tests in `Login.test.tsx`, `ChangePassword.test.tsx`, and `Navigation.test.tsx` pass.
+  - [x] Simulated requester selector is completely removed from UI.
+  - [x] User can log in with valid credentials and receive appropriate feedback on invalid credentials.
+  - [x] Users flagged with `mustChangePassword` are confined to the password change screen and cannot navigate away until a valid new password is saved.
+  - [x] Navigation bar dynamically reflects current user identity, role badge, and permitted links.
+  - [x] Clicking Logout clears authentication state and redirects to the Login screen.
+  - [x] 100% of Vitest tests in `Login.test.tsx`, `ChangePassword.test.tsx`, and `Navigation.test.tsx` pass.
 
 ---
 
@@ -247,9 +247,9 @@ This document provides the definitive planning specification for GitHub Issues (
   - Modifying business logic or data contracts (unless bug fixes are uncovered).
   - Final PDF report generation (deferred to Issue 19 (#41)).
 * **Acceptance Criteria:**
-  - [ ] All E2E test suites pass 100% on headless browser runs.
-  - [ ] Zero horizontal scrollbars detected across all views in mobile/tablet viewports (AC-16).
-  - [ ] All required screenshots are clearly captured, high-resolution, and organized in their respective directories.
+  - [x] All E2E test suites pass 100% on headless browser runs.
+  - [x] Zero horizontal scrollbars detected across all views in mobile/tablet viewports (AC-16).
+  - [x] All required screenshots are clearly captured, high-resolution, and organized in their respective directories.
 
 ---
 

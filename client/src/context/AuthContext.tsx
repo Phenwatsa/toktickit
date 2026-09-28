@@ -123,10 +123,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (payload: ChangePasswordPayload) => {
       if (!token) throw new Error("Not authenticated");
       const res = await apiChangePassword(payload, token);
-      setUser(res.user);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(res.user));
+      const updatedUser = res.user || (user ? { ...user, mustChangePassword: false } : null);
+      if (updatedUser) {
+        setUser(updatedUser);
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      }
     },
-    [token]
+    [token, user]
   );
 
   return (

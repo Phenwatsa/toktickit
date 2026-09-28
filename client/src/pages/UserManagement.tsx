@@ -23,6 +23,28 @@ export function UserManagement() {
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
 
+  // Responsive Screen Detection (Mobile < 768px vs Desktop >= 768px)
+  const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileScreen(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const hasActiveFilters = Boolean(search.trim()) || roleFilter !== "ALL";
+  const handleClearFilters = () => {
+    setSearch("");
+    setRoleFilter("ALL");
+  };
+
   // Create Modal State
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
   const [createName, setCreateName] = useState<string>("");
@@ -456,21 +478,22 @@ export function UserManagement() {
   );
 
   return (
-    <div className="zen-container py-3" data-testid="admin-user-management">
-      {/* Page Header matching IT Staff format */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
-        <div>
+    <div className="zen-container py-3" style={{ paddingBottom: "3rem" }} data-testid="admin-user-management">
+      {/* Page Header matching IT Staff & Requester format */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div style={{ flex: "1 1 auto", minWidth: 0 }}>
           <h1 className="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 36,
-                height: 36,
+                width: 34,
+                height: 34,
                 borderRadius: 8,
                 backgroundColor: "var(--color-pale-green, #EAF6EF)",
                 color: "var(--color-primary, #006B3C)",
+                flexShrink: 0,
               }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -480,36 +503,37 @@ export function UserManagement() {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
             </span>
-            User Management
+            <span style={{ whiteSpace: "nowrap" }}>User Management</span>
           </h1>
           <p className="text-muted small mb-0">
             Create, view, and administer user accounts, roles, and access credentials.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="zen-btn-primary d-inline-flex align-items-center gap-2"
-          onClick={handleOpenCreate}
-          data-testid="create-user-button"
-          style={{
-            backgroundColor: "var(--color-primary, #006B3C)",
-            color: "#FFFFFF",
-            border: "none",
-            borderRadius: "8px",
-            padding: "0.5rem 1.1rem",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            boxShadow: "0 2px 4px rgba(0, 107, 60, 0.2)",
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span>Create New User</span>
-        </button>
+        <div className="zen-header-actions-group d-flex align-items-center gap-2 flex-shrink-0">
+          {users.length > 0 && (
+            <span
+              className="badge bg-light text-dark border zen-total-tickets-badge"
+              style={{ fontWeight: 600, whiteSpace: "nowrap" }}
+              data-testid="total-records-badge"
+            >
+              Total Users: {users.length}
+            </span>
+          )}
+          <button
+            type="button"
+            className="zen-btn-primary zen-create-ticket-top-btn ms-auto ms-md-0"
+            onClick={handleOpenCreate}
+            data-testid="create-user-button"
+            style={{ whiteSpace: "nowrap" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>Create New User</span>
+          </button>
+        </div>
       </div>
 
       {/* Global Fetch Error Banner */}
@@ -529,11 +553,21 @@ export function UserManagement() {
         </div>
       )}
 
-      {/* Filter and Search Bar matching Staff Queue layout */}
-      <div className="zen-card mb-4 p-3 shadow-sm" style={{ backgroundColor: "#FFFFFF", borderRadius: "10px" }}>
-        <div className="d-flex flex-column flex-md-row align-items-md-center gap-3">
+      {/* Filter and Search Bar matching Staff Queue & Requester layout */}
+      <div
+        className="zen-card mb-4"
+        style={{
+          padding: "1rem 1.25rem",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: "12px",
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+        }}
+        data-testid="filter-bar"
+      >
+        <div className="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
           {/* Search Box with Left SVG Icon and Right Clear Button */}
-          <div style={{ position: "relative", flex: 1 }}>
+          <div style={{ position: "relative", flex: "1 1 auto", minWidth: 200 }}>
             <input
               type="text"
               className="form-control form-control-sm"
@@ -550,6 +584,7 @@ export function UserManagement() {
                 fontSize: "0.85rem",
                 height: "38px",
                 width: "100%",
+                transition: "all 0.15s ease",
               }}
             />
             <span
@@ -594,7 +629,7 @@ export function UserManagement() {
           </div>
 
           {/* Role Filter Select */}
-          <div style={{ minWidth: 200 }}>
+          <div style={{ flex: isMobileScreen ? "1 1 auto" : "0 0 190px", minWidth: 160 }}>
             <select
               id="admin-role-filter"
               className="form-select form-select-sm"
@@ -604,12 +639,13 @@ export function UserManagement() {
               style={{
                 borderRadius: "8px",
                 borderColor: "#E2E8F0",
-                backgroundColor: "#F8FAFC",
+                backgroundColor: "#FFFFFF",
                 fontSize: "0.85rem",
                 fontWeight: 500,
                 height: "38px",
                 width: "100%",
                 color: "#334155",
+                transition: "all 0.15s ease",
               }}
             >
               <option value="ALL">All Roles</option>
@@ -618,15 +654,50 @@ export function UserManagement() {
               <option value="ADMINISTRATOR">Administrator</option>
             </select>
           </div>
+
+          {/* Reset Filters Action Button */}
+          <div style={{ flex: "0 0 auto", width: isMobileScreen ? "100%" : "auto" }}>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              data-testid="clear-filters-btn"
+              style={{
+                backgroundColor: hasActiveFilters ? "var(--color-pale-green, #EAF6EF)" : "#F8FAFC",
+                color: hasActiveFilters ? "var(--color-primary, #006B3C)" : "#94A3B8",
+                border: hasActiveFilters ? "1px solid #C4E6D2" : "1px solid #E2E8F0",
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.83rem",
+                padding: "0 0.95rem",
+                height: "38px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                whiteSpace: "nowrap",
+                cursor: hasActiveFilters ? "pointer" : "not-allowed",
+                transition: "all 0.15s ease",
+                width: isMobileScreen ? "100%" : "auto",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              <span>Reset Filters</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Users Table matching zen-table-container format */}
+      {/* Users Table matching IT Staff & Requester format */}
       <div
         className="zen-card p-0 overflow-hidden shadow-sm"
         style={{
           backgroundColor: "#FFFFFF",
-          borderRadius: "10px",
+          borderRadius: "12px",
           border: "1px solid var(--color-border, #E2E8F0)",
         }}
       >
@@ -648,81 +719,354 @@ export function UserManagement() {
             <small className="text-muted">Try adjusting your search criteria or role filter.</small>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="zen-table mb-0 w-100" data-testid="users-table">
-              <thead>
-                <tr>
-                  <th style={{ backgroundColor: "#F8FAFC", boxShadow: "0 1px 0 var(--color-border)" }}>Name</th>
-                  <th style={{ backgroundColor: "#F8FAFC", boxShadow: "0 1px 0 var(--color-border)" }}>Email</th>
-                  <th style={{ backgroundColor: "#F8FAFC", boxShadow: "0 1px 0 var(--color-border)" }}>Department</th>
-                  <th style={{ backgroundColor: "#F8FAFC", boxShadow: "0 1px 0 var(--color-border)" }}>Role</th>
-                  <th style={{ backgroundColor: "#F8FAFC", boxShadow: "0 1px 0 var(--color-border)" }}>Status</th>
-                  <th style={{ backgroundColor: "#F8FAFC", boxShadow: "0 1px 0 var(--color-border)", textAlign: "right" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <>
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            {!isMobileScreen && (
+              <div
+                className="table-responsive d-none d-md-block"
+                style={{
+                  maxHeight: "calc(100vh - 275px)",
+                  overflowY: "auto",
+                  overflowX: "auto",
+                }}
+              >
+                <table
+                  className="zen-table mb-0 w-100"
+                  style={{
+                    tableLayout: "fixed",
+                    width: "100%",
+                    minWidth: "860px",
+                    fontSize: "0.85rem",
+                  }}
+                  data-testid="users-table"
+                >
+                  <colgroup>
+                    <col style={{ width: "18%", minWidth: 160 }} /> {/* Name */}
+                    <col style={{ width: "28%", minWidth: 210 }} /> {/* Email */}
+                    <col style={{ width: "20%", minWidth: 160 }} /> {/* Department */}
+                    <col style={{ width: "13%", minWidth: 120 }} /> {/* Role */}
+                    <col style={{ width: "10%", minWidth: 90 }} />  {/* Status */}
+                    <col style={{ width: "11%", minWidth: 100 }} /> {/* Action */}
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          paddingLeft: "1.25rem",
+                          position: "sticky",
+                          top: 0,
+                          zIndex: 5,
+                          backgroundColor: "#F8FAFC",
+                          boxShadow: "0 1px 0 var(--color-border)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Name
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          position: "sticky",
+                          top: 0,
+                          zIndex: 5,
+                          backgroundColor: "#F8FAFC",
+                          boxShadow: "0 1px 0 var(--color-border)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Email
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          position: "sticky",
+                          top: 0,
+                          zIndex: 5,
+                          backgroundColor: "#F8FAFC",
+                          boxShadow: "0 1px 0 var(--color-border)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Department
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "center",
+                          position: "sticky",
+                          top: 0,
+                          zIndex: 5,
+                          backgroundColor: "#F8FAFC",
+                          boxShadow: "0 1px 0 var(--color-border)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Role
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "center",
+                          position: "sticky",
+                          top: 0,
+                          zIndex: 5,
+                          backgroundColor: "#F8FAFC",
+                          boxShadow: "0 1px 0 var(--color-border)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Status
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "center",
+                          position: "sticky",
+                          top: 0,
+                          zIndex: 5,
+                          backgroundColor: "#F8FAFC",
+                          boxShadow: "0 1px 0 var(--color-border)",
+                          whiteSpace: "nowrap",
+                          paddingRight: "1.25rem",
+                        }}
+                      >
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => {
+                      const isCurrent = currentUser?.id === u.id;
+                      return (
+                        <tr
+                          key={u.id}
+                          data-testid={`user-row-${u.id}`}
+                          style={{
+                            backgroundColor: isCurrent ? "rgba(0, 107, 60, 0.03)" : "transparent",
+                            transition: "background-color 0.15s ease",
+                          }}
+                        >
+                          <td style={{ verticalAlign: "middle", paddingLeft: "1.25rem" }}>
+                            <div className="d-flex align-items-center gap-2">
+                              <span
+                                className="fw-semibold text-slate-800"
+                                data-testid={`user-name-${u.id}`}
+                                style={{
+                                  color: isCurrent ? "var(--color-primary, #006B3C)" : "#1E293B",
+                                  fontSize: "0.875rem",
+                                }}
+                              >
+                                {u.name}
+                              </span>
+                              {isCurrent && (
+                                <span
+                                  className="badge"
+                                  style={{
+                                    fontSize: "0.65rem",
+                                    padding: "0.15rem 0.45rem",
+                                    borderRadius: "9999px",
+                                    backgroundColor: "var(--color-pale-green, #E8F5E9)",
+                                    color: "var(--color-primary, #006B3C)",
+                                    border: "1px solid #C8E6C9",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  You
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td
+                            className="text-muted"
+                            data-testid={`user-email-${u.id}`}
+                            style={{
+                              verticalAlign: "middle",
+                              wordBreak: "break-all",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            {u.email}
+                          </td>
+                          <td
+                            className="text-muted"
+                            data-testid={`user-dept-${u.id}`}
+                            style={{
+                              verticalAlign: "middle",
+                              textAlign: "left",
+                              wordBreak: "break-word",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            {u.department || "—"}
+                          </td>
+                          <td
+                            data-testid={`user-role-${u.id}`}
+                            style={{
+                              textAlign: "center",
+                              verticalAlign: "middle",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {renderRoleBadge(u.role)}
+                          </td>
+                          <td
+                            data-testid={`user-status-${u.id}`}
+                            style={{
+                              textAlign: "center",
+                              verticalAlign: "middle",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {renderStatusBadge(u.isActive)}
+                          </td>
+                          <td
+                            style={{
+                              textAlign: "center",
+                              whiteSpace: "nowrap",
+                              verticalAlign: "middle",
+                              padding: "0.75rem 1.25rem 0.75rem 0.5rem",
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="zen-btn-view"
+                              onClick={() => handleOpenEdit(u)}
+                              data-testid={`edit-user-btn-${u.id}`}
+                              style={{
+                                borderRadius: "6px",
+                                fontSize: "0.8rem",
+                                padding: "0.28rem 0.75rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.35rem",
+                              }}
+                              title="Edit user details"
+                            >
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                              >
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                              <span>Edit</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Mobile Cards View (< 768px: Phone) */}
+            {isMobileScreen && (
+              <div
+                className="d-block d-md-none p-3"
+                data-testid="users-cards-container"
+                style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+              >
                 {users.map((u) => {
                   const isCurrent = currentUser?.id === u.id;
                   return (
-                    <tr
+                    <div
                       key={u.id}
-                      data-testid={`user-row-${u.id}`}
+                      className="zen-card p-3"
+                      data-testid={`user-card-${u.id}`}
                       style={{
-                        backgroundColor: isCurrent ? "rgba(0, 107, 60, 0.03)" : "transparent",
+                        backgroundColor: isCurrent ? "rgba(0, 107, 60, 0.03)" : "#FFFFFF",
+                        border: isCurrent ? "1px solid #C4E6D2" : "1px solid #E2E8F0",
+                        borderRadius: "10px",
+                        boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
                       }}
                     >
-                      <td>
+                      <div className="d-flex align-items-center justify-content-between mb-2">
                         <div className="d-flex align-items-center gap-2">
-                          <span className="fw-semibold text-slate-800" data-testid={`user-name-${u.id}`}>
+                          <span
+                            className="fw-bold text-dark"
+                            data-testid={`user-name-${u.id}`}
+                            style={{ fontSize: "0.95rem" }}
+                          >
                             {u.name}
                           </span>
                           {isCurrent && (
                             <span
-                              className="badge bg-light text-secondary border"
-                              style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem", borderRadius: "9999px" }}
+                              className="badge"
+                              style={{
+                                fontSize: "0.65rem",
+                                padding: "0.15rem 0.45rem",
+                                borderRadius: "9999px",
+                                backgroundColor: "var(--color-pale-green, #E8F5E9)",
+                                color: "var(--color-primary, #006B3C)",
+                                border: "1px solid #C8E6C9",
+                                fontWeight: 600,
+                              }}
                             >
                               You
                             </span>
                           )}
                         </div>
-                      </td>
-                      <td className="text-muted" data-testid={`user-email-${u.id}`}>
-                        {u.email}
-                      </td>
-                      <td className="text-muted" data-testid={`user-dept-${u.id}`}>
-                        {u.department || "—"}
-                      </td>
-                      <td data-testid={`user-role-${u.id}`}>
-                        {renderRoleBadge(u.role)}
-                      </td>
-                      <td data-testid={`user-status-${u.id}`}>
-                        {renderStatusBadge(u.isActive)}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
+                        <div data-testid={`user-status-${u.id}`}>
+                          {renderStatusBadge(u.isActive)}
+                        </div>
+                      </div>
+
+                      <div className="text-muted small mb-2 d-flex flex-column gap-1">
+                        <div className="d-flex align-items-center gap-2">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                          </svg>
+                          <span style={{ wordBreak: "break-all" }} data-testid={`user-email-${u.id}`}>{u.email}</span>
+                        </div>
+                        <div className="d-flex align-items-center gap-2">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                            <line x1="9" y1="22" x2="9" y2="22.01" />
+                            <line x1="15" y1="22" x2="15" y2="22.01" />
+                            <line x1="12" y1="18" x2="12" y2="18.01" />
+                          </svg>
+                          <span data-testid={`user-dept-${u.id}`}>{u.department || "—"}</span>
+                        </div>
+                      </div>
+
+                      <div className="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <div data-testid={`user-role-${u.id}`}>
+                          {renderRoleBadge(u.role)}
+                        </div>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                          className="zen-btn-view"
                           onClick={() => handleOpenEdit(u)}
                           data-testid={`edit-user-btn-${u.id}`}
                           style={{
                             borderRadius: "6px",
                             fontSize: "0.8rem",
-                            padding: "0.25rem 0.65rem",
+                            padding: "0.28rem 0.85rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.35rem",
                           }}
                         >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                           </svg>
                           <span>Edit</span>
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
