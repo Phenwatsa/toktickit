@@ -193,5 +193,5 @@ All sprint work follows strict Git discipline: `feature/*` or `docs/*` branches 
 | **Issue 15 (#37)** | `feature/lab3-3-staff-queue` | IT Staff Ticket Queue (API & Responsive UI) | **Merged** |
 | **Issue 16 (#38)** | `feature/lab3-4-ticket-detail-and-notes` | Staff Ticket Detail, Comments & Confidential Notes | **Merged** |
 | **Issue 17 (#39)** | `feature/lab3-5-admin-user-management` | Minimalist Administrator User Management | **Merged** |
-| **Issue 18 (#40)** | `feature/lab3-6-e2e-and-responsive` | End-to-End Testing, Responsive Audit & Visual Artifacts | **Approved** |
+| **Issue 18 (#40)** | `feature/lab3-6-e2e-and-responsive` | End-to-End Testing, Responsive Audit & Visual Artifacts | **Merged** |
 | **Issue 19 (#41)** | `docs/lab3-documentation` | Release Integration, Reviewer Consolidation & Final Docs | **Ready** |
