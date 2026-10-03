@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { generateToken } from "../../src/middleware/auth.js";
 
 // ---------------------------------------------------------------------------
 // Lab 2 — Issue 8: My Tickets List API Tests (Multi-tenant & Filtering)
@@ -10,6 +11,8 @@ import { getPrisma } from "../../src/prisma.js";
 describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   let requesterAId: number;
   let requesterBId: number;
+  let tokenA: string;
+  let tokenB: string;
   let categoryHardwareId: number;
   let categorySoftwareId: number;
   let systemLaptopId: number;
@@ -33,11 +36,13 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
 
     // Get two distinct active requesters
     const requesters = await prisma.requesterUser.findMany({
-      where: { isActive: true },
+      where: { isActive: true, mustChangePassword: false },
       take: 2,
     });
     requesterAId = requesters[0].id;
     requesterBId = requesters[1].id;
+    tokenA = generateToken(requesters[0]);
+    tokenB = generateToken(requesters[1]);
 
     // Get categories
     const catHardware = await prisma.category.findFirst({ where: { name: "Hardware" } });
@@ -107,7 +112,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("returns HTTP 200 with paginated tickets owned strictly by Requester A", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .query({ requesterId: requesterAId });
 
     expect(res.status).toBe(200);
@@ -144,7 +149,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
     // Requester B query with valid Requester B session header
     const resB = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", String(requesterBId))
+      .set("Authorization", `Bearer ${tokenB}`)
       .query({ requesterId: requesterBId });
 
     expect(resB.status).toBe(200);
@@ -156,7 +161,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("filters tickets by search query across ticketNumber and summary (case-insensitive)", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .query({ requesterId: requesterAId, search: "Overheating" });
 
     expect(res.status).toBe(200);
@@ -167,7 +172,7 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("filters tickets by categoryId, priority, and currentStatus", async () => {
     const res = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .query({
         requesterId: requesterAId,
         categoryId: categorySoftwareId,
@@ -183,12 +188,12 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
   it("supports sorting by createdAt in ascending and descending order", async () => {
     const resDesc = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .query({ requesterId: requesterAId, sortBy: "createdAt", sortOrder: "desc" });
 
     const resAsc = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .query({ requesterId: requesterAId, sortBy: "createdAt", sortOrder: "asc" });
 
     expect(resDesc.status).toBe(200);
@@ -203,24 +208,25 @@ describe("Issue 8 — GET /api/tickets (My Tickets List API)", () => {
     expect(firstAscDate).toBeLessThanOrEqual(lastAscDate);
   });
 
-  it("rejects unauthorized access when session header mismatches query requesterId (HTTP 403)", async () => {
+  it("strictly derives ownership from session and ignores query requesterId", async () => {
     // Current session is Requester A, but request tries to query Requester B
     const res = await request(app)
       .get("/api/tickets")
-      .set("x-requester-id", String(requesterAId))
+      .set("Authorization", `Bearer ${tokenA}`)
       .query({ requesterId: requesterBId });
 
-    expect(res.status).toBe(403);
-    expect(res.body).toHaveProperty("error", "Forbidden");
-    expect(res.body.message).toContain("cannot access tickets belonging to another requester");
+    expect(res.status).toBe(200);
+    const ticketNumbers = res.body.data.map((t: any) => t.ticketNumber);
+    expect(ticketNumbers).toContain(uniqueTicketNumA1);
+    expect(ticketNumbers).not.toContain(uniqueTicketNumB1);
   });
 
-  it("rejects request when x-requester-id session header is missing even if query requesterId is provided (HTTP 400)", async () => {
+  it("rejects request when authentication token is missing even if query requesterId is provided (HTTP 401)", async () => {
     const res = await request(app)
       .get("/api/tickets")
       .query({ requesterId: requesterAId });
 
-    expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty("error", "Missing requester session");
+    expect(res.status).toBe(401);
+    expect(res.body).toHaveProperty("error", "Authentication required");
   });
 });

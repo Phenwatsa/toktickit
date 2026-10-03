@@ -1,0 +1,197 @@
+# TokTickIT Lab 3 — Test Plan & Traceability Matrix
+
+This document outlines the planned automated test suite for TokTickIT Sprint 3 (Lab 3). It defines the test matrix across the testing pyramid (Backend REST API Integration tests, Frontend UI Component tests, and End-to-End Playwright scenarios), mapping every test directly to its corresponding Acceptance Criterion (AC-xx).
+
+---
+
+## 1. Planned Test Matrix
+
+### 1.1 Backend API Tests (`server/tests/lab-03/`)
+
+| Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+| **API-01** | API | AC-01 | Valid user login with correct email and password | HTTP 200; returns JWT token and safe user profile (id, name, email, role, mustChangePassword) | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-02** | API | AC-05 | Login attempt with incorrect password | HTTP 401 Unauthorized; safe error `"Invalid email or password"` without leaking details | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-03** | API | AC-05 | Login attempt with deactivated account (`isActive: false`) | HTTP 401 Unauthorized; safe generic error response | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-04** | API | AC-02 | User with `mustChangePassword = true` changes password | HTTP 200; updates password hash, sets `mustChangePassword = false` | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-05** | API | AC-02 | Password change fails if new password does not meet complexity rules | HTTP 400 Bad Request; descriptive validation errors | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-06** | API | AC-03 | Requester queries ticket list (`GET /api/tickets`) with another `requesterId` in query/header, or attempts to access another user's ticket detail (`GET /api/tickets/:id`) | Ownership strictly derived from session `req.user.id`; foreign tickets excluded from list and unauthorized ticket detail access rejected with HTTP 403 Forbidden | `server/tests/lab-03/authorization.api.test.ts` | Passing |
+| **API-07** | API | AC-06 | IT Staff queries ticket queue with search and filters | HTTP 200; returns paginated array of all system tickets with metadata | `server/tests/lab-03/staff-queue.api.test.ts` | Passing |
+| **API-08** | API | AC-15 | Unauthorized roles (Requester and Admin) attempt to access staff queue (`GET /api/staff/tickets`) | HTTP 403 Forbidden; zero queue data leaked | `server/tests/lab-03/staff-queue.api.test.ts` | Passing |
+| **API-09** | API | AC-07 | IT Staff claims unassigned ticket ownership | HTTP 200; ticket owner set to current authenticated staff ID | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Passing |
+| **API-10** | API | AC-08 | IT Staff updates `itPriority` | HTTP 200; `itPriority` updated while original `requestedPriority` remains intact | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Passing |
+| **API-11** | API | AC-09 | IT Staff attempts invalid status transition (`IN_PROGRESS` to `CLOSED`) | HTTP 400 Bad Request; transition blocked according to transition rules | `server/tests/lab-03/staff-ticket-detail.api.test.ts` | Passing |
+| **API-12** | API | AC-10 | Requester and IT Staff exchange Public Comments on ticket | HTTP 201; comment created, visible to both Requester and Staff | `server/tests/lab-03/comments-notes.api.test.ts` | Passing |
+| **API-13** | API | AC-04 | Unauthorized roles (Requester and Admin) attempt to read or post Internal Notes | HTTP 403 Forbidden; zero note content or metadata returned | `server/tests/lab-03/comments-notes.api.test.ts` | Passing |
+| **API-14** | API | AC-11 | Admin creates new user with one role and initial password | HTTP 201; user created with `mustChangePassword = true` | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-15** | API | AC-12 | Admin attempts to create user with duplicate email | HTTP 409 Conflict; duplicate email error message | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-16** | API | AC-13 | Admin attempts to deactivate own account | HTTP 400 Bad Request; self-deactivation blocked by safety guard | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-17** | API | AC-14 | Admin attempts to deactivate or demote last active admin | HTTP 400 Bad Request; system retains at least one active administrator | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-18** | API | AC-15 | Non-Admin attempts to call Admin User endpoints | HTTP 403 Forbidden for Requester and IT Staff | `server/tests/lab-03/users-admin.api.test.ts` | Passing |
+| **API-19** | API | AC-17 | Authenticated user retrieves current profile via `GET /api/auth/me` | HTTP 200 with user profile; HTTP 401 when token is missing or invalid | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-20** | API | AC-18 | User logs out via `POST /api/auth/logout` and previous token is revoked | Calling protected route with old token fails with HTTP 401 (`tokenVersion` mismatch) | `server/tests/lab-03/auth.api.test.ts` | Passing |
+| **API-21** | API | AC-20 | Requester B attempts to upload, download (`GET /api/attachments/:id/download`), or soft-delete attachments on Requester A's ticket | HTTP 403 Forbidden on upload, download, and soft-delete; attachments cross-user isolation strictly enforced | `server/tests/lab-03/authorization.api.test.ts` | Passing |
+| **API-22** | API | AC-21 | Requester owner marks problem resolved via `PATCH /api/requester/tickets/:id/resolve-indication`; non-owner, IT Staff, and Admin attempts rejected | HTTP 200 with `problemAppearsResolved: true` and official status unchanged; HTTP 403 Forbidden for non-owner, Staff, and Admin; HTTP 404 for nonexistent ticket | `server/tests/lab-03/requester-resolution.api.test.ts` | Passing |
+
+---
+
+### 1.2 Frontend UI Component Tests (`client/src/tests/lab-03/`)
+
+| Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+| **UI-01** | UI | AC-01 | Login view form validation, input handling, and busy state | Form submits credentials, disables button with spinner during request | `client/tests/lab-03/Login.test.tsx` | Passing |
+| **UI-02** | UI | AC-05 | Login view displays safe error banner on 401 response | Shows `"Invalid email or password"` alert banner | `client/tests/lab-03/Login.test.tsx` | Passing |
+| **UI-03** | UI | AC-02 | Change Password form enforces password policy checks in real-time | Submit button remains disabled until all 3 rules (length, cases, number) pass | `client/tests/lab-03/ChangePassword.test.tsx` | Passing |
+| **UI-04** | UI | AC-06 | Staff Ticket Queue table renders tickets, badges, and owner names | Correct data columns displayed with Zen Green badges | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Passing |
+| **UI-05** | UI | AC-06 | Staff Ticket Queue handles empty state and no-results search filter | Displays empty illustration / message with "Reset Filters" action | `client/tests/lab-03/StaffTicketQueue.test.tsx` | Passing |
+| **UI-06** | UI | AC-07, AC-08 | Ticket Detail renders operational controls (Claim, Reassign, IT Priority) | Operational buttons trigger appropriate callbacks | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Passing |
+| **UI-07** | UI | AC-04, AC-10 | Ticket Detail enforces confidentiality of Internal Notes & renders Public Comments | When viewed by Requester, Internal Notes are completely absent; when viewed by Staff, both render with clear visual distinction | `client/tests/lab-03/StaffTicketDetail.test.tsx` | Passing |
+| **UI-08** | UI | AC-11 | Admin User Management displays user list and open Create User modal | Form renders name, email, role radio buttons, and initial password | `client/tests/lab-03/UserManagement.test.tsx` | Passing |
+| **UI-09** | UI | AC-13 | Admin User Management disables deactivation for current admin row | Active toggle switch is disabled with explanatory tooltip | `client/tests/lab-03/UserManagement.test.tsx` | Passing |
+| **UI-10** | UI | AC-19 | Role-based navigation renders strictly permitted links per role | Requester sees My Tickets/Create Ticket; Staff sees Ticket Queue; Admin sees User Management | `client/tests/lab-03/Navigation.test.tsx` | Passing |
+| **UI-11** | UI | AC-21 | Requester Ticket Detail renders "Problem Appears Resolved" button and updates indicator | Button click triggers PATCH request and displays resolved indicator without altering official status badge | `client/tests/lab-03/RequesterTicketDetail.test.tsx` | Passing |
+
+---
+
+### 1.3 End-to-End Browser Automation Tests (`e2e/lab-03/`)
+
+| Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+| **E2E-01** | E2E | AC-01, AC-18 | Complete authentication flow (Login $\rightarrow$ Dashboard $\rightarrow$ Logout $\rightarrow$ Session Revocation) | User logs in, sees customized role navbar, logs out, redirected to login, old session dead | `e2e/lab-03/authentication.spec.ts` | Passing |
+| **E2E-02** | E2E | AC-02 | First-login mandatory password change intercept and continuation | User with initial password is forced to change password before app opens | `e2e/lab-03/authentication.spec.ts` | Passing |
+| **E2E-03** | E2E | AC-06, AC-19 | IT Staff end-to-end queue navigation, search, filter, and role nav | Queue loads, filters narrow results, clicking ticket opens detail view | `e2e/lab-03/staff-ticket-flow.spec.ts` | Passing |
+| **E2E-04** | E2E | AC-07, AC-08, AC-09, AC-10 | IT Staff claims ticket, updates priority, transitions status, posts comment/note | Full operational flow persists across page refresh | `e2e/lab-03/staff-ticket-flow.spec.ts` | Passing |
+| **E2E-05** | E2E | AC-04, AC-10 | Requester logs in, inspects ticket, verifies Internal Notes are hidden | Internal Notes container is completely absent; comments work | `e2e/lab-03/staff-ticket-flow.spec.ts` | Passing |
+| **E2E-06** | E2E | AC-11, AC-12, AC-13, AC-19 | Admin creates user, duplicate email check, attempts self-deactivation, resets password | Full admin lifecycle verified in UI with security rules | `e2e/lab-03/user-administration.spec.ts` | Passing |
+| **E2E-07** | E2E | AC-03, AC-20 | Lab 2 Requester Regression: create ticket, list my tickets, attachments | All Lab 2 features function without the mock requester selector | `e2e/lab-03/requester-regression.spec.ts` | Passing |
+| **E2E-08** | E2E | AC-16 | Cross-viewport responsive audit (Desktop, Tablet, Mobile) | Zero horizontal overflow (`scrollWidth === clientWidth`) across all screens | `e2e/lab-03/responsive.spec.ts` | Passing |
+| **E2E-09** | E2E | AC-21 | Requester marks problem resolved, verifying indication persists while ticket status remains active | Flag `problemAppearsResolved` displays true in Requester view and IT Staff queue/detail, official status remains `OPEN` or `IN_PROGRESS` | `e2e/lab-03/requester-resolution.spec.ts` | Passing |
+
+---
+
+### 1.4 Unit Tests (`server/tests/lab-03/unit/` & `client/src/tests/lab-03/unit/`)
+
+| Test ID | Type | AC | What It Tests | Expected Result | Automated Test File | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+| **UNIT-01** | Unit | AC-02 | Password policy complexity rule validator (length $\ge 8$, upper, lower, digit) | Returns valid `true` on compliant passwords; returns `false` with precise violation codes on failure | `server/tests/lab-03/unit/password-policy.unit.test.ts` | Passing |
+| **UNIT-02** | Unit | AC-09 | 8-status finite state machine transition validator | Valid transitions return `true`; illegal transitions (e.g. `IN_PROGRESS` $\rightarrow$ `CLOSED`) return `false` | `server/tests/lab-03/unit/status-transition.unit.test.ts` | Passing |
+| **UNIT-03** | Unit | AC-15 | Role-based authorization middleware permission checks | Verifies `requireRole` helper permits authorized roles and rejects unauthorized roles with 403 Forbidden | `server/tests/lab-03/unit/role-auth.unit.test.ts` | Passing |
+| **UNIT-04** | Unit | AC-08 | Priority assignment helper upon ticket initialization | Verifies `itPriority` helper sets initial IT priority equal to `requestedPriority` (BR-11) | `server/tests/lab-03/unit/priority-init.unit.test.ts` | Passing |
+| **UNIT-05** | Unit | AC-13, AC-14 | Administrator safety guards (self-deactivation and last active admin check) | Prevents self-deactivation (`userId === targetId`) and blocking when sole active admin remaining | `server/tests/lab-03/unit/admin-guard.unit.test.ts` | Passing |
+| **UNIT-06** | Unit | AC-18 | JWT payload `tokenVersion` mismatch validator | Verifies token comparison rejects stale `tokenVersion` against active database version | `server/tests/lab-03/unit/token-version.unit.test.ts` | Passing |
+
+---
+
+## 2. Acceptance Criteria Traceability Matrix
+
+| AC ID | Acceptance Criterion Summary | Covering Automated Tests |
+| :--- | :--- | :--- |
+| **AC-01** | Valid credentials establish authenticated session and role | `API-01`, `UI-01`, `E2E-01` |
+| **AC-02** | Initial password user must change password before app access | `API-04`, `API-05`, `UI-03`, `E2E-02`, `UNIT-01` |
+| **AC-03** | Requester identity derived from session `req.user.id`, enforcing ticket-list and ticket-detail cross-user ownership isolation | `API-06`, `E2E-07` |
+| **AC-04** | Internal Notes strictly hidden and forbidden for Requesters and Admins | `API-13`, `UI-07`, `E2E-05` |
+| **AC-05** | Invalid credentials or inactive accounts safely rejected | `API-02`, `API-03`, `UI-02`, `E2E-01` |
+| **AC-06** | IT Staff queue retrieval with search, filters, pagination | `API-07`, `UI-04`, `UI-05`, `E2E-03` |
+| **AC-07** | Ticket ownership claim and reassignment | `API-09`, `UI-06`, `E2E-04` |
+| **AC-08** | IT Priority management preserving Requested Priority | `API-10`, `UI-06`, `E2E-04`, `UNIT-04` |
+| **AC-09** | Status transitions adhere to defined state matrix | `API-11`, `UI-06`, `E2E-04`, `UNIT-02` |
+| **AC-10** | Public Comments exchange between Requester and Staff | `API-12`, `UI-07`, `E2E-04`, `E2E-05` |
+| **AC-11** | Admin user creation with role and initial password | `API-14`, `UI-08`, `E2E-06` |
+| **AC-12** | Duplicate email rejection on user creation/update | `API-15`, `E2E-06` |
+| **AC-13** | Prevention of Admin self-deactivation | `API-16`, `UI-09`, `E2E-06`, `UNIT-05` |
+| **AC-14** | Last active administrator protection | `API-17`, `UNIT-05` |
+| **AC-15** | Non-Admin forbidden from User Management / Non-Staff forbidden from Staff Queue | `API-08`, `API-18`, `UNIT-03` |
+| **AC-16** | Cross-viewport responsive layout and zero horizontal overflow | `E2E-08` |
+| **AC-17** | Current user profile retrieval via `GET /api/auth/me` | `API-19` |
+| **AC-18** | Server-side token revocation on logout via `tokenVersion` | `API-20`, `E2E-01`, `UNIT-06` |
+| **AC-19** | Role-based navigation rendering strictly permitted destinations | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
+| **AC-20** | Requester attachment ownership isolation against unauthorized access (upload, download, soft-delete) | `API-21`, `E2E-07` |
+| **AC-21** | Requester owner marks problem appears resolved without altering official status; non-owners blocked | `API-22`, `UI-11`, `E2E-09` |
+
+---
+
+## 3. Test Execution Summary & Verification Output
+
+### 3.1 Backend Test Execution Summary (Vitest & Supertest)
+```text
+Test Files  20 passed (20)
+     Tests  152 passed (152)
+   Start at  21:34:54
+   Duration  7.45s
+
+✓ tests/lab-01/categories.test.ts (1)
+✓ tests/lab-01/health.test.ts (1)
+✓ tests/lab-02/attachments.api.test.ts (9)
+✓ tests/lab-02/create-ticket.api.test.ts (8)
+✓ tests/lab-02/my-tickets.api.test.ts (7)
+✓ tests/lab-02/requesters.api.test.ts (2)
+✓ tests/lab-02/ticket-detail.api.test.ts (4)
+✓ tests/lab-03/auth.api.test.ts (8)
+✓ tests/lab-03/authorization.api.test.ts (7)
+✓ tests/lab-03/comments-notes.api.test.ts (11)
+✓ tests/lab-03/requester-resolution.api.test.ts (6)
+✓ tests/lab-03/staff-queue.api.test.ts (17)
+✓ tests/lab-03/staff-ticket-detail.api.test.ts (16)
+✓ tests/lab-03/users-admin.api.test.ts (15)
+✓ tests/lab-03/unit/admin-guard.unit.test.ts (9)
+✓ tests/lab-03/unit/password-policy.unit.test.ts (7)
+✓ tests/lab-03/unit/priority-init.unit.test.ts (2)
+✓ tests/lab-03/unit/role-auth.unit.test.ts (5)
+✓ tests/lab-03/unit/status-transition.unit.test.ts (12)
+✓ tests/lab-03/unit/token-version.unit.test.ts (5)
+```
+
+### 3.2 Frontend Test Execution Summary (Vitest & React Testing Library)
+```text
+Test Files  13 passed (13)
+     Tests  77 passed (77)
+   Start at  21:35:24
+   Duration  7.43s
+
+✓ tests/lab-01/App.test.tsx (4)
+✓ tests/lab-02/AttachmentSection.test.tsx (6)
+✓ tests/lab-02/CreateTicket.test.tsx (8)
+✓ tests/lab-02/MyTickets.test.tsx (7)
+✓ tests/lab-02/RequesterSelector.test.tsx (3)
+✓ tests/lab-02/RequesterTicketDetail.test.tsx (2)
+✓ tests/lab-03/ChangePassword.test.tsx (6)
+✓ tests/lab-03/Login.test.tsx (5)
+✓ tests/lab-03/Navigation.test.tsx (6)
+✓ tests/lab-03/RequesterTicketDetail.test.tsx (4)
+✓ tests/lab-03/StaffTicketDetail.test.tsx (8)
+✓ tests/lab-03/StaffTicketQueue.test.tsx (9)
+✓ tests/lab-03/UserManagement.test.tsx (9)
+```
+
+### 3.3 End-to-End Test Execution Summary (Playwright Multi-Device Suite)
+```text
+Running 24 tests using 1 worker
+
+✓  1 [chromium] › e2e/lab-03/authentication.spec.ts:16:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-01: Valid Login Across All 3 Roles, Role-Based Landing Views & Navigation State (1.8s)
+✓  2 [chromium] › e2e/lab-03/authentication.spec.ts:51:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-01: Logout Session Invalidation & Protected Route Interception (636ms)
+✓  3 [chromium] › e2e/lab-03/authentication.spec.ts:81:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-02: Inactive Account Blockage, Invalid Credentials & Mobile Login View (1.9s)
+✓  4 [chromium] › e2e/lab-03/authentication.spec.ts:121:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-02: Mandatory First-Login Password Change Flow & Policy Validation (1.4s)
+✓  5 [chromium] › e2e/lab-03/requester-regression.spec.ts:18:3 › Lab 3 Requester Regression E2E Suite › E2E-07: Requester Ticket Lifecycle (Create -> List -> Detail -> Soft-Remove Attachment) (1.3s)
+✓  6 [chromium] › e2e/lab-03/requester-resolution.spec.ts:15:3 › Lab 3 Requester Problem Appears Resolved E2E Suite › E2E-09: Mark Problem Appears Resolved, State Persistence & Staff Visibility (1.4s)
+✓  7 [chromium] › e2e/lab-03/responsive.spec.ts:25:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Login View - Desktop (1280x800) has zero horizontal overflow (227ms)
+✓  8 [chromium] › e2e/lab-03/responsive.spec.ts:32:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Login View - Tablet (768x1024) has zero horizontal overflow (229ms)
+✓  9 [chromium] › e2e/lab-03/responsive.spec.ts:39:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Login View - Mobile (375x667) has zero horizontal overflow (192ms)
+✓ 10 [chromium] › e2e/lab-03/responsive.spec.ts:48:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Change Password View - Desktop (1280x800) has zero horizontal overflow (534ms)
+✓ 11 [chromium] › e2e/lab-03/responsive.spec.ts:56:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Change Password View - Tablet (768x1024) has zero horizontal overflow (540ms)
+✓ 12 [chromium] › e2e/lab-03/responsive.spec.ts:64:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Change Password View - Mobile (375x667) has zero horizontal overflow (525ms)
+✓ 13 [chromium] › e2e/lab-03/responsive.spec.ts:74:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Requester Views - Desktop (1280x800) has zero horizontal overflow (707ms)
+✓ 14 [chromium] › e2e/lab-03/responsive.spec.ts:83:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Requester Views - Tablet (768x1024) has zero horizontal overflow (1.5s)
+✓ 15 [chromium] › e2e/lab-03/responsive.spec.ts:92:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Requester Views - Mobile (375x667) has zero horizontal overflow (1.4s)
+✓ 16 [chromium] › e2e/lab-03/responsive.spec.ts:103:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › IT Staff Views - Desktop (1280x800) has zero horizontal overflow (673ms)
+✓ 17 [chromium] › e2e/lab-03/responsive.spec.ts:112:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › IT Staff Views - Tablet (768x1024) has zero horizontal overflow (1.5s)
+✓ 18 [chromium] › e2e/lab-03/responsive.spec.ts:121:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › IT Staff Views - Mobile (375x667) has zero horizontal overflow (1.5s)
+✓ 19 [chromium] › e2e/lab-03/responsive.spec.ts:132:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Administrator Views - Desktop (1280x800) has zero horizontal overflow (754ms)
+✓ 20 [chromium] › e2e/lab-03/responsive.spec.ts:141:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Administrator Views - Tablet (768x1024) has zero horizontal overflow (1.1s)
+✓ 21 [chromium] › e2e/lab-03/responsive.spec.ts:150:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Administrator Views - Mobile (375x667) has zero horizontal overflow (1.4s)
+✓ 22 [chromium] › e2e/lab-03/staff-ticket-flow.spec.ts:15:3 › Lab 3 IT Staff Ticket Operations E2E Suite › E2E-03: Staff Queue Multi-Device Responsiveness, Search, Filters & Pagination (6.8s)
+✓ 23 [chromium] › e2e/lab-03/staff-ticket-flow.spec.ts:187:3 › Lab 3 IT Staff Ticket Operations E2E Suite › E2E-04 & E2E-05: Staff Operations (Claim, Priority, Status) & Comments/Notes Confidentiality (4.4s)
+✓ 24 [chromium] › e2e/lab-03/user-administration.spec.ts:15:3 › Lab 3 Administrator User Management E2E Suite › E2E-06: Admin User Management, Creation, Constraints, and Password Reset (5.3s)
+
+24 passed (39.3s)
+Exit Code: 0
+```

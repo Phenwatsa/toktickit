@@ -2,6 +2,32 @@
 // Lab 2 — TokTickIT Core TypeScript Interfaces
 // ---------------------------------------------------------------------------
 
+export type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  department?: string | null;
+  mustChangePassword: boolean;
+  isActive: boolean;
+  tokenVersion?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
+
 export interface RequesterUser {
   id: number;
   name: string;
@@ -29,9 +55,11 @@ export type TicketStatus =
   | "NEW"
   | "OPEN"
   | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
   | "PENDING"
   | "RESOLVED"
   | "CLOSED"
+  | "REOPENED"
   | "CANCELLED";
 
 export interface Attachment {
@@ -60,6 +88,7 @@ export interface Ticket {
   category?: Category;
   relatedSystemId: number;
   relatedSystem?: RelatedSystem;
+  problemAppearsResolved?: boolean;
   ticketOwner?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -94,3 +123,151 @@ export interface TicketFilterParams {
   pageSize?: number;
   signal?: AbortSignal;
 }
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 15: Staff Queue Types
+// ---------------------------------------------------------------------------
+
+export interface StaffTicketOwner {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface StaffTicketItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: Priority;
+  itPriority?: Priority | null;
+  currentStatus: TicketStatus;
+  category: {
+    id: number;
+    name: string;
+  };
+  requester?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  ticketOwner: StaffTicketOwner | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffQueuePagination {
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
+export interface StaffTicketQueueResponse {
+  data: StaffTicketItem[];
+  pagination: StaffQueuePagination;
+}
+
+export interface StaffTicketQueueParams {
+  search?: string;
+  status?: string;
+  categoryId?: number | "";
+  requestedPriority?: string;
+  itPriority?: string;
+  ownerId?: string | number;
+  sortBy?: "createdAt" | "updatedAt" | "ticketNumber" | "itPriority";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+  signal?: AbortSignal;
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 16: Staff Ticket Detail, Comments & Internal Notes Types
+// ---------------------------------------------------------------------------
+
+export interface CommentAuthor {
+  id: number;
+  name: string;
+  role: Role;
+}
+
+export interface PublicComment {
+  id: number;
+  ticketId?: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface InternalNote {
+  id: number;
+  ticketId?: number;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor;
+}
+
+export interface StaffTicketDetailAttachment {
+  id: number;
+  fileName: string;
+  originalName?: string;
+  fileSize: number;
+  sizeBytes?: number;
+  mimeType: string;
+  url: string;
+  createdAt?: string;
+}
+
+export interface StaffTicketDetailData {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  category: { id: number; name: string };
+  relatedSystem?: { id: number; name: string; description?: string | null } | null;
+  requestedPriority: Priority;
+  itPriority: Priority;
+  currentStatus: TicketStatus;
+  problemAppearsResolved: boolean;
+  requester: { id: number; name: string; email: string; department?: string | null };
+  ticketOwner: StaffTicketOwner | null;
+  createdAt: string;
+  updatedAt: string;
+  attachments: StaffTicketDetailAttachment[];
+  publicComments: PublicComment[];
+  internalNotes: InternalNote[];
+}
+
+// ---------------------------------------------------------------------------
+// Lab 3 — Issue 17: Admin User Management Types
+// ---------------------------------------------------------------------------
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  department: string | null;
+  role: Role;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  department?: string;
+  role: Role;
+  isActive?: boolean;
+  initialPassword: string;
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  department?: string | null;
+  role?: Role;
+  isActive?: boolean;
+}
+

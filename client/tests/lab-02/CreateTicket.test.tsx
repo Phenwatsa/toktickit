@@ -75,11 +75,9 @@ describe("CreateTicket Component", () => {
 
     // Wait for dropdowns to be populated
     await waitFor(() => {
-      expect(screen.getByLabelText(/Category/i)).toBeInTheDocument();
+      const categorySelect = screen.getByLabelText(/Category/i) as HTMLSelectElement;
+      expect(categorySelect.options.length).toBe(5); // 1 placeholder + 4 categories
     });
-
-    const categorySelect = screen.getByLabelText(/Category/i) as HTMLSelectElement;
-    expect(categorySelect.options.length).toBe(5); // 1 placeholder + 4 categories
 
     const systemSelect = screen.getByLabelText(/Related System/i) as HTMLSelectElement;
     expect(systemSelect.options.length).toBe(4); // 1 placeholder + 3 systems

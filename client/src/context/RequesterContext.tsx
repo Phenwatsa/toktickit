@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { RequesterUser } from "../types";
 import { fetchActiveRequesters } from "../api";
+import { useAuth } from "./AuthContext";
 
 interface RequesterContextType {
   currentRequester: RequesterUser | null;
@@ -17,6 +18,7 @@ const RequesterContext = createContext<RequesterContextType | undefined>(undefin
 const STORAGE_KEY = "toktickit_selected_requester";
 
 export function RequesterProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [currentRequester, setCurrentRequester] = useState<RequesterUser | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -30,6 +32,33 @@ export function RequesterProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync currentRequester with authenticated user (when role is REQUESTER)
+  useEffect(() => {
+    if (user && user.role === "REQUESTER") {
+      setCurrentRequester((prev) => {
+        if (
+          prev &&
+          prev.id === user.id &&
+          prev.name === user.name &&
+          prev.email === user.email &&
+          prev.department === (user.department || "General") &&
+          prev.isActive === user.isActive
+        ) {
+          return prev;
+        }
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          department: user.department || "General",
+          isActive: user.isActive,
+        };
+      });
+    } else if (user && user.role !== "REQUESTER") {
+      setCurrentRequester((prev) => (prev !== null ? null : prev));
+    }
+  }, [user]);
+
   async function loadActiveRequesters() {
     setIsLoading(true);
     setError(null);
@@ -37,8 +66,8 @@ export function RequesterProvider({ children }: { children: ReactNode }) {
       const list = await fetchActiveRequesters();
       setActiveRequesters(list);
 
-      // If stored requester is no longer in active list, clear it
-      if (currentRequester && !list.some((r) => r.id === currentRequester.id)) {
+      // If stored requester is no longer in active list, clear it (unless user is authenticated)
+      if (currentRequester && !user && !list.some((r) => r.id === currentRequester.id)) {
         setCurrentRequester(null);
         localStorage.removeItem(STORAGE_KEY);
       }
