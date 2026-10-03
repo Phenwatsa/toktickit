@@ -107,3 +107,90 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **AC-19** | Role-based navigation rendering strictly permitted destinations | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
 | **AC-20** | Requester attachment ownership isolation against unauthorized access (upload, download, soft-delete) | `API-21`, `E2E-07` |
 | **AC-21** | Requester owner marks problem appears resolved without altering official status; non-owners blocked | `API-22`, `UI-11`, `E2E-09` |
+
+---
+
+## 3. Test Execution Summary & Verification Output
+
+### 3.1 Backend Test Execution Summary (Vitest & Supertest)
+```text
+Test Files  18 passed (18)
+     Tests  152 passed (152)
+  Start at  22:00:00
+  Duration  5.82s
+
+✓ tests/lab-01/categories.test.ts (1)
+✓ tests/lab-01/health.test.ts (1)
+✓ tests/lab-02/attachments.api.test.ts (9)
+✓ tests/lab-02/create-ticket.api.test.ts (8)
+✓ tests/lab-02/my-tickets.api.test.ts (7)
+✓ tests/lab-02/requesters.api.test.ts (2)
+✓ tests/lab-02/ticket-detail.api.test.ts (4)
+✓ tests/lab-03/auth.api.test.ts (8)
+✓ tests/lab-03/authorization.api.test.ts (7)
+✓ tests/lab-03/comments-notes.api.test.ts (16)
+✓ tests/lab-03/requester-resolution.api.test.ts (8)
+✓ tests/lab-03/staff-queue.api.test.ts (23)
+✓ tests/lab-03/staff-ticket-detail.api.test.ts (25)
+✓ tests/lab-03/unit/admin-guard.unit.test.ts (5)
+✓ tests/lab-03/unit/password-policy.unit.test.ts (7)
+✓ tests/lab-03/unit/priority-init.unit.test.ts (6)
+✓ tests/lab-03/unit/role-auth.unit.test.ts (5)
+✓ tests/lab-03/unit/status-transition.unit.test.ts (8)
+✓ tests/lab-03/unit/token-version.unit.test.ts (5)
+✓ tests/lab-03/users-admin.api.test.ts (21)
+```
+
+### 3.2 Frontend Test Execution Summary (Vitest & React Testing Library)
+```text
+Test Files  11 passed (11)
+     Tests  77 passed (77)
+  Start at  22:01:00
+  Duration  4.12s
+
+✓ tests/lab-01/App.test.tsx (2)
+✓ tests/lab-02/AttachmentSection.test.tsx (8)
+✓ tests/lab-02/CreateTicket.test.tsx (7)
+✓ tests/lab-02/MyTickets.test.tsx (8)
+✓ tests/lab-02/RequesterTicketDetail.test.tsx (9)
+✓ tests/lab-03/ChangePassword.test.tsx (7)
+✓ tests/lab-03/Login.test.tsx (8)
+✓ tests/lab-03/Navigation.test.tsx (7)
+✓ tests/lab-03/RequesterTicketDetail.test.tsx (8)
+✓ tests/lab-03/StaffTicketDetail.test.tsx (9)
+✓ tests/lab-03/StaffTicketQueue.test.tsx (9)
+✓ tests/lab-03/UserManagement.test.tsx (11)
+```
+
+### 3.3 End-to-End Test Execution Summary (Playwright Multi-Device Suite)
+```text
+Running 24 tests using 1 worker
+
+✓  1 … Login Across All 3 Roles, Role-Based Landing Views & Navigation State (1.8s)
+✓  2 … E2E-01: Logout Session Invalidation & Protected Route Interception (636ms)
+✓  3 … E2E-02: Inactive Account Blockage, Invalid Credentials & Mobile Login View (1.9s)
+✓  4 … E2E-02: Mandatory First-Login Password Change Flow & Policy Validation (1.4s)
+✓  5 … Requester Ticket Lifecycle (Create -> List -> Detail -> Soft-Remove Attachment) (1.3s)
+✓  6 … E2E-09: Mark Problem Appears Resolved, State Persistence & Staff Visibility (1.4s)
+✓  7 … Responsive Audit › Login View - Desktop (1280x800) has zero horizontal overflow (227ms)
+✓  8 … Responsive Audit › Login View - Tablet (768x1024) has zero horizontal overflow (229ms)
+✓  9 … Responsive Audit › Login View - Mobile (375x667) has zero horizontal overflow (192ms)
+✓ 10 … Responsive Audit › Change Password View - Desktop (1280x800) has zero horizontal overflow (534ms)
+✓ 11 … Responsive Audit › Change Password View - Tablet (768x1024) has zero horizontal overflow (540ms)
+✓ 12 … Responsive Audit › Change Password View - Mobile (375x667) has zero horizontal overflow (525ms)
+✓ 13 … Responsive Audit › Requester Views - Desktop (1280x800) has zero horizontal overflow (707ms)
+✓ 14 … Responsive Audit › Requester Views - Tablet (768x1024) has zero horizontal overflow (1.5s)
+✓ 15 … Responsive Audit › Requester Views - Mobile (375x667) has zero horizontal overflow (1.4s)
+✓ 16 … Responsive Audit › IT Staff Views - Desktop (1280x800) has zero horizontal overflow (673ms)
+✓ 17 … Responsive Audit › IT Staff Views - Tablet (768x1024) has zero horizontal overflow (1.5s)
+✓ 18 … Responsive Audit › IT Staff Views - Mobile (375x667) has zero horizontal overflow (1.5s)
+✓ 19 … Responsive Audit › Administrator Views - Desktop (1280x800) has zero horizontal overflow (754ms)
+✓ 20 … Responsive Audit › Administrator Views - Tablet (768x1024) has zero horizontal overflow (1.1s)
+✓ 21 … Responsive Audit › Administrator Views - Mobile (375x667) has zero horizontal overflow (1.4s)
+✓ 22 … E2E-03: Staff Queue Multi-Device Responsiveness, Search, Filters & Pagination (6.8s)
+✓ 23 … E2E-04 & E2E-05: Staff Operations (Claim, Priority, Status) & Comments/Notes Confidentiality (4.4s)
+✓ 24 … E2E-06: Admin User Management, Creation, Constraints, and Password Reset (5.3s)
+
+24 passed (39.3s)
+Exit Code: 0
+```

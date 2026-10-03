@@ -201,9 +201,163 @@
 
 ## 2. Pull Requests I Reviewed for My Partner (@lephirada)
 
-*(To be populated as partner @lephirada shares her feature branches and pull requests for review)*
-
 | PR | Partner Branch | Scope / Issue | My Verdict | Target Branch |
 |:---|:---|:---|:---|:---|
-| *(Pending)* | *(Pending)* | *(Pending partner PR details)* | *Pending* | `lab3-staging` |
+| [PR #32](https://github.com/lephirada/toktickit/pull/32) | `feature/10-lab3-documentation` | Issue 10 (#24): Documentation and Engineering Contract | **Approved** | `lab3-staging` |
+| [PR #33](https://github.com/lephirada/toktickit/pull/33) | `feature/11-database-migration` | Issue 11 (#25): Database Schema, Migration, and Seed | **Approved** | `lab3-staging` |
+| [PR #34](https://github.com/lephirada/toktickit/pull/34) | `feature/12-authentication-authorization` | Issue 12 (#26): Authentication and Authorization | **Approved** | `lab3-staging` |
+| [PR #35](https://github.com/lephirada/toktickit/pull/35) | `feature/13-client-auth-shell` | Issue 13 (#27): Client Authentication and Shared Application Shell | **Approved** | `lab3-staging` |
+| [PR #36](https://github.com/lephirada/toktickit/pull/36) | `feature/14-staff-queue` | Issue 14 (#28): Staff Queue | **Approved** | `lab3-staging` |
+| [PR #37](https://github.com/lephirada/toktickit/pull/37) | `feature/15-staff-ticket-operations` | Issue 15 (#29): Staff Ticket Operations | **Approved** | `lab3-staging` |
+| [PR #38](https://github.com/lephirada/toktickit/pull/38) | `feature/16-user-management` | Issue 16 (#30): User Management | *Pending Review* | `lab3-staging` |
+
+---
+
+### [PR #32](https://github.com/lephirada/toktickit/pull/32) — Issue 10 (#24): Documentation and Engineering Contract
+* **Partner Branch:** `feature/10-lab3-documentation`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/lephirada/toktickit/pull/32](https://github.com/lephirada/toktickit/pull/32)
+* **Scope / Issue:** [Issue 10 (#24)](https://github.com/lephirada/toktickit/issues/24) — Documentation and Engineering Contract
+* **Review Cycle 1 — Feedback given by @Phenwatsa:**
+  > "Reviewed the latest changes against the Lab 03 acceptance criteria. The required documentation is complete, FR-01 to FR-15 are consistent, and the API, UI, testing, migration, and evidence specifications are properly documented. The previous logout ambiguity has also been clarified.
+  > No blocking issues found."
+* **Partner Response (@lephirada):**
+  > "Thank you for your careful review Ka! You can merge this PR into lab3-staging as the documentation foundation is now complete and aligned with all acceptance criteria."
+* **My Verdict:** **Approved**
+
+---
+
+### [PR #33](https://github.com/lephirada/toktickit/pull/33) — Issue 11 (#25): Database Schema, Migration, and Seed
+* **Partner Branch:** `feature/11-database-migration`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/lephirada/toktickit/pull/33](https://github.com/lephirada/toktickit/pull/33)
+* **Scope / Issue:** [Issue 11 (#25)](https://github.com/lephirada/toktickit/issues/25) — Database Schema, Migration, and Seed
+* **Review Cycle 1 — Feedback given by @Phenwatsa (Request Changes):**
+  > "Request Changes
+  > 
+  > I found two issues that should be fixed before approval:
+  > 1. `mustChangePassword` is set to `false` by default in both `schema.prisma` and the migration, but the acceptance criteria require the default to be `true`.
+  > 2. `migration.test.ts` tests a locally duplicated `runSeed()` implementation instead of executing the actual `server/prisma/seed.ts`. Therefore, it does not fully verify the real seed script's idempotency and password-state preservation required by AC-11-05 and AC-11-08.
+  > 
+  > Please fix these issues and update the migration tests accordingly."
+* **Partner Response (@lephirada):**
+  > "Thank you for the feedback Ka. I have reviewed and addressed both concerns. Please check the PR again."
+* **Review Cycle 2 — Approval given by @Phenwatsa:**
+  > "Reviewed the latest changes against the Lab 03 acceptance criteria.
+  > 
+  > The previous issues have been addressed:
+  > • `mustChangePassword` now defaults to `true` in both the Prisma schema and migration.
+  > • `migration.test.ts` now executes the actual `server/prisma/seed.ts` and verifies seed idempotency and credential preservation.
+  > 
+  > The migration, schema changes, seed logic, and verification tests are consistent with the requirements. CI is also passing.
+  > No blocking issues found."
+* **Partner Response (@lephirada):**
+  > "Thank you for the review and approval Ka, I have updated reviewer.md of docs/lab-03. You can merging this PR into lab2-staging now."
+* **My Verdict:** **Approved**
+
+---
+
+### [PR #34](https://github.com/lephirada/toktickit/pull/34) — Issue 12 (#26): Authentication and Authorization
+* **Partner Branch:** `feature/12-authentication-authorization`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/lephirada/toktickit/pull/34](https://github.com/lephirada/toktickit/pull/34)
+* **Scope / Issue:** [Issue 12 (#26)](https://github.com/lephirada/toktickit/issues/26) — Authentication and Authorization
+* **Review Cycle 1 — Feedback given by @Phenwatsa (Request Changes):**
+  > "I found two issues that should be fixed before approval:
+  > 1. JWT verification does not require `iat` and `exp`
+  >    • `verifySessionToken()` only validates `sub`, `email`, and `role`.
+  >    • A correctly signed token without `iat` / `exp` could still pass verification, which does not fully match the required JWT contract and could allow a token without expiration.
+  > 2. `JWT_SECRET` is not validated at application startup
+  >    • `getJwtSecret()` exits the process for a missing/weak secret only when the function is called.
+  >    • The server can therefore start in production without a valid `JWT_SECRET`, contrary to the requirement that production must fail to start when the secret is missing or weak.
+  > 
+  > Please fix these two issues before approval."
+* **Partner Response (@lephirada):**
+  > "Thanks for pointing these out. Both issues have been fixed"
+* **Review Cycle 2 — Approval given by @Phenwatsa:**
+  > "Reviewed the latest changes against the Issue 12 acceptance criteria. All required authentication, JWT/session handling, role-based authorization, requester ownership isolation, password-change gate, discussion endpoints, CORS configuration, and test coverage are implemented as required.
+  > 
+  > The two issues from the previous review have also been addressed:
+  > • `iat` and `exp` are now required during JWT verification.
+  > • `JWT_SECRET` is now validated at application startup in production.
+  > 
+  > No blocking issues found.
+  > 
+  > Approve."
+* **My Verdict:** **Approved**
+
+---
+
+### [PR #35](https://github.com/lephirada/toktickit/pull/35) — Issue 13 (#27): Client Authentication and Shared Application Shell
+* **Partner Branch:** `feature/13-client-auth-shell`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/lephirada/toktickit/pull/35](https://github.com/lephirada/toktickit/pull/35)
+* **Scope / Issue:** [Issue 13 (#27)](https://github.com/lephirada/toktickit/issues/27) — Client Authentication and Shared Application Shell
+* **Review Cycle 1 — Feedback given by @Phenwatsa:**
+  > "Reviewed the PR against the Issue 13 Acceptance Criteria. All required auth flows, protected routes, role-based navigation, logout, Requester workflow, comments/resolved flow, tests, and evidence are complete.
+  > CI (Client/Server/Playwright) also passes with no blocking issues.
+  > 
+  > Approve"
+* **Partner Response (@lephirada):**
+  > "Thank you for the review and approval Ka. I have updated docs/lab-03. You can merge this PR into lab3-staging now."
+* **My Verdict:** **Approved**
+
+---
+
+### [PR #36](https://github.com/lephirada/toktickit/pull/36) — Issue 14 (#28): Staff Queue
+* **Partner Branch:** `feature/14-staff-queue`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/lephirada/toktickit/pull/36](https://github.com/lephirada/toktickit/pull/36)
+* **Scope / Issue:** [Issue 14 (#28)](https://github.com/lephirada/toktickit/issues/28) — Staff Queue
+* **Review Cycle 1 — Feedback given by @Phenwatsa:**
+  > "Reviewed the PR against the Issue 14 Acceptance Criteria. The Staff Queue API, RBAC, search/filter/sort/pagination, responsive UI, required tests, and desktop/tablet/mobile evidence are all implemented.
+  > CI passes for Server, Client, and Playwright E2E with no blocking issues.
+  > 
+  > Approve"
+* **Partner Response (@lephirada):**
+  > "Thank you for the review and approval Ka. I have updated docs/lab-03. You can merge this PR into lab3-staging now."
+* **My Verdict:** **Approved**
+
+---
+
+### [PR #37](https://github.com/lephirada/toktickit/pull/37) — Issue 15 (#29): Staff Ticket Operations
+* **Partner Branch:** `feature/15-staff-ticket-operations`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/lephirada/toktickit/pull/37](https://github.com/lephirada/toktickit/pull/37)
+* **Scope / Issue:** [Issue 15 (#29)](https://github.com/lephirada/toktickit/issues/29) — Staff Ticket Operations
+* **Review Cycle 1 — Feedback given by @Phenwatsa (Request Changes):**
+  > "Reviewed PR #37 against the Issue 15 Acceptance Criteria. Most requirements are implemented and CI passes successfully, including the staff detail API/UI, assignment, priority, state machine, internal notes, attachments, atomic activity logging, tests, and screenshots.
+  > 
+  > However, AC-15-08 is not fully enforced:
+  > • `POST /api/tickets/:id/comments` still allows Public Comments on tickets in `CLOSED` state.
+  > • AC-15-08 states that closed tickets cannot be modified unless explicitly reopened.
+  > • The current tests cover closed-ticket assignment, priority, status, notes, and attachments, but do not cover closed-ticket public comments.
+  > 
+  > Please block public comment creation on `CLOSED` tickets (and add a regression test) before approval.
+  > 
+  > CI is currently passing, but this acceptance-criteria gap remains.
+  > 
+  > Request Changes"
+* **Partner Response (@lephirada):**
+  > "Thank you for catching this! I have addressed the issue by blocking public comment creation on both `CLOSED` and `CANCELLED` tickets (`422 Unprocessable Entity`), with double-check guards inside the database transaction. Added regression tests covering rejection on closed/cancelled tickets in `server/tests/lab-03/comments-notes.api.test.ts`. All 220 server tests and 104 client tests are now passing. Ready for your re-review!"
+* **Review Cycle 2 — Approval given by @Phenwatsa:**
+  > "Re-reviewed PR #37 against the Issue 15 Acceptance Criteria.
+  > 
+  > The previous AC-15-08 gap has been fixed: public comments are now blocked on `CLOSED` and `CANCELLED` tickets, with regression tests and transaction-level guards added.
+  > 
+  > CI also passes successfully with no remaining blocking issues.
+  > 
+  > Approve"
+* **Partner Response (@lephirada):**
+  > "@Phenwatsa Thank you for the review and approval Ka. I have updated docs/lab-03. You can merge this PR into lab3-staging now."
+* **My Verdict:** **Approved**
+
+---
+
+### [PR #38](https://github.com/lephirada/toktickit/pull/38) — Issue 16 (#30): User Management
+* **Partner Branch:** `feature/16-user-management`
+* **Target branch:** `lab3-staging`
+* **PR Link:** [https://github.com/lephirada/toktickit/pull/38](https://github.com/lephirada/toktickit/pull/38)
+* **Scope / Issue:** [Issue 16 (#30)](https://github.com/lephirada/toktickit/issues/30) — User Management
+* **Status:** Open (Pending Review)
 
