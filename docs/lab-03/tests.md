@@ -114,10 +114,10 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 
 ### 3.1 Backend Test Execution Summary (Vitest & Supertest)
 ```text
-Test Files  18 passed (18)
+Test Files  20 passed (20)
      Tests  152 passed (152)
-  Start at  22:00:00
-  Duration  5.82s
+   Start at  21:34:54
+   Duration  7.45s
 
 ✓ tests/lab-01/categories.test.ts (1)
 ✓ tests/lab-01/health.test.ts (1)
@@ -128,38 +128,39 @@ Test Files  18 passed (18)
 ✓ tests/lab-02/ticket-detail.api.test.ts (4)
 ✓ tests/lab-03/auth.api.test.ts (8)
 ✓ tests/lab-03/authorization.api.test.ts (7)
-✓ tests/lab-03/comments-notes.api.test.ts (16)
-✓ tests/lab-03/requester-resolution.api.test.ts (8)
-✓ tests/lab-03/staff-queue.api.test.ts (23)
-✓ tests/lab-03/staff-ticket-detail.api.test.ts (25)
-✓ tests/lab-03/unit/admin-guard.unit.test.ts (5)
+✓ tests/lab-03/comments-notes.api.test.ts (11)
+✓ tests/lab-03/requester-resolution.api.test.ts (6)
+✓ tests/lab-03/staff-queue.api.test.ts (17)
+✓ tests/lab-03/staff-ticket-detail.api.test.ts (16)
+✓ tests/lab-03/users-admin.api.test.ts (15)
+✓ tests/lab-03/unit/admin-guard.unit.test.ts (9)
 ✓ tests/lab-03/unit/password-policy.unit.test.ts (7)
-✓ tests/lab-03/unit/priority-init.unit.test.ts (6)
+✓ tests/lab-03/unit/priority-init.unit.test.ts (2)
 ✓ tests/lab-03/unit/role-auth.unit.test.ts (5)
-✓ tests/lab-03/unit/status-transition.unit.test.ts (8)
+✓ tests/lab-03/unit/status-transition.unit.test.ts (12)
 ✓ tests/lab-03/unit/token-version.unit.test.ts (5)
-✓ tests/lab-03/users-admin.api.test.ts (21)
 ```
 
 ### 3.2 Frontend Test Execution Summary (Vitest & React Testing Library)
 ```text
-Test Files  11 passed (11)
+Test Files  13 passed (13)
      Tests  77 passed (77)
-  Start at  22:01:00
-  Duration  4.12s
+   Start at  21:35:24
+   Duration  7.43s
 
-✓ tests/lab-01/App.test.tsx (2)
-✓ tests/lab-02/AttachmentSection.test.tsx (8)
-✓ tests/lab-02/CreateTicket.test.tsx (7)
-✓ tests/lab-02/MyTickets.test.tsx (8)
-✓ tests/lab-02/RequesterTicketDetail.test.tsx (9)
-✓ tests/lab-03/ChangePassword.test.tsx (7)
-✓ tests/lab-03/Login.test.tsx (8)
-✓ tests/lab-03/Navigation.test.tsx (7)
-✓ tests/lab-03/RequesterTicketDetail.test.tsx (8)
-✓ tests/lab-03/StaffTicketDetail.test.tsx (9)
+✓ tests/lab-01/App.test.tsx (4)
+✓ tests/lab-02/AttachmentSection.test.tsx (6)
+✓ tests/lab-02/CreateTicket.test.tsx (8)
+✓ tests/lab-02/MyTickets.test.tsx (7)
+✓ tests/lab-02/RequesterSelector.test.tsx (3)
+✓ tests/lab-02/RequesterTicketDetail.test.tsx (2)
+✓ tests/lab-03/ChangePassword.test.tsx (6)
+✓ tests/lab-03/Login.test.tsx (5)
+✓ tests/lab-03/Navigation.test.tsx (6)
+✓ tests/lab-03/RequesterTicketDetail.test.tsx (4)
+✓ tests/lab-03/StaffTicketDetail.test.tsx (8)
 ✓ tests/lab-03/StaffTicketQueue.test.tsx (9)
-✓ tests/lab-03/UserManagement.test.tsx (11)
+✓ tests/lab-03/UserManagement.test.tsx (9)
 ```
 
 ### 3.3 End-to-End Test Execution Summary (Playwright Multi-Device Suite)
