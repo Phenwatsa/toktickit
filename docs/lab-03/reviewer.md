@@ -210,7 +210,7 @@
 | [PR #36](https://github.com/lephirada/toktickit/pull/36) | `feature/14-staff-queue` | Issue 14 (#28): Staff Queue | **Approved** | `lab3-staging` |
 | [PR #37](https://github.com/lephirada/toktickit/pull/37) | `feature/15-staff-ticket-operations` | Issue 15 (#29): Staff Ticket Operations | **Approved** | `lab3-staging` |
 | [PR #38](https://github.com/lephirada/toktickit/pull/38) | `feature/16-user-management` | Issue 16 (#30): User Management | **Approved** | `lab3-staging` |
-| [PR #39](https://github.com/lephirada/toktickit/pull/39) | `feature/17-integration-e2e` | Issue 17 (#31): Integration, End-to-End Testing, Responsive UI & Final Verification | **Approved** | `lab3-staging` |
+| [PR #39](https://github.com/lephirada/toktickit/pull/39) | `feature/17-integration-e2e` | Issue 17 (#31): Integration, End-to-End Testing, Responsive UI & Final Verification | **Pending Review** | `lab3-staging` |
 
 ---
 
@@ -379,13 +379,6 @@
 * **Target branch:** `lab3-staging`
 * **PR Link:** [https://github.com/lephirada/toktickit/pull/39](https://github.com/lephirada/toktickit/pull/39)
 * **Scope / Issue:** [Issue 17 (#31)](https://github.com/lephirada/toktickit/issues/31) — Integration, End-to-End Testing, Responsive UI, and Final Verification
-* **Review Cycle 1 — Feedback given by @Phenwatsa:**
-  > "Reviewed PR #39 against the Issue 17 Acceptance Criteria.
-  > 
-  > All Playwright E2E suites (authentication, staff queue/detail, user administration, full journey), responsive overflow verification across Desktop/Tablet/Mobile viewports, CI workflow updates, and visual screenshot artifacts are complete and passing.
-  > 
-  > No blocking issues found.
-  > 
-  > Approve"
-* **My Verdict:** **Approved**
+* **Status:** **Pending Review** (PR #39 is currently open on partner repository `lephirada/toktickit`; awaiting formal peer review submission from @Phenwatsa)
+* **My Verdict:** **Pending**
 
