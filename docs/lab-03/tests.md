@@ -107,3 +107,91 @@ This document outlines the planned automated test suite for TokTickIT Sprint 3 (
 | **AC-19** | Role-based navigation rendering strictly permitted destinations | `UI-10`, `E2E-01`, `E2E-03`, `E2E-06` |
 | **AC-20** | Requester attachment ownership isolation against unauthorized access (upload, download, soft-delete) | `API-21`, `E2E-07` |
 | **AC-21** | Requester owner marks problem appears resolved without altering official status; non-owners blocked | `API-22`, `UI-11`, `E2E-09` |
+
+---
+
+## 3. Test Execution Summary & Verification Output
+
+### 3.1 Backend Test Execution Summary (Vitest & Supertest)
+```text
+Test Files  20 passed (20)
+     Tests  152 passed (152)
+   Start at  21:34:54
+   Duration  7.45s
+
+✓ tests/lab-01/categories.test.ts (1)
+✓ tests/lab-01/health.test.ts (1)
+✓ tests/lab-02/attachments.api.test.ts (9)
+✓ tests/lab-02/create-ticket.api.test.ts (8)
+✓ tests/lab-02/my-tickets.api.test.ts (7)
+✓ tests/lab-02/requesters.api.test.ts (2)
+✓ tests/lab-02/ticket-detail.api.test.ts (4)
+✓ tests/lab-03/auth.api.test.ts (8)
+✓ tests/lab-03/authorization.api.test.ts (7)
+✓ tests/lab-03/comments-notes.api.test.ts (11)
+✓ tests/lab-03/requester-resolution.api.test.ts (6)
+✓ tests/lab-03/staff-queue.api.test.ts (17)
+✓ tests/lab-03/staff-ticket-detail.api.test.ts (16)
+✓ tests/lab-03/users-admin.api.test.ts (15)
+✓ tests/lab-03/unit/admin-guard.unit.test.ts (9)
+✓ tests/lab-03/unit/password-policy.unit.test.ts (7)
+✓ tests/lab-03/unit/priority-init.unit.test.ts (2)
+✓ tests/lab-03/unit/role-auth.unit.test.ts (5)
+✓ tests/lab-03/unit/status-transition.unit.test.ts (12)
+✓ tests/lab-03/unit/token-version.unit.test.ts (5)
+```
+
+### 3.2 Frontend Test Execution Summary (Vitest & React Testing Library)
+```text
+Test Files  13 passed (13)
+     Tests  77 passed (77)
+   Start at  21:35:24
+   Duration  7.43s
+
+✓ tests/lab-01/App.test.tsx (4)
+✓ tests/lab-02/AttachmentSection.test.tsx (6)
+✓ tests/lab-02/CreateTicket.test.tsx (8)
+✓ tests/lab-02/MyTickets.test.tsx (7)
+✓ tests/lab-02/RequesterSelector.test.tsx (3)
+✓ tests/lab-02/RequesterTicketDetail.test.tsx (2)
+✓ tests/lab-03/ChangePassword.test.tsx (6)
+✓ tests/lab-03/Login.test.tsx (5)
+✓ tests/lab-03/Navigation.test.tsx (6)
+✓ tests/lab-03/RequesterTicketDetail.test.tsx (4)
+✓ tests/lab-03/StaffTicketDetail.test.tsx (8)
+✓ tests/lab-03/StaffTicketQueue.test.tsx (9)
+✓ tests/lab-03/UserManagement.test.tsx (9)
+```
+
+### 3.3 End-to-End Test Execution Summary (Playwright Multi-Device Suite)
+```text
+Running 24 tests using 1 worker
+
+✓  1 [chromium] › e2e/lab-03/authentication.spec.ts:16:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-01: Valid Login Across All 3 Roles, Role-Based Landing Views & Navigation State (1.8s)
+✓  2 [chromium] › e2e/lab-03/authentication.spec.ts:51:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-01: Logout Session Invalidation & Protected Route Interception (636ms)
+✓  3 [chromium] › e2e/lab-03/authentication.spec.ts:81:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-02: Inactive Account Blockage, Invalid Credentials & Mobile Login View (1.9s)
+✓  4 [chromium] › e2e/lab-03/authentication.spec.ts:121:3 › Lab 3 Authentication & Route Guard E2E Suite › E2E-02: Mandatory First-Login Password Change Flow & Policy Validation (1.4s)
+✓  5 [chromium] › e2e/lab-03/requester-regression.spec.ts:18:3 › Lab 3 Requester Regression E2E Suite › E2E-07: Requester Ticket Lifecycle (Create -> List -> Detail -> Soft-Remove Attachment) (1.3s)
+✓  6 [chromium] › e2e/lab-03/requester-resolution.spec.ts:15:3 › Lab 3 Requester Problem Appears Resolved E2E Suite › E2E-09: Mark Problem Appears Resolved, State Persistence & Staff Visibility (1.4s)
+✓  7 [chromium] › e2e/lab-03/responsive.spec.ts:25:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Login View - Desktop (1280x800) has zero horizontal overflow (227ms)
+✓  8 [chromium] › e2e/lab-03/responsive.spec.ts:32:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Login View - Tablet (768x1024) has zero horizontal overflow (229ms)
+✓  9 [chromium] › e2e/lab-03/responsive.spec.ts:39:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Login View - Mobile (375x667) has zero horizontal overflow (192ms)
+✓ 10 [chromium] › e2e/lab-03/responsive.spec.ts:48:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Change Password View - Desktop (1280x800) has zero horizontal overflow (534ms)
+✓ 11 [chromium] › e2e/lab-03/responsive.spec.ts:56:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Change Password View - Tablet (768x1024) has zero horizontal overflow (540ms)
+✓ 12 [chromium] › e2e/lab-03/responsive.spec.ts:64:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Change Password View - Mobile (375x667) has zero horizontal overflow (525ms)
+✓ 13 [chromium] › e2e/lab-03/responsive.spec.ts:74:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Requester Views - Desktop (1280x800) has zero horizontal overflow (707ms)
+✓ 14 [chromium] › e2e/lab-03/responsive.spec.ts:83:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Requester Views - Tablet (768x1024) has zero horizontal overflow (1.5s)
+✓ 15 [chromium] › e2e/lab-03/responsive.spec.ts:92:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Requester Views - Mobile (375x667) has zero horizontal overflow (1.4s)
+✓ 16 [chromium] › e2e/lab-03/responsive.spec.ts:103:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › IT Staff Views - Desktop (1280x800) has zero horizontal overflow (673ms)
+✓ 17 [chromium] › e2e/lab-03/responsive.spec.ts:112:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › IT Staff Views - Tablet (768x1024) has zero horizontal overflow (1.5s)
+✓ 18 [chromium] › e2e/lab-03/responsive.spec.ts:121:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › IT Staff Views - Mobile (375x667) has zero horizontal overflow (1.5s)
+✓ 19 [chromium] › e2e/lab-03/responsive.spec.ts:132:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Administrator Views - Desktop (1280x800) has zero horizontal overflow (754ms)
+✓ 20 [chromium] › e2e/lab-03/responsive.spec.ts:141:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Administrator Views - Tablet (768x1024) has zero horizontal overflow (1.1s)
+✓ 21 [chromium] › e2e/lab-03/responsive.spec.ts:150:5 › Lab 3 Cross-Viewport Responsive Overflow Audit › Administrator Views - Mobile (375x667) has zero horizontal overflow (1.4s)
+✓ 22 [chromium] › e2e/lab-03/staff-ticket-flow.spec.ts:15:3 › Lab 3 IT Staff Ticket Operations E2E Suite › E2E-03: Staff Queue Multi-Device Responsiveness, Search, Filters & Pagination (6.8s)
+✓ 23 [chromium] › e2e/lab-03/staff-ticket-flow.spec.ts:187:3 › Lab 3 IT Staff Ticket Operations E2E Suite › E2E-04 & E2E-05: Staff Operations (Claim, Priority, Status) & Comments/Notes Confidentiality (4.4s)
+✓ 24 [chromium] › e2e/lab-03/user-administration.spec.ts:15:3 › Lab 3 Administrator User Management E2E Suite › E2E-06: Admin User Management, Creation, Constraints, and Password Reset (5.3s)
+
+24 passed (39.3s)
+Exit Code: 0
+```

@@ -27,13 +27,51 @@ export function ensureScreenshotsDir(): void {
 export async function captureScreenshot(
   page: Page,
   category: "authentication" | "staff-queue" | "staff-ticket-detail" | "user-management",
-  filename: string
+  filename: string,
+  options?: { fullPage?: boolean }
 ): Promise<void> {
   ensureScreenshotsDir();
   const filePath = path.join(SCREENSHOTS_BASE_DIR, category, filename.endsWith(".png") ? filename : `${filename}.png`);
   await page.waitForTimeout(400);
+
+  // Check if modal is present
   const hasModal = (await page.locator('.modal, [role="dialog"], [data-testid$="modal"], .modal-backdrop').count()) > 0;
-  await page.screenshot({ path: filePath, fullPage: !hasModal });
+
+  // Always scroll to top before taking screenshots so sticky elements do not float mid-page
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
+  await page.waitForTimeout(200);
+
+  // Determine whether to use fullPage:
+  // - Responsive views (tablet / mobile or viewport width <= 768) should NOT be fullPage, but capture the exact viewport
+  // - Modals should NOT be fullPage
+  const viewport = page.viewportSize();
+  const isResponsiveDevice = (viewport && viewport.width <= 768) || filename.includes("tablet") || filename.includes("mobile");
+
+  let isFullPage = options?.fullPage ?? (!hasModal && !isResponsiveDevice);
+
+  // If fullPage is true, temporarily disable position: sticky on .zen-header so it renders cleanly at the very top (y = 0)
+  if (isFullPage) {
+    await page.evaluate(() => {
+      const header = document.querySelector('.zen-header') as HTMLElement;
+      if (header) {
+        header.style.position = 'static';
+      }
+    });
+  }
+
+  await page.screenshot({ path: filePath, fullPage: isFullPage });
+
+  // Restore position on header
+  if (isFullPage) {
+    await page.evaluate(() => {
+      const header = document.querySelector('.zen-header') as HTMLElement;
+      if (header) {
+        header.style.position = '';
+      }
+    });
+  }
 }
 
 /**
