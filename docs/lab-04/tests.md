@@ -139,8 +139,8 @@ e2e/lab-04/
 | **DB & Migration Tests** | 2 | `MIG-01`, `SEED-01` | `migration-recovery.test.ts`, `seed-data.test.ts` |
 | **Workflow Tests** | 3 | `WF-01`, `WF-02`, `WF-03` | `ticket-workflow.api.test.ts` |
 | **UI Component Tests** | 10 | `UI-01a` to `UI-08` (`UI-01a`, `UI-01b`, `UI-07a`, `UI-07b`) | `ActionsTaken`, `TicketWorkflow`, `RequesterDashboard`, `StaffDashboard`, `AdminDashboard` |
-| **E2E Playwright Tests** | 5 | `E2E-01` to `E2E-04` (`E2E-03a`, `E2E-03b`) | `actions-taken-flow.spec.ts`, `ticket-resolution.spec.ts`, `dashboards.spec.ts` |
+| **E2E Playwright Tests** | 5 | `E2E-01`, `E2E-02`, `E2E-03a`, `E2E-03b`, `E2E-04` | `actions-taken-flow.spec.ts`, `ticket-resolution.spec.ts`, `dashboards.spec.ts` |
 | **Regression Suites** | 3 | `REG-01`, `REG-02`, `REG-03` | Server regression (`REG-01`), Client regression (`REG-02`), E2E regression (`REG-03`) |
-| **Total** | **42** | | Across all 6 testing levels |
+| **Total** | **42** | | Across all 7 test categories |
 
 *Test execution results will be recorded progressively during implementation issues and finalized prior to release.*
