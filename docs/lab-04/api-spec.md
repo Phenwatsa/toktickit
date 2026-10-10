@@ -291,7 +291,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       "details": [
         {
           "field": "expectedUpdatedAt",
-          "message": "expectedUpdatedAt timestamp is required for concurrency control."
+          "message": "expectedUpdatedAt timestamp is required for concurrency control"
         }
       ]
     }
@@ -304,7 +304,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       "details": [
         {
           "field": "expectedUpdatedAt",
-          "message": "expectedUpdatedAt must be a valid ISO-8601 UTC date string."
+          "message": "expectedUpdatedAt must be a valid ISO-8601 UTC date string"
         }
       ]
     }
@@ -312,7 +312,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   - `400 Bad Request` (Invalid status transition):
     ```json
     {
-      "error": "Cannot transition status from NEW to RESOLVED. Permitted transitions from NEW are: OPEN, CANCELLED.",
+      "error": "Cannot transition status from NEW to RESOLVED. Permitted transitions from NEW are: OPEN, CANCELLED",
       "code": "INVALID_TRANSITION",
       "details": []
     }
@@ -341,7 +341,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       "details": [
         {
           "field": "expectedUpdatedAt",
-          "message": "Provided timestamp does not match current ticket updatedAt timestamp."
+          "message": "Provided timestamp does not match current ticket updatedAt timestamp"
         }
       ],
       "currentUpdatedAt": "2026-10-10T14:35:00.000Z"
@@ -363,6 +363,10 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   }
   ```
 - **Error Responses**:
+  - `400 Bad Request` (Ticket cancelled):
+    ```json
+    { "error": "Cannot submit resolution indication on a cancelled ticket", "code": "TICKET_CANCELLED", "details": [] }
+    ```
   - `401 Unauthorized`:
     ```json
     { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
@@ -429,7 +433,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 ### 4.2 IT Staff Dashboard Metrics
 - **Endpoint**: `GET /api/staff/dashboard`
 - **Authorized Roles**: `IT_STAFF`, `ADMINISTRATOR`
-- **Description**: Computes authoritative system-wide queue metrics and current user queue assignments.
+- **Description**: Computes authoritative system-wide queue metrics and current user queue assignments for IT Staff and Administrators.
 - **Response**: `200 OK`
   ```json
   {

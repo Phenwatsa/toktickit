@@ -134,7 +134,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
 - **Recent Queue Tickets (Left Panel)**:
   - Table displaying Ticket Number, Summary, IT Priority badge, Status badge, Requester, and Updated Date.
 - **Quick Actions (Right Panel)**:
-  - "+ Create Ticket", "Search Tickets", "My Assigned Queue".
+  - "Create Ticket", "Search Tickets", "My Assigned Queue".
 
 ---
 
@@ -148,13 +148,14 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   5. `Inactive Users` (`users.inactiveUsers`): Deactivated accounts.
 - **Role Distribution Badges**: Horizontal badge row displaying Requesters (`users.byRole.requester`), IT Staff (`users.byRole.itStaff`), and Administrators (`users.byRole.administrator`).
 - **Quick Actions (Right Panel)**:
-  - "Manage Users": Primary action navigating directly to User Management (`#/admin-users`).
+  - "User Management": Navigates directly to User Management (`#/admin-users`).
   - "Ticket Queue": Navigates to operational ticket queue (`#/staff-queue`).
-  - "+ Create Ticket": Quick link to ticket creation form (`#/create-ticket`).
+  - "Create Ticket": Quick link to ticket creation form (`#/create-ticket`).
 - **Recent Queue Overview (Left Panel)**: Table displaying recent system tickets with priority, status, and assigned staff.
 - **Interactive Drill-Down**:
-  - Clicking `Total Users` / `Active Users` / `Inactive Users` navigates to `#/admin-users`.
+  - Clicking `Total Active Tickets` navigates to `#/staff-queue`.
   - Clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`.
+  - Clicking `Total Users` / `Active Users` / `Inactive Users` navigates to `#/admin-users`.
 
 ---
 

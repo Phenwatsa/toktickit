@@ -160,7 +160,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - Playwright E2E browser verification (deferred to Issue 26 (#57)).
 * **Acceptance Criteria:**
   - [ ] Requester dashboard metrics match database counts and never expose tickets belonging to other users.
-  - [ ] IT Staff dashboard endpoint calculates accurate counts for primary cards, unassigned queue, 8-status distribution, and priorities.
+  - [ ] IT Staff and Administrator users receive HTTP 200 OK with accurate counts for primary cards, unassigned queue, 8-status distribution, and priorities on `GET /api/staff/dashboard`.
   - [ ] Administrator dashboard endpoint returns accurate operational queue and user account distribution metrics.
   - [ ] Non-permitted roles receive HTTP 403 Forbidden on role-restricted dashboard endpoints.
   - [ ] 100% of tests in `requester-dashboard.api.test.ts` and `staff-dashboard.api.test.ts` pass.
@@ -176,20 +176,20 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Requester Dashboard View (`client/src/pages/RequesterDashboard.tsx`):**
     - 5 Metric cards: My Open Tickets (`openTickets`), In Progress (`inProgressTickets`), Waiting for Requester (`waitingForRequesterTickets`), Recently Resolved (`resolvedTickets`), Closed (`closedTickets`).
     - My Recent Tickets list with status badges and timestamps.
-    - Quick actions: "Create Ticket", "View My Tickets".
+    - Quick actions: "Create Ticket", "View All My Tickets".
     - Drill-down: Clicking metric cards navigates to `MyTickets` pre-filtered (`#/my-tickets?status=OPEN_GROUP`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`).
   - **IT Staff Dashboard View (`client/src/pages/StaffDashboard.tsx`):**
     - 5 Primary cards: New, Open, In Progress, Waiting for Requester, My Assigned.
     - Workload badges: Unassigned Queue highlight, 8-status distribution pills, 4-priority badges.
     - Recent Queue Tickets list with priority badges and assignees.
-    - Quick actions: "Create Ticket", "Search Tickets", "My Queue".
+    - Quick actions: "Create Ticket", "Search Tickets", "My Assigned Queue".
     - Drill-down: Clicking metric cards/badges navigates to `StaffTicketQueue` with active filter presets.
   - **Administrator Dashboard View (`client/src/pages/AdminDashboard.tsx`):**
     - Overview banner with system health and refresh controls.
     - Upper Metric Cards Grid: Operational Queue (`Total Active Tickets`, `Unassigned Queue`) alongside User Statistics (`Total Users`, `Active Users`, `Inactive Users`).
     - User Role Distribution Badges: Requesters, IT Staff, Administrators.
-    - Recent System Queue list and Administrative Quick Actions ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "+ Create Ticket").
-    - Drill-down: User metric cards drill down to `#/admin-users`; Unassigned Queue card drills down to `#/staff-queue?owner=unassigned`.
+    - Recent System Queue list and Administrative Quick Actions ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "Create Ticket" linking to `#/create-ticket`).
+    - Drill-down: Clicking `Total Active Tickets` navigates to `#/staff-queue`; clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`; clicking User metric cards navigates to `#/admin-users`.
   - **App Shell & Navigation Updates (`App.tsx`, `Header.tsx`):**
     - Add role-aware "Dashboard" link to Header navigation bar for all roles with active state indicator.
     - Set role-appropriate Dashboard as the default landing view upon login.
