@@ -259,42 +259,11 @@ model ActionTaken {
 ### 7.3 Migration, Backfill & Rollback/Recovery Strategy (Required by Handout §5.2)
 - **Non-Destructive Forward Migration**: `ActionTaken` is an additive model. All existing tickets, users, attachments, comments, and notes from Labs 1, 2, and 3 remain completely valid without requiring backfill data.
 - **Legacy Ticket Handling**: Dashboard calculations and ticket views treat legacy tickets with zero Actions Taken seamlessly using standard SQL outer joins or Prisma relation counts.
-- **Authoritative Rollback & Disaster Recovery Scenarios (Prisma-Supported Sequences)**:
-  Prisma Migrate records migration state in its internal `_prisma_migrations` table and does not provide an automated native `migrate down` command. The strategy formally documents and distinguishes two operational recovery scenarios:
-
-  1. **Scenario 1: Disaster Recovery from a Deployment Failure (Failed Migration State)**:
-     - *Applicability*: When a migration fails during execution (e.g. timeout, lock collision, transaction abort), Prisma records the migration in `_prisma_migrations` as failed (`finished_at IS NULL`).
-     - *Prisma-Supported Recovery Sequence*:
-       1. **Physical Cleanup**: Execute physical teardown of partially created tables and indexes:
-          ```sql
-          DROP TABLE IF EXISTS "ActionTaken" CASCADE;
-          ```
-       2. **Prisma State Resolution**: Run Prisma CLI's official resolution command for failed migrations:
-          ```bash
-          npx prisma migrate resolve --rolled-back <migration_name>
-          ```
-          *(Prisma officially permits `--rolled-back` specifically when the migration status in `_prisma_migrations` is recorded as failed, resetting the migration so it can be re-attempted).*
-       3. **Legacy Preservation Verification**: Verify that all legacy tables (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) and pre-existing records remain 100% intact and undamaged.
-       4. **Forward Re-application**: Re-run `npx prisma migrate deploy` to safely apply the migration forward.
-
-  2. **Scenario 2: Rollback of a Successfully Applied Migration (Post-Deployment Reversion)**:
-     - *Applicability*: When a migration has already completed successfully (`finished_at IS NOT NULL`), Prisma CLI rejects `prisma migrate resolve --rolled-back` because the migration is recorded as applied.
-     - *Prisma-Supported Rollback Procedures*:
-       - **Procedure A (Staging / Automated Disaster Recovery Verification)**:
-         1. Physically drop the child table:
-            ```sql
-            DROP TABLE IF EXISTS "ActionTaken" CASCADE;
-            ```
-         2. Synchronize Prisma history by removing the applied migration record:
-            ```sql
-            DELETE FROM "_prisma_migrations" WHERE "migration_name" LIKE '%action_taken%';
-            ```
-         3. Verify legacy data and schema integrity.
-         4. Confirm forward recovery by re-running `npx prisma migrate deploy`.
-       - **Procedure B (Production Forward Compensating Migration)**:
-         Author and deploy a down-migration schema change dropping `"ActionTaken"` through the normal Prisma forward migration pipeline (`prisma migrate deploy`).
-
-- **Planned Automated Verification (`MIG-01`)**: Suite `server/tests/lab-04/migration-recovery.test.ts` verifies the disaster recovery workflow: creates pre-migration records, executes physical schema teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`), synchronizes Prisma migration state, asserts 100% preservation of legacy tables/records, and verifies clean forward re-application via `npx prisma migrate deploy`.
+- **Migration Recovery and Test Database Isolation**:
+  Migration recovery must distinguish between failed migrations and migrations that have already been applied successfully:
+  - **Failed migrations**: Inspect the database schema and migration state before recovery. Use `npx prisma migrate resolve --rolled-back <migration_name>` only when the migration is genuinely recorded as failed (`finished_at IS NULL`) and the database schema has been restored (e.g. dropping partially created tables/indexes via `DROP TABLE IF EXISTS "ActionTaken" CASCADE;`) to a state suitable for safely retrying it via `npx prisma migrate deploy`.
+  - **Successfully applied migrations**: Do not delete or reset records in Prisma's internal `_prisma_migrations` table to force an already-applied migration to run again. Apply a new corrective or compensating migration when a schema change is required in production or staging environments.
+  - **Migration testing & verification**: Use an isolated disposable test database with an explicitly prepared baseline schema (Labs 1–3 legacy schema). Verify that `npx prisma migrate deploy` applies the pending migration successfully and preserves existing legacy data. Do not manipulate migration history to simulate a fresh migration run.
 
 ### 7.4 Required Seed Scenarios Mapping (Required by Handout §5.3)
 The idempotent seed script (`prisma/seed.ts`) populates realistic test data covering all five required scenario dimensions (Handout §5.3) plus repeated-run idempotency verification (6 verification categories total). Suite `SEED-01` (`server/tests/lab-04/seed-data.test.ts`) verifies these scenarios directly across repeated runs:
@@ -348,7 +317,7 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 - **AC-19a**: Given an authenticated Administrator user, when calling `GET /api/admin/dashboard`, the response returns `HTTP 200 OK` with authoritative operational summaries (`totalActiveTickets`, `unassignedTickets`) and user account distribution metrics (`totalUsers`, `activeUsers`, `inactiveUsers`, `byRole`) (FR-15, BR-17).
 - **AC-19b**: Given an authenticated non-administrator user (Requester or IT Staff), when attempting to call `GET /api/admin/dashboard`, the backend rejects the request with `HTTP 403 Forbidden` (FR-15, BR-17).
 - **AC-20**: Given an authenticated Administrator on the Dashboard UI, the view renders operational queue indicators (`totalActiveTickets`, `unassignedTickets`), user account statistics (`totalUsers`, `activeUsers`, `inactiveUsers`), role distribution badges (`byRole`), recent system queue list, administrative Quick Actions ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "Create Ticket" linking to `#/create-ticket`), and interactive drill-downs (clicking `Total Active Tickets` navigates to `#/staff-queue`, clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`, clicking user statistics navigates to `#/admin-users`), conforming to Zen Green styling without text clipping or overlapping controls (FR-13, FR-14, FR-15, FR-17, BR-15, BR-17).
-- **AC-21**: Given a disaster recovery scenario requiring recovery or rollback of the Lab 4 migration, when executing physical schema teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`) followed by Prisma migration history synchronization (marking failed state via `npx prisma migrate resolve --rolled-back <migration_name>` or resetting migration tracking record for applied migrations), all legacy tables (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) and existing data remain 100% intact, and subsequent forward migration (`npx prisma migrate deploy`) applies cleanly without errors (Handout §5.2).
+- **AC-21**: Given an isolated test database prepared with the required legacy schema and representative legacy data, when the pending migration is deployed using `npx prisma migrate deploy`, then the migration must complete successfully, the expected schema changes (`ActionTaken` table, foreign keys, indexes) must be present, and all required legacy data (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) must remain intact. Migration recovery tests must use a database state appropriate to the scenario: failed migrations may be resolved using Prisma's supported recovery workflow (`npx prisma migrate resolve --rolled-back <migration_name>`) after verifying database state, whereas successfully applied migrations must not be rerun by manually deleting or resetting records in `_prisma_migrations` (Handout §5.2).
 - **AC-22**: Given the execution of the seed script (`prisma/seed.ts`), when run initially and repeatedly (idempotency verification), no duplicate key violations occur, record counts remain consistent, and realistic test data covering all five required scenario dimensions (8 statuses, 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, zero/non-zero dashboard metrics) plus repeated-run idempotency is populated and verified directly by `SEED-01` (Handout §5.3).
 - **AC-23**: Given a ticket in `CANCELLED` terminal status, when attempting to create an Action Taken (`POST /api/tickets/:id/actions`), update an Action Taken (`PATCH /api/tickets/:id/actions/:actionId`), transition ticket status (`PATCH /api/staff/tickets/:id/status`), or submit advisory resolution indication (`PATCH /api/requester/tickets/:id/resolve-indication`), the backend rejects the request with `HTTP 400 Bad Request` (`TICKET_CANCELLED`) and prevents any modifications (FR-02, FR-05, FR-08, FR-09, BR-11).
 
