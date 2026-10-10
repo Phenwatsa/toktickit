@@ -147,6 +147,13 @@ The interface adapts smoothly across three standard test viewports:
 | **Tablet** | $768\text{px} \times 1024\text{px}$ | 2–3 column metric cards grid; stacked Recent Tickets and Quick Actions; responsive scrollable data tables. |
 | **Mobile** | $375\text{px} \times 667\text{px}$ | 1 column stacked metric cards; full-width action buttons ($44\text{px}+$ touch targets); tables transform into vertical card stacks; zero horizontal overflow ($scrollWidth === clientWidth$). |
 
+### 5.1 Responsive, Overlap & Token Verification Protocol
+To guarantee compliance with FR-16 and AC-17, test suites (specifically `E2E-04` and UI component tests) execute the following programmatic checks:
+1. **Zero Horizontal Overflow**: Assert `document.body.scrollWidth === document.body.clientWidth` and `window.scrollX === 0` across all three viewports.
+2. **No Overlapping Interactive Elements**: Programmatically verify that sticky headers, action buttons, Quick Action shortcut tiles, and modal dialogs do not collide (intersecting bounding boxes) across viewports.
+3. **No Clipped Text or Cutoff Labels**: Elements must retain complete visibility without truncation of critical identifiers (Ticket IDs, status badges, timestamps).
+4. **Zen Green Token Verification**: Automated assertion verifying computed CSS variables (`--zg-primary: #006B3C`, `--zg-bg-page: #F5F7F6`, `--zg-surface: #FFFFFF`) applied to primary interactive elements and background containers.
+
 ---
 
 ## 6. Accessibility, Focus & Visual Polish Checklist

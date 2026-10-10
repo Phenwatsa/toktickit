@@ -74,11 +74,9 @@ The stakeholder requires:
 - **FR-11 (Requester Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/requester/dashboard`) returning authoritative metrics strictly isolated to the authenticated Requester: `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and up to 5 recent tickets (`recentTickets`).
 - **FR-12 (IT Staff Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/staff/dashboard`) returning authoritative operational metrics for IT Staff: primary card counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), workload indicators (`unassignedTickets`), full 8-status breakdown (`byStatus`), 4-level priority breakdown (`byPriority`), and recent queue tickets (`recentTickets`).
 - **FR-13 (Dashboard Drill-Down Navigation)**: The frontend shall support interactive drill-down navigation from dashboard metric cards directly to pre-filtered ticket list and queue views.
-- **FR-14 (Dashboard Quick Actions)**: Dashboards shall provide contextual shortcut buttons for routine actions (Create Ticket, View My Tickets, Search Tickets, My Queue).
-
-### Regression & Hardening
+- **FR-14 (Dashboard Quick Actions)**: Dashboards shall provide contextual shortcut buttons for routine actions (Requester: Create Ticket, View My Tickets; IT Staff: Create Ticket, Search Tickets, My Queue).
 - **FR-15 (Regression Continuity)**: All endpoints, views, and behaviors from Labs 1, 2, and 3 (Categories, Tickets, Attachments, Auth, Comments, Internal Notes, Admin User Management) shall function without regression.
-- **FR-16 (Zen Green UI Consistency)**: All newly introduced and existing screens shall conform to the Zen Green design system across Desktop, Tablet, and Mobile viewports without horizontal clipping or overlapping controls.
+- **FR-16 (Zen Green UI Consistency & Responsive Polish)**: All newly introduced and existing screens shall conform to the Zen Green design system across Desktop, Tablet, and Mobile viewports without text clipping, overlapping controls, or horizontal page scrolling.
 
 ---
 
@@ -271,8 +269,8 @@ model ActionTaken {
 - **AC-13**: Given an authenticated IT Staff user, when calling `GET /api/staff/dashboard`, the response returns accurate queue metrics: primary counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), `unassignedTickets`, full 8-status `byStatus`, and 4-level `byPriority` (FR-12, BR-12, BR-14).
 - **AC-14**: Given an authenticated Requester user, when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden` (FR-12).
 - **AC-15**: Given an authenticated user on the Dashboard UI, clicking any summary metric card navigates to the respective ticket list with the active filter preset (drill-down) (FR-13, BR-15).
-- **AC-16**: Given an authenticated user on the Dashboard UI, the Quick Actions panel renders operational shortcut links (Create Ticket, View My Tickets / Search Tickets, My Queue) that navigate directly to target functional views upon click (FR-14).
-- **AC-17**: Given any screen in the application across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$) (FR-16).
+- **AC-16**: Given an authenticated user on either Requester or Staff Dashboard UI, the Quick Actions panel renders operational shortcut links (Requester: Create Ticket, View My Tickets; IT Staff: Create Ticket, Search Tickets, My Queue) that navigate directly to target functional views upon click (FR-14, BR-13, BR-14).
+- **AC-17**: Given any screen in the application across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$), all interactive controls and status badges adhere to Zen Green design tokens (`--zg-primary`, `--zg-surface`, `--zg-border`), and components render without text clipping or overlapping modal/action controls (FR-16).
 - **AC-18**: All regression tests for authentication, ticket creation, ticket queue, attachments, public comments, internal notes, and user management pass 100% without failure (FR-15).
 
 ---

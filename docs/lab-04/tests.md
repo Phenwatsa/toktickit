@@ -71,12 +71,13 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-10** | BR-10 | **AC-11** | `UI-04`  | UI | 409 Conflict alert UI feedback | User-friendly conflict banner displayed | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
 | **FR-11** | BR-13, BR-15 | **AC-15**| `UI-05`  | UI | Requester dashboard rendering & drill-down | Clicking card navigates to filtered MyTickets | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | **FR-12** | BR-14, BR-15 | **AC-15**| `UI-06`  | UI | Staff dashboard rendering & drill-down | Clicking card navigates to filtered Queue | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
-| **FR-14** | BR-14 | **AC-16** | `UI-07`  | UI | Dashboard Quick Actions shortcuts navigation | Clicking shortcut button navigates to target screen | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
-| **FR-01** | BR-02 | **AC-01** | `E2E-01` | E2E | Actions Taken cross-role workflow | Staff creates/edits; Requester views read-only | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
+| **FR-14** | BR-13 | **AC-16** | `UI-07a` | UI | Requester Dashboard Quick Actions navigation | Clicking 'Create Ticket' and 'View All My Tickets' triggers correct route navigation | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
+| **FR-14** | BR-14 | **AC-16** | `UI-07b` | UI | Staff Dashboard Quick Actions navigation | Clicking 'Create Ticket', 'Search Tickets', and 'My Assigned Queue' triggers correct route navigation | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
+| **FR-01, FR-02, FR-05, FR-06** | BR-01..03, BR-05..06 | **AC-01, AC-03, AC-04, AC-06** | `E2E-01` | E2E | Actions Taken complete cross-role workflow (Staff create/edit & Requester read-only audit) | Staff creates/edits action; Requester views in chronological order with zero edit controls | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
 | **FR-07** | BR-08, BR-09 | **AC-07**| `E2E-02` | E2E | Resolution gate lifecycle E2E | Requester advises; Staff formally resolves | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
 | **FR-13** | BR-15 | **AC-15** | `E2E-03a`| E2E | Dashboards drill-down navigation E2E | Live cards filter queues seamlessly in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **FR-14** | BR-14 | **AC-16** | `E2E-03b`| E2E | Dashboard Quick Actions browser interaction | Quick Action shortcuts functional in real browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **FR-16** | Handout §8.6| **AC-17** | `E2E-04` | E2E | Responsive viewport audit | Zero horizontal overflow across 3 viewports | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **FR-14** | BR-13, BR-14 | **AC-16** | `E2E-03b`| E2E | Cross-role Dashboard Quick Actions browser interaction (Requester & Staff) | Shortcut actions for both Requester and Staff navigate seamlessly to target views in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **FR-16** | Handout §8.6, §7| **AC-17** | `E2E-04` | E2E | Responsive layout, overlap, clipping, and Zen Green token audit | Zero horizontal overflow (scrollWidth === clientWidth), zero control collisions/clipping, and Zen Green tokens verified | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | **FR-15** | Handout §8.5| **AC-18** | `REG-01` | Regression | Labs 1–3 full regression test suites | 100% of previous test suites pass | `e2e/lab-03/*` & `e2e/lab-02/*` | Planned |
 
 ---
@@ -90,21 +91,21 @@ server/tests/lab-04/
 │   ├── status-transition-matrix.unit.test.ts  # UNIT-02
 │   ├── concurrency-check.unit.test.ts         # UNIT-03
 │   └── dashboard-calculator.unit.test.ts      # UNIT-04
-├── actions-taken.api.test.ts                  # API-01, API-02, API-03, API-04, API-05, API-06
+├── actions-taken.api.test.ts                  # API-01, API-02, API-03a, API-03b, API-04, API-05, API-06
 ├── ticket-workflow.api.test.ts                # WF-01, WF-02, WF-03, API-07, API-08
 ├── requester-dashboard.api.test.ts            # API-09
 └── staff-dashboard.api.test.ts                # API-10, API-11
 
 client/tests/lab-04/
-├── ActionsTaken.test.tsx                      # UI-01, UI-02, UI-03
+├── ActionsTaken.test.tsx                      # UI-01a, UI-01b, UI-02, UI-03
 ├── TicketWorkflow.test.tsx                    # UI-04
-├── RequesterDashboard.test.tsx                # UI-05
-└── StaffDashboard.test.tsx                    # UI-06
+├── RequesterDashboard.test.tsx                # UI-05, UI-07a
+└── StaffDashboard.test.tsx                    # UI-06, UI-07b
 
 e2e/lab-04/
 ├── actions-taken-flow.spec.ts                 # E2E-01
 ├── ticket-resolution.spec.ts                  # E2E-02
-└── dashboards.spec.ts                         # E2E-03, E2E-04
+└── dashboards.spec.ts                         # E2E-03a, E2E-03b, E2E-04
 ```
 
 ---
