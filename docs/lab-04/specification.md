@@ -1,17 +1,17 @@
 # Lab 4 Sprint Engineering Specification
 
 ## 1. Sprint Goal
-Complete the core TokTickIT service-desk system by implementing the parent-child Actions Taken work-tracking structure, enforcing authoritative backend Ticket resolution rules and stale-update conflict protection, delivering role-appropriate operational dashboards with accessible drill-down capabilities for Requesters and IT Staff, and performing comprehensive full-stack hardening and regression verification across all features delivered in Labs 1 through 3 under the Zen Green design system.
+Complete the core TokTickIT service-desk system by implementing the parent-child Actions Taken work-tracking structure, enforcing authoritative backend Ticket resolution rules and stale-update conflict protection, delivering role-appropriate operational dashboards with accessible drill-down capabilities for Requesters, IT Staff, and Administrators, and performing comprehensive full-stack hardening and regression verification across all features delivered in Labs 1 through 3 under the Zen Green design system.
 
 ---
 
 ## 2. Stakeholder Request Interpretation & Separation of Concerns
 The service desk has established reliable communication between Requesters and IT Staff via public comments and internal notes, but operations lack a structured, reliable mechanism to plan, execute, and audit concrete IT activities on tickets. 
 The stakeholder requires:
-1. **Actions Taken Under Each Ticket**: An append-friendly log recording concrete work activities performed by IT Staff members. Each entry must track Action Date/Time, Action Description, Result, Performed by (auto-populated from authenticated session), Follow-Up Required flag, Follow-Up Note (strictly mandatory when follow-up is needed), and Attachment Notes referencing external diagnostic evidence or screenshots.
-2. **Clear Coordination vs. Execution Responsibility**: A Ticket has a single designated Ticket Owner responsible for overall coordination, but distinct IT Staff members may execute individual actions and record them under Actions Taken.
-3. **Resolution Gate Enforcement**: While Requesters may indicate that a reported issue appears resolved, this indication remains purely advisory. Only authorized IT Staff can formally review work and transition a ticket to `RESOLVED` or `CLOSED`.
-4. **Role-Appropriate Operational Dashboards**: Concise, actionable dashboards summarizing authoritative metrics for Requesters (owned tickets, pending feedback, recent resolutions) and IT Staff (unassigned queue, personal assignments, status/priority breakdown), equipped with direct drill-down links into filtered queues without replacing detailed list views.
+1. **Actions Taken Under Each Ticket**: An append-friendly log recording concrete work activities performed by IT Staff members and Administrators. Each entry must track Action Date/Time, Action Description, Result, Performed by (auto-populated from authenticated session), Follow-Up Required flag, Follow-Up Note (strictly mandatory when follow-up is needed), and Attachment Notes referencing external diagnostic evidence or screenshots.
+2. **Clear Coordination vs. Execution Responsibility**: A Ticket has a single designated Ticket Owner responsible for overall coordination, but distinct IT Staff members or Administrators may execute individual actions and record them under Actions Taken.
+3. **Resolution Gate Enforcement**: While Requesters may indicate that a reported issue appears resolved, this indication remains purely advisory. Only authorized IT Staff and Administrators can formally review work and transition a ticket to `RESOLVED` or `CLOSED`.
+4. **Role-Appropriate Operational Dashboards**: Concise, actionable dashboards summarizing authoritative metrics for Requesters (owned tickets, pending feedback, recent resolutions), IT Staff (unassigned queue, personal assignments, status/priority breakdown), and Administrators (operational health and user distribution), equipped with direct drill-down links into filtered queues without replacing detailed list views.
 5. **System Hardening & Zen Green Continuity**: Polishing responsiveness, keyboard accessibility, safe failure feedback, and guaranteeing zero regressions across authentication, ticket operations, comments, internal notes, attachments, and user administration.
 
 ---
@@ -186,7 +186,7 @@ The table below defines the authoritative role-based access permissions for Spri
   - Header: Action Date/Time formatted cleanly, Performed by badge, Follow-Up indicator badge.
   - Body: Action Description and Result summary.
   - Footer: Follow-up Note (rendered with amber accent if required), Attachment Notes reference.
-- **IT Staff Mode**: Includes "+ Add Action Taken" button opening an inline modal/card. Form includes Date/Time picker (defaults to now), Description textarea, Result textarea, Follow-Up checkbox, dynamic Follow-Up Note input (mandatory when checked), and Attachment Notes input. Includes edit action for recorded items.
+- **IT Staff & Administrator Mode**: Includes "+ Add Action Taken" button opening an inline modal/card. Form includes Date/Time picker (defaults to now), Description textarea, Result textarea, Follow-Up checkbox, dynamic Follow-Up Note input (mandatory when checked), and Attachment Notes input. Includes edit action for recorded items.
 - **Requester Mode**: Purely read-only; Add/Edit buttons and forms are completely omitted.
 
 ### Dashboards
