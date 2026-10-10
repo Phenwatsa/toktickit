@@ -170,11 +170,11 @@ The interface adapts smoothly across three standard test viewports:
 | **Mobile** | $375\text{px} \times 667\text{px}$ | 1 column stacked metric cards; full-width action buttons ($44\text{px}+$ touch targets); tables transform into vertical card stacks; zero horizontal overflow ($scrollWidth === clientWidth$). |
 
 ### 5.1 Responsive, Overlap & Token Verification Protocol
-To guarantee compliance with FR-17 and AC-17, test suites (specifically `E2E-04` and UI component tests across the four core responsive screens: Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/tickets/:id`) execute the following programmatic checks:
+To guarantee compliance with FR-17 and AC-17, the automated responsive test suite (`E2E-04`) executes browser-level viewport audits across all four core screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/tickets/:id`) across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) viewports (while UI component tests verify isolated component mounting and internal layout structures), asserting the following programmatic checks:
 1. **Zero Horizontal Overflow**: Assert `document.body.scrollWidth === document.body.clientWidth` and `window.scrollX === 0` across all three viewports.
 2. **No Overlapping Interactive Elements**: Programmatically verify that sticky headers, action buttons, Quick Action shortcut tiles, and modal dialogs do not collide (intersecting bounding boxes) across viewports.
 3. **No Clipped Text or Cutoff Labels**: Elements must retain complete visibility without truncation of critical identifiers (Ticket IDs, status badges, timestamps).
-4. **Zen Green Token Verification**: Automated assertion verifying computed CSS variables (`--zg-primary: #006B3C`, `--zg-bg-page: #F5F7F6`, `--zg-surface: #FFFFFF`) applied to primary interactive elements and background containers.
+4. **Zen Green Token Verification**: Automated assertion verifying computed CSS variables (`--zg-primary: #006B3C`, `--zg-bg-page: #F5F7F6`, `--zg-surface: #FFFFFF`, `--zg-border: #E2E8F0`) applied to primary interactive elements, card borders, and background containers.
 
 ---
 
