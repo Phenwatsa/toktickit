@@ -26,24 +26,28 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    - Stale-update conflict recovery (`409 Conflict` followed by reload and retry).
 4. **UI Component Tests (`client/tests/lab-04/`)**:
    Vitest & React Testing Library component tests:
-   - `ActionsTaken.test.tsx`: Tests list rendering, modal form state, validation error banners, and read-only Requester presentation.
-   - `TicketWorkflow.test.tsx`: Tests status transition controls, resolution feedback, and 409 conflict alert handling.
-   - `RequesterDashboard.test.tsx`: Tests metric cards rendering, empty state, drill-down triggers, and Requester Quick Actions (`UI-07a`).
-   - `StaffDashboard.test.tsx`: Tests 5 primary cards, 8-status breakdown, priority badges, drill-down routing, Staff Quick Actions (`UI-07b`), and Admin dashboard overview & navigation (`UI-08`).
+   - `ActionsTaken.test.tsx`: Tests list rendering, modal form state, validation error banners, and read-only Requester presentation (`UI-01a`, `UI-01b`, `UI-02`, `UI-03`).
+   - `TicketWorkflow.test.tsx`: Tests status transition controls, resolution feedback, and 409 conflict alert handling (`UI-04`).
+   - `RequesterDashboard.test.tsx`: Tests metric cards rendering, empty state, drill-down triggers, and Requester Quick Actions (`UI-05`, `UI-07a`).
+   - `StaffDashboard.test.tsx`: Tests 5 primary cards, 8-status breakdown, priority badges, drill-down routing, and Staff Quick Actions (`UI-06`, `UI-07b`).
+   - `AdminDashboard.test.tsx`: Tests Admin dashboard overview rendering, user account statistics, and User Management navigation (`UI-08`).
 5. **End-to-End Playwright Tests (`e2e/lab-04/`)**:
    Full browser workflows executed under real session cookies/tokens:
-   - `actions-taken-flow.spec.ts`: End-to-end recording of actions by staff, editing, and requester read-only audit.
-   - `ticket-resolution.spec.ts`: Requester advisory resolution $\to$ IT Staff formal review $\to$ official `RESOLVED` status transition.
-   - `dashboards.spec.ts`: Live dashboard metric counts verification against database records and interactive drill-down navigation.
-6. **Regression Tests (`server/tests/lab-01..03/`, `client/tests/lab-01..03/`, `e2e/lab-02..03/`)**:
-   Continuous test runs ensuring that legacy Authentication, Attachments, Comments, Internal Notes, and User Management remain functional with zero regressions.
+   - `actions-taken-flow.spec.ts`: End-to-end recording of actions by staff, editing, and requester read-only audit (`E2E-01`).
+   - `ticket-resolution.spec.ts`: Requester advisory resolution $\to$ IT Staff formal review $\to$ official `RESOLVED` status transition (`E2E-02`).
+   - `dashboards.spec.ts`: Live dashboard metric counts verification against database records, drill-down navigation, Quick Actions, and responsive audits (`E2E-03a`, `E2E-03b`, `E2E-04`).
+6. **Regression Tests**:
+   Continuous test runs ensuring that legacy features from Labs 1–3 remain functional with zero regressions across:
+   - `REG-01` (Server Regression): All server API and unit test suites across Labs 1, 2, and 3 (`server/tests/lab-01/*`, `server/tests/lab-02/*`, `server/tests/lab-03/*`).
+   - `REG-02` (Client Regression): All client UI component test suites across Labs 1, 2, and 3 (`client/tests/lab-01/*`, `client/tests/lab-02/*`, `client/tests/lab-03/*`).
+   - `REG-03` (E2E Regression): All Playwright end-to-end regression workflows from Labs 2 and 3 (`e2e/lab-02/*`, `e2e/lab-03/*`).
 
 ---
 
 ## 2. Full Requirements Traceability Matrix (FR $\to$ BR $\to$ AC $\to$ Test ID)
 
 | FR ID | Governing BR | AC ID | Test ID | Type | What It Tests | Expected Result | Automated Test File | Status |
-| :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
 | **FR-01** | BR-05, BR-06 | **AC-04** | `API-04` | API | List Actions Taken on owned ticket | Returns 200 with chronological actions list | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-01** | BR-06 | **AC-05** | `API-05` | API | Cross-requester actions isolation | Non-owner requester receives 403 Forbidden | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-02** | BR-01, BR-02 | **AC-01** | `API-01` | API | IT Staff records valid Action Taken | Created with 201 under target ticket | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
@@ -79,9 +83,11 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-14** | BR-13, BR-14 | **AC-16** | `E2E-03b`| E2E | Cross-role Dashboard Quick Actions browser interaction (Requester & Staff) | Shortcut actions for both Requester and Staff navigate seamlessly to target views in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | **FR-15** | BR-17 | **AC-19** | `API-12` | API | Admin dashboard operational & user distribution metrics | Returns 200 with operational summary and accurate user stats | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | **FR-15** | Matrix | **AC-19** | `API-13` | API | Non-admin blocked from admin dashboard | Returns 403 Forbidden for Requester and IT Staff | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| **FR-15, FR-17** | BR-17 | **AC-20** | `UI-08`  | UI | Admin dashboard overview rendering & user navigation | Renders operational tiles, user distribution stats, and User Management link | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
+| **FR-15, FR-17** | BR-17 | **AC-20** | `UI-08`  | UI | Admin dashboard overview rendering & user navigation | Renders operational tiles, user distribution stats, and User Management link | `client/tests/lab-04/AdminDashboard.test.tsx` | Planned |
 | **FR-17** | Handout §8.6, §7| **AC-17** | `E2E-04` | E2E | Responsive layout, overlap, clipping, and Zen Green token audit | Zero horizontal overflow (scrollWidth === clientWidth), zero control collisions/clipping, and Zen Green tokens verified | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **FR-16** | Handout §8.5| **AC-18** | `REG-01` | Regression | Labs 1–3 full regression test suites | 100% of previous test suites pass | `e2e/lab-03/*` & `e2e/lab-02/*` | Planned |
+| **FR-16** | Handout §8.5| **AC-18** | `REG-01` | Regression (Server) | Labs 1–3 Server API & Unit regression suites | 100% of previous server test suites pass without regression | `server/tests/lab-01/*`, `server/tests/lab-02/*`, `server/tests/lab-03/*` | Planned |
+| **FR-16** | Handout §8.5| **AC-18** | `REG-02` | Regression (Client) | Labs 1–3 Client UI component regression suites | 100% of previous client test suites pass without regression | `client/tests/lab-01/*`, `client/tests/lab-02/*`, `client/tests/lab-03/*` | Planned |
+| **FR-16** | Handout §8.5| **AC-18** | `REG-03` | Regression (E2E) | Labs 2–3 Full-stack E2E workflow regression suites | 100% of previous Playwright E2E suites pass without regression | `e2e/lab-02/*`, `e2e/lab-03/*` | Planned |
 
 ---
 
@@ -103,7 +109,8 @@ client/tests/lab-04/
 ├── ActionsTaken.test.tsx                      # UI-01a, UI-01b, UI-02, UI-03
 ├── TicketWorkflow.test.tsx                    # UI-04
 ├── RequesterDashboard.test.tsx                # UI-05, UI-07a
-└── StaffDashboard.test.tsx                    # UI-06, UI-07b, UI-08
+├── StaffDashboard.test.tsx                    # UI-06, UI-07b
+└── AdminDashboard.test.tsx                    # UI-08
 
 e2e/lab-04/
 ├── actions-taken-flow.spec.ts                 # E2E-01
