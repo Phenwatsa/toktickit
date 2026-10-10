@@ -87,7 +87,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - Malformed ISO-8601 timestamp returns HTTP 400 (`VALIDATION_ERROR`).
     - Stale timestamp mismatch returns HTTP 409 (`STALE_UPDATE_CONFLICT`) with `currentUpdatedAt`.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security (permitting IT Staff and Admin, blocking Requester), missing/malformed timestamp rejection (400), stale conflict handling (409), and cancelled ticket rejection (400 `TICKET_CANCELLED`).
+    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security (permitting IT Staff and Admin, blocking Requester), missing/malformed timestamp rejection (400), stale conflict handling (409), and cancelled ticket rejection (400 `TICKET_CANCELLED`, `API-14`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Frontend status dropdown adjustments (deferred to Issue 23 (#54)).
   - Dashboard metric calculations (deferred to Issue 24 (#55)).
@@ -96,7 +96,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400.
   - [ ] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`).
   - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes.
-  - [ ] Attempting to transition a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`).
+  - [ ] Attempting to transition a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`).
   - [ ] 100% of tests in `server/tests/lab-04/ticket-workflow.api.test.ts` pass.
 * **AI Verification Note:**
   > Verify backend status validation and concurrency handling in `ticket-workflow.api.test.ts`. Do not fail verification due to missing frontend UI integration or unmerged PR status.
