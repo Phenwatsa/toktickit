@@ -114,7 +114,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   - `result`: String, 3–2000 characters (required).
   - `actionDateTime`: Valid ISO date string (optional, defaults to server current time).
   - `isFollowUpRequired`: Boolean (required, default `false`).
-  - `followUpNote`: String, **strictly required** when `isFollowUpRequired === true` (min 3 non-whitespace chars); optional or null when `false`.
+  - `followUpNote`: String, **strictly required** when `isFollowUpRequired === true` (minimum 3 non-whitespace characters; values that are empty, whitespace-only, or under 3 non-whitespace characters are rejected); optional or null when `false`.
   - `attachmentNotes`: String, max 500 characters (optional).
   - `performedById`: **Auto-populated** from authenticated session user ID (`req.user.id`). Any client-supplied performer ID is ignored.
 - **Response**: `201 Created`
@@ -147,7 +147,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       "details": [
         {
           "field": "followUpNote",
-          "message": "Follow-up note is required when follow-up is needed"
+          "message": "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed"
         }
       ]
     }
@@ -183,6 +183,12 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     "attachmentNotes": "Updated diagnostic log"
   }
   ```
+- **Validation Rules**:
+  - `actionDescription`: String, 5–2000 characters (optional on update).
+  - `result`: String, 3–2000 characters (optional on update).
+  - `isFollowUpRequired`: Boolean (optional on update).
+  - `followUpNote`: String, strictly required when `isFollowUpRequired === true` (minimum 3 non-whitespace characters; values that are empty, whitespace-only, or under 3 non-whitespace characters are rejected); optional or null when `false`.
+  - `attachmentNotes`: String, max 500 characters (optional on update).
 - **Response**: `200 OK`
   ```json
   {
@@ -203,10 +209,31 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   }
   ```
 - **Error Responses**:
-  - `400 Bad Request`: Validation failure.
-  - `401 Unauthorized`: Unauthenticated.
-  - `403 Forbidden`: Non-staff user.
-  - `404 Not Found`: Action Taken record not found.
+  - `400 Bad Request` (Validation error):
+    ```json
+    {
+      "error": "Validation failed",
+      "code": "VALIDATION_ERROR",
+      "details": [
+        {
+          "field": "followUpNote",
+          "message": "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed"
+        }
+      ]
+    }
+    ```
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Requester attempts update):
+    ```json
+    { "error": "Access denied. Only IT Staff and Administrators may modify Actions Taken.", "code": "FORBIDDEN", "details": [] }
+    ```
+  - `404 Not Found`:
+    ```json
+    { "error": "Action Taken record not found", "code": "NOT_FOUND", "details": [] }
+    ```
 
 ---
 

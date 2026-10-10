@@ -65,7 +65,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
     - Displayed with warm amber highlight background (`#FEF3C7`), warning icon, and text: "Follow-Up Required: [Note text]".
   - **Attachment Reference** (if `attachmentNotes` exists):
     - Paperclip icon with text: "Referenced Attachments: [Notes]".
-  - **Staff Controls** (IT Staff only): Subtle "Edit" button allowing in-place editing of action details.
+  - **Staff & Admin Controls** (IT Staff and Administrator): Subtle "Edit" button allowing in-place editing of action details.
 
 ### 3.3 Create & Edit Modal/Drawer (`ActionTakenModal.tsx`)
 - **Fields**:
@@ -74,7 +74,8 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   - `Result`: Textarea (min 3 chars, placeholder: "Describe the outcome or findings...").
   - `Performed By`: Read-only field showing current user name: "Logged-in Staff Member (Auto-assigned)".
   - `Follow-Up Required?`: Checkbox toggle.
-  - `Follow-Up Note`: Textarea that dynamically appears or becomes mandatory when the checkbox is active (enforcing at least 3 non-whitespace characters per BR-04). If blank or containing fewer than 3 non-whitespace characters upon submit, red inline validation message: "Follow-up note is required (minimum 3 characters) when follow-up is needed."
+  - `Follow-Up Note`: Textarea that dynamically appears or becomes mandatory when the checkbox is active (enforcing at least 3 non-whitespace characters per BR-04).
+    - **Validation Behavior**: Submitting a blank string, whitespace-only (`"   "`), or fewer than 3 non-whitespace characters (e.g. `"ab"`, `"  a  "`) blocks submission and displays a red inline error message: `"Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed."`. Submitting 3 or more non-whitespace characters passes validation.
   - `Attachment Notes`: Optional text field referencing file names or diagnostic images.
 - **Footer**: "Cancel" and "Save Action Taken" buttons with loading spinner during submission.
 

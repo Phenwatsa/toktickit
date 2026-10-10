@@ -60,7 +60,7 @@ The stakeholder requires:
 - **FR-01 (Actions Taken Listing)**: The system shall provide an endpoint (`GET /api/tickets/:id/actions`) allowing permitted users to retrieve all Actions Taken for a ticket, ordered chronologically.
 - **FR-02 (Actions Taken Creation)**: IT Staff and Administrators shall be able to record a new Action Taken under an active ticket (`POST /api/tickets/:id/actions`), specifying description, result, follow-up requirement, follow-up note, and attachment notes.
 - **FR-03 (Automated Performer Attribution)**: The system shall automatically record the authenticated user as the performer (`performedById`) upon Action Taken creation; manual override of the performer identity by client payload is prohibited.
-- **FR-04 (Follow-Up Conditional Validation)**: The system shall reject any Action Taken creation or update where `isFollowUpRequired` is true but `followUpNote` is empty or whitespace-only.
+- **FR-04 (Follow-Up Conditional Validation)**: The system shall reject any Action Taken creation or update where `isFollowUpRequired` is true but `followUpNote` is empty, contains only whitespace, or has fewer than 3 non-whitespace characters (enforcing a minimum of 3 non-whitespace characters per BR-04).
 - **FR-05 (Actions Taken Modification)**: IT Staff and Administrators shall be able to update an existing Action Taken (`PATCH /api/tickets/:id/actions/:actionId`) under an accessible ticket.
 - **FR-06 (Requester Read-Only Access)**: Requesters shall be able to view all Actions Taken on tickets they own, but shall be strictly blocked from creating or modifying Actions Taken.
 
@@ -248,20 +248,38 @@ model ActionTaken {
 ### 7.3 Migration, Backfill & Rollback/Recovery Strategy (Required by Handout §5.2)
 - **Non-Destructive Forward Migration**: `ActionTaken` is an additive model. All existing tickets, users, attachments, comments, and notes from Labs 1, 2, and 3 remain completely valid without requiring backfill data.
 - **Legacy Ticket Handling**: Dashboard calculations and ticket views treat legacy tickets with zero Actions Taken seamlessly using standard SQL outer joins or Prisma relation counts.
-- **Rollback & Disaster Recovery Strategy**:
-  - *Rollback Command*: If the Lab 4 migration must be reverted, the rollback is executed via Prisma CLI: `npx prisma migrate resolve --rolled-back <migration_name>` followed by dropping the `ActionTaken` table (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`).
-  - *Recovery Verification*: Automated test (`MIG-01`) verifies that reverting the migration leaves all legacy tables (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) 100% intact with zero data loss or constraint corruption.
+- **Authoritative Rollback & Disaster Recovery Sequence**:
+  In the event that the Sprint 4 database migration must be rolled back or recovered, the system adheres to a strict multi-phase procedure (noting that `prisma migrate resolve` records migration history state but does not alter physical tables):
+  1. **Phase 1: Physical Schema Reversal (Database Down Migration)**:
+     Execute physical teardown of Sprint 4 increments using verified rollback SQL:
+     ```sql
+     DROP TABLE IF EXISTS "ActionTaken" CASCADE;
+     ```
+     This drops the child table and associated foreign keys/indexes without modifying or deleting parent `Ticket` or `User` records.
+  2. **Phase 2: Prisma Migration History Synchronization**:
+     Synchronize Prisma's internal `_prisma_migrations` tracking table so Prisma records the migration as rolled back:
+     ```bash
+     npx prisma migrate resolve --rolled-back <migration_name>
+     ```
+  3. **Phase 3: Legacy Schema & Data Preservation Verification**:
+     Execute automated verification suite (`MIG-01`) asserting that:
+     - All legacy tables (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) and column schemas remain 100% intact.
+     - All pre-migration records, foreign keys, and indexes are undamaged with zero data corruption.
+     - Read and write operations on legacy entities continue to succeed without runtime error.
+  4. **Phase 4: Forward Re-application Recovery Check**:
+     Re-run `npx prisma migrate deploy` to confirm that the migration can be safely re-applied without schema conflicts or syntax errors.
 
 ### 7.4 Required Seed Scenarios Mapping (Required by Handout §5.3)
-The idempotent seed script (`prisma/seed.ts`) populates realistic data covering all five required test dimensions, mapped directly to planned verification suites:
+The idempotent seed script (`prisma/seed.ts`) populates realistic test data covering all five required dimensions. Suite `SEED-01` (`server/tests/lab-04/seed-data.test.ts`) verifies these scenarios directly across repeated runs:
 
-| Seed Scenario Dimension | Seeded Characteristics in `seed.ts` | Target Verification Suite |
+| Seed Scenario Dimension | Seeded Characteristics in `seed.ts` | Target Verification in `SEED-01` & Test Suites |
 | :--- | :--- | :--- |
-| **1. Lifecycle Statuses** | Seed tickets across all 8 statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`) | Verified by `WF-03` & `API-10` (`byStatus` breakdown) |
-| **2. IT Priorities** | Seed tickets across all 4 priorities (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) | Verified by `API-10` (`byPriority` breakdown) |
-| **3. Ownership Distribution** | Seed tickets with assigned owner (`ticketOwnerId = staff.id`) and unassigned queue (`ticketOwnerId = null`) | Verified by `API-10` (`myAssignedTickets`, `unassignedTickets`) |
-| **4. Actions Taken Multiplicity** | Seed tickets with exactly 0, 1, and multiple ($\ge 2$) Actions Taken lines with varied staff performers | Verified by `API-04`, `UI-01a`, `E2E-01` |
-| **5. Dashboard Metrics Sets** | Seed active users with non-zero metrics and clean/fresh user accounts with zero metrics | Verified by `API-09`, `API-10`, `UI-05`, `UI-06` empty states |
+| **1. Lifecycle Statuses** | Seed tickets across all 8 statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`) | `SEED-01` queries and verifies tickets in each of the 8 distinct statuses; further verified by `WF-03` & `API-10` |
+| **2. IT Priorities** | Seed tickets across all 4 priorities (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) | `SEED-01` queries and verifies tickets in each of the 4 priority levels; further verified by `API-10` |
+| **3. Ownership Distribution** | Seed tickets with assigned owner (`ticketOwnerId = staff.id`) and unassigned queue (`ticketOwnerId = null`) | `SEED-01` queries and verifies presence of both assigned and unassigned tickets; further verified by `API-10` |
+| **4. Actions Taken Multiplicity** | Seed tickets with exactly 0, 1, and multiple ($\ge 2$) Actions Taken lines with varied staff performers | `SEED-01` asserts tickets with count = 0, count = 1, and count $\ge 2$; further verified by `API-04`, `UI-01a`, `E2E-01` |
+| **5. Dashboard Metrics Sets** | Seed active users with non-zero metrics and clean/fresh user accounts with zero metrics | `SEED-01` verifies non-zero counts for active users and zero-count baselines for fresh users; further verified by `API-09`, `API-10`, `UI-05`, `UI-06` empty states |
+| **6. Repeated Run Idempotency** | Seed script executed multiple times sequentially (`seed.ts` run 1 $\to$ run 2) | `SEED-01` asserts zero unique constraint/foreign key collisions, and confirms that total record counts remain identical after run 2 |
 
 ---
 
@@ -281,17 +299,17 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic data covering 
 
 ## 9. Acceptance Criteria
 
-- **AC-01**: Given an authenticated IT Staff user, when a valid Action Taken is submitted with description and result, it is successfully created with `performedById` automatically set to the authenticated user ID and linked to the correct ticket (FR-02, FR-03, BR-01, BR-02, BR-03).
-- **AC-02**: Given an authenticated IT Staff user, when an Action Taken is submitted with `isFollowUpRequired = true` but an empty `followUpNote`, the backend rejects the request with `HTTP 400 Bad Request` and descriptive validation details (FR-04, BR-04).
+- **AC-01**: Given an authenticated IT Staff or Administrator user, when a valid Action Taken is submitted with description and result, it is successfully created with `performedById` automatically set to the authenticated user ID and linked to the correct ticket (FR-02, FR-03, BR-01, BR-02, BR-03).
+- **AC-02**: Given an authenticated IT Staff or Administrator user, when an Action Taken is submitted with `isFollowUpRequired = true` but `followUpNote` is empty, contains only whitespace, or has fewer than 3 non-whitespace characters, the backend rejects the request with `HTTP 400 Bad Request` (`VALIDATION_ERROR`) and descriptive validation details: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed." (FR-04, BR-04).
 - **AC-03**: Given an authenticated Requester user, when attempting to create (`POST`) or edit (`PATCH`) an Action Taken via API, the backend rejects the request with `HTTP 403 Forbidden` (FR-06).
 - **AC-04**: Given an authenticated Requester user, when viewing an owned ticket, all existing Actions Taken are retrieved via API in chronological order and rendered in read-only format with Add/Edit controls completely omitted (FR-01, FR-06, BR-05, BR-06).
 - **AC-05**: Given an authenticated Requester user, when attempting to view Actions Taken on a ticket owned by another requester, the backend returns `HTTP 403 Forbidden` (FR-01).
-- **AC-06**: Given an authenticated IT Staff user, when updating an existing Action Taken (`PATCH /api/tickets/:id/actions/:actionId`) with valid data, the record is updated in the database and returned with updated fields and `updatedAt` timestamp (FR-05, BR-01, BR-02).
+- **AC-06**: Given an authenticated IT Staff or Administrator user, when updating an existing Action Taken (`PATCH /api/tickets/:id/actions/:actionId`) with valid data, the record is updated in the database and returned with updated fields and `updatedAt` timestamp (FR-05, BR-01, BR-02).
 - **AC-07**: Given an authenticated Requester user, when attempting to call the status transition endpoint to change status to `RESOLVED` or `CLOSED`, the backend rejects the request with `HTTP 403 Forbidden` (FR-07, BR-08).
 - **AC-08**: Given an authenticated Requester user, when marking "Problem Appears Resolved", the ticket's `problemAppearsResolved` flag is updated to `true`, but `currentStatus` remains unchanged (FR-08, BR-09).
-- **AC-09**: Given an authenticated IT Staff user, when attempting an invalid status transition (e.g. `NEW` $\to$ `RESOLVED`), the backend rejects the request with `HTTP 400 Bad Request` and descriptive transition error (FR-09, BR-07).
-- **AC-10**: Given an authenticated IT Staff user, when submitting a status transition missing the mandatory `expectedUpdatedAt` parameter, the backend rejects the request with `HTTP 400 Bad Request` (FR-10, BR-10).
-- **AC-11**: Given an authenticated IT Staff user, when submitting a status transition with an outdated or mismatched `expectedUpdatedAt` timestamp, the backend rejects the request with `HTTP 409 Conflict` returning `currentUpdatedAt` (FR-10, BR-10).
+- **AC-09**: Given an authenticated IT Staff or Administrator user, when attempting an invalid status transition (e.g. `NEW` $\to$ `RESOLVED`), the backend rejects the request with `HTTP 400 Bad Request` and descriptive transition error (FR-09, BR-07).
+- **AC-10**: Given an authenticated IT Staff or Administrator user, when submitting a status transition missing the mandatory `expectedUpdatedAt` parameter, the backend rejects the request with `HTTP 400 Bad Request` (FR-10, BR-10).
+- **AC-11**: Given an authenticated IT Staff or Administrator user, when submitting a status transition with an outdated or mismatched `expectedUpdatedAt` timestamp, the backend rejects the request with `HTTP 409 Conflict` returning `currentUpdatedAt` (FR-10, BR-10).
 - **AC-12**: Given an authenticated Requester user, when calling `GET /api/requester/dashboard`, the response returns authoritative counts for `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and `recentTickets` strictly isolated to the user (FR-11, BR-12, BR-13).
 - **AC-13**: Given an authenticated IT Staff user, when calling `GET /api/staff/dashboard`, the response returns accurate queue metrics: primary counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), `unassignedTickets`, full 8-status `byStatus`, and 4-level `byPriority` (FR-12, BR-12, BR-14).
 - **AC-14**: Given an authenticated Requester user, when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden` (FR-12).
@@ -303,8 +321,8 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic data covering 
 - **AC-19a**: Given an authenticated Administrator user, when calling `GET /api/admin/dashboard`, the response returns `HTTP 200 OK` with authoritative operational summaries (`totalActiveTickets`, `unassignedTickets`) and user account distribution metrics (`totalUsers`, `activeUsers`, `inactiveUsers`, `byRole`) (FR-15, BR-17).
 - **AC-19b**: Given an authenticated non-administrator user (Requester or IT Staff), when attempting to call `GET /api/admin/dashboard`, the backend rejects the request with `HTTP 403 Forbidden` (FR-15, BR-17).
 - **AC-20**: Given an authenticated Administrator on the Dashboard UI, the view renders operational queue indicators, user account statistics, role distribution badges, and quick action navigation to User Management (`#/admin-users`) conforming to Zen Green styling without text clipping or overlapping controls (FR-15, FR-17).
-- **AC-21**: Given a rollback of the Lab 4 Prisma migration, all legacy tables (Users, Tickets, Attachments, Comments, Notes) remain completely intact and functional with zero data corruption (Handout §5.2).
-- **AC-22**: Given the execution of the seed script, realistic tickets are populated idempotently covering all 8 statuses, 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, and non-zero/zero dashboard metric sets (Handout §5.3).
+- **AC-21**: Given a disaster recovery scenario requiring rollback of the Lab 4 migration, when executing physical schema reversal (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`) followed by Prisma migration history synchronization (`npx prisma migrate resolve --rolled-back <migration_name>`), all legacy tables (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) and existing data remain 100% intact, and subsequent forward migration (`npx prisma migrate deploy`) applies cleanly without errors (Handout §5.2).
+- **AC-22**: Given the execution of the seed script (`prisma/seed.ts`), when run initially and repeatedly (idempotency verification), no duplicate key violations occur, record counts remain consistent, and realistic test data covering all 8 statuses, all 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, and zero/non-zero dashboard metric profiles is populated and verified directly by `SEED-01` (Handout §5.3).
 
 ---
 
