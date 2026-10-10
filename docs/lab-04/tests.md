@@ -1,46 +1,79 @@
 # TokTickIT Lab 4 — Test Plan & Traceability Matrix
 
-This document provides the authoritative test plan, traceability matrix, and execution log for TokTickIT Sprint 4 (Lab 4). It maps each Acceptance Criterion (AC-01 through AC-15) to automated test suites across API, UI component, workflow, and End-to-End Playwright levels.
+This document provides the authoritative test plan, architecture breakdown, and full Requirements Traceability Matrix (RTM) for TokTickIT Sprint 4 (Lab 4). It links Functional Requirements (FR) and Business Rules (BR) to testable Acceptance Criteria (AC) and planned automated test cases across all six testing levels.
 
 ---
 
-## 1. Test Strategy & Architectural Breakdown
+## 1. Test Strategy & Architectural Breakdown (6 Test Types)
 
-The testing suite enforces full test-driven quality assurance:
-1. **Server API Tests (`server/tests/lab-04/`)**: Supertest suites asserting HTTP response codes, JSON schemas, business rule validations, and RBAC isolation.
-2. **Client UI Component Tests (`client/tests/lab-04/`)**: Vitest & React Testing Library suites verifying UI rendering, form state management, validation feedback, and drill-down navigation.
-3. **End-to-End Playwright Tests (`e2e/lab-04/`)**: Full browser workflows validating cross-role user journeys, responsive viewports, and regression integrity.
-4. **Regression Test Suites (`server/tests/lab-01..03/`, `client/tests/lab-01..03/`, `e2e/lab-02..03/`)**: Continuous execution verifying that baseline capabilities from Labs 1–3 remain functional without regression.
+The test plan enforces comprehensive multi-tier quality assurance covering all specified test dimensions:
+
+1. **Unit Tests (`server/tests/lab-04/unit/`)**:
+   Isolated validation and calculation logic testing business rules without network overhead:
+   - `follow-up-validation.unit.test.ts` (`UNIT-01`): Validates conditional requirement for `followUpNote` when `isFollowUpRequired === true`.
+   - `status-transition-matrix.unit.test.ts` (`UNIT-02`): Validates permitted vs forbidden transitions across all 8 statuses and role authority checks.
+   - `concurrency-check.unit.test.ts` (`UNIT-03`): Validates optimistic concurrency timestamp comparison logic.
+   - `dashboard-calculator.unit.test.ts` (`UNIT-04`): Validates aggregation logic for metric counts.
+2. **API / Integration Tests (`server/tests/lab-04/`)**:
+   Supertest suites asserting HTTP status codes, request validation, database interactions, and RBAC isolation:
+   - `actions-taken.api.test.ts`: Tests CRUD endpoints, auto-performer attribution, and cross-user isolation.
+   - `requester-dashboard.api.test.ts`: Tests Requester metrics calculation and strict tenant isolation.
+   - `staff-dashboard.api.test.ts`: Tests Staff queue metrics, status breakdowns, priority breakdowns, and non-staff 403 rejection.
+3. **Workflow Tests (`server/tests/lab-04/ticket-workflow.api.test.ts`)**:
+   Stateful multi-step lifecycle integration tests:
+   - Multi-step status progression (`NEW` $\to$ `OPEN` $\to$ `IN_PROGRESS` $\to$ `WAITING_FOR_REQUESTER` $\to$ `RESOLVED` $\to$ `CLOSED`).
+   - Resolution gate verification (Requester advisory indication vs IT Staff formal resolution).
+   - Stale-update conflict recovery (`409 Conflict` followed by reload and retry).
+4. **UI Component Tests (`client/tests/lab-04/`)**:
+   Vitest & React Testing Library component tests:
+   - `ActionsTaken.test.tsx`: Tests list rendering, modal form state, validation error banners, and read-only Requester presentation.
+   - `TicketWorkflow.test.tsx`: Tests status transition controls, resolution feedback, and 409 conflict alert handling.
+   - `RequesterDashboard.test.tsx`: Tests metric cards rendering, empty state, and drill-down navigation triggers.
+   - `StaffDashboard.test.tsx`: Tests 5 primary cards, 8-status breakdown, priority badges, and drill-down routing.
+5. **End-to-End Playwright Tests (`e2e/lab-04/`)**:
+   Full browser workflows executed under real session cookies/tokens:
+   - `actions-taken-flow.spec.ts`: End-to-end recording of actions by staff, editing, and requester read-only audit.
+   - `ticket-resolution.spec.ts`: Requester advisory resolution $\to$ IT Staff formal review $\to$ official `RESOLVED` status transition.
+   - `dashboards.spec.ts`: Live dashboard metric counts verification against database records and interactive drill-down navigation.
+6. **Regression Tests (`server/tests/lab-01..03/`, `client/tests/lab-01..03/`, `e2e/lab-02..03/`)**:
+   Continuous test runs ensuring that legacy Authentication, Attachments, Comments, Internal Notes, and User Management remain functional with zero regressions.
 
 ---
 
-## 2. Acceptance Criteria Traceability Matrix
+## 2. Full Requirements Traceability Matrix (FR $\to$ BR $\to$ AC $\to$ Test ID)
 
-| AC ID | Test ID | Type | Requirement / AC Description | What It Tests | Expected Result | Automated Test File | Status |
-| :--- | :--- | :---: | :--- | :--- | :--- | :--- | :---: |
-| **AC-01** | `API-01` | API | Create valid Action Taken | IT Staff records an Action Taken with description and result | Created with `201`, auto-assigned `performedById`, correct `ticketId` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **AC-02** | `API-02` | API | Follow-Up Note conditional validation | Submit Action Taken with `isFollowUpRequired = true` and blank note | Rejected with `400 Bad Request` and validation error message | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **AC-03** | `API-03` | API | Requester Action creation blocked | Requester calls `POST /api/tickets/:id/actions` | Rejected with `403 Forbidden` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **AC-04** | `API-04` | API | List Actions Taken (Requester owner) | Requester views Actions Taken on owned ticket | Returns `200 OK` with chronological action list | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **AC-05** | `API-05` | API | Cross-requester action isolation | Requester attempts to view Actions on another user's ticket | Rejected with `403 Forbidden` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **AC-06** | `API-06` | API | Resolution gate enforcement | Requester attempts to set status to `RESOLVED` or `CLOSED` | Rejected with `403 Forbidden` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| **AC-07** | `API-07` | API | Advisory resolution indication | Requester marks problem appears resolved | Sets `problemAppearsResolved = true`; `currentStatus` preserved | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| **AC-08** | `API-08` | API | Invalid transition rejection | IT Staff attempts invalid jump (e.g. `NEW` $\to$ `RESOLVED`) | Rejected with `400 Bad Request` and descriptive error | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| **AC-09** | `API-09` | API | Stale-update concurrency conflict | IT Staff submits status update with outdated `expectedUpdatedAt` | Rejected with `409 Conflict` and current timestamp | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| **AC-10** | `API-10` | API | Requester dashboard metrics isolation | Requester retrieves dashboard data | Returns `200 OK` with accurate counts for owned tickets only | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| **AC-11** | `API-11` | API | IT Staff dashboard queue metrics | IT Staff retrieves operational dashboard metrics | Returns `200 OK` with accurate unassigned, assigned, and status counts | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| **AC-12** | `API-12` | API | Non-staff blocked from staff dashboard | Requester calls `GET /api/staff/dashboard` | Rejected with `403 Forbidden` | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| **AC-01** | `UI-01` | UI | Actions Taken UI list & modal | IT Staff renders action list and creates entry via modal form | List updates dynamically with new action card | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| **AC-02** | `UI-02` | UI | Dynamic Follow-up Note validation | Check Follow-Up checkbox and submit without note text | Inline validation error displayed; submit blocked | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| **AC-03** | `UI-03` | UI | Requester Actions read-only view | Requester views Ticket Detail screen | Actions list is visible; "+ Add Action Taken" button is hidden | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| **AC-09** | `UI-04` | UI | Conflict feedback alert | Backend returns 409 Conflict on status change | User-friendly conflict banner displayed prompting reload | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
-| **AC-10** | `UI-05` | UI | Requester dashboard rendering & drill-down | Requester views dashboard and clicks "In Progress" card | Navigates to `#/my-tickets` pre-filtered by In Progress | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
-| **AC-11** | `UI-06` | UI | Staff dashboard rendering & drill-down | IT Staff views dashboard and clicks "Unassigned" card | Navigates to `#/staff-queue` pre-filtered by Unassigned | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
-| **AC-01** | `E2E-01` | E2E | Actions Taken full lifecycle | IT Staff adds action, edits action; Requester verifies read-only | Complete cross-role flow executes successfully in browser | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
-| **AC-06** | `E2E-02` | E2E | Ticket resolution workflow | Requester advises resolved; IT Staff formally resolves | Official status moves to Resolved with audit trail | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
-| **AC-13** | `E2E-03` | E2E | Dashboard navigation & drill-down | User interacts with dashboard cards and quick action links | Browser routes accurately with persistent filter states | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **AC-14** | `E2E-04` | E2E | Cross-viewport responsive audit | Test Desktop, Tablet, and Mobile viewport layouts | `scrollWidth === clientWidth` on all major views | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **AC-15** | `REG-01` | E2E | Complete Labs 1–3 regression suite | Execute all legacy auth, tickets, notes, and admin specs | 100% of previous test suites pass without regression | `e2e/lab-03/*` & `e2e/lab-02/*` | Planned |
+| FR ID | Governing BR | AC ID | Test ID | Type | What It Tests | Expected Result | Automated Test File | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| **FR-01** | BR-05, BR-06 | **AC-04** | `API-04` | API | List Actions Taken on owned ticket | Returns 200 with chronological actions list | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-01** | BR-06 | **AC-05** | `API-05` | API | Cross-requester actions isolation | Non-owner requester receives 403 Forbidden | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-02** | BR-01, BR-02 | **AC-01** | `API-01` | API | IT Staff records valid Action Taken | Created with 201 under target ticket | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-03** | BR-03 | **AC-01** | `API-01` | API | Performer auto-attribution from session | `performedById` matches authenticated user ID | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-04** | BR-04 | **AC-02** | `UNIT-01`| Unit | Follow-up note validator logic | Returns false when note empty & required = true | `server/tests/lab-04/unit/follow-up-validation.unit.test.ts` | Planned |
+| **FR-04** | BR-04 | **AC-02** | `API-02` | API | Conditional validation on Action creation | 400 Bad Request if followUpNote is blank | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-05** | BR-01, BR-02 | **AC-01** | `API-06` | API | IT Staff updates existing Action Taken | Returns 200 with updated fields | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-06** | BR-06 | **AC-03** | `API-03` | API | Requester Action creation blocked | 403 Forbidden returned | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-07** | BR-08 | **AC-06** | `WF-01`  | Workflow | Resolution gate: Requester cannot resolve | Requester calling resolve/close rejected (403) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-08** | BR-09 | **AC-07** | `WF-02`  | Workflow | Advisory resolution indication | `problemAppearsResolved = true`; status unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-09** | BR-07 | **AC-08** | `UNIT-02`| Unit | 8-status transition matrix validator | Validates all valid/invalid state hops | `server/tests/lab-04/unit/status-transition-matrix.unit.test.ts` | Planned |
+| **FR-09** | BR-07 | **AC-08** | `WF-03`  | Workflow | Multi-step lifecycle status flow | Transitions sequentially through valid states | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-10** | BR-10 | **AC-09** | `UNIT-03`| Unit | Optimistic concurrency comparator | Flags timestamp mismatch as conflict | `server/tests/lab-04/unit/concurrency-check.unit.test.ts` | Planned |
+| **FR-10** | BR-10 | **AC-09** | `API-07` | API | Missing `expectedUpdatedAt` rejection | 400 Bad Request with validation details | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-10** | BR-10 | **AC-10** | `API-08` | API | Stale update detection & conflict | 409 Conflict with `currentUpdatedAt` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-11** | BR-12, BR-13 | **AC-11**| `UNIT-04`| Unit | Requester metrics calculator logic | Computes 5 distinct metric formulas | `server/tests/lab-04/unit/dashboard-calculator.unit.test.ts` | Planned |
+| **FR-11** | BR-13 | **AC-11** | `API-09` | API | Requester dashboard metrics isolation | Returns 200 with 5 metrics for owned tickets | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| **FR-12** | BR-14 | **AC-12** | `API-10` | API | Staff dashboard queue metrics & byStatus | Returns 200 with 5 cards & all 8 statuses | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| **FR-12** | Matrix | **AC-13** | `API-11` | API | Requester blocked from staff dashboard | 403 Forbidden returned | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| **FR-02** | BR-03 | **AC-01** | `UI-01`  | UI | Actions Taken list & create modal | List updates with new action item | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
+| **FR-04** | BR-04 | **AC-02** | `UI-02`  | UI | Follow-up note UI inline validation | Checkbox triggers mandatory validation error | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
+| **FR-06** | BR-06 | **AC-03** | `UI-03`  | UI | Requester Actions read-only UI | Add/Edit buttons completely omitted | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
+| **FR-10** | BR-10 | **AC-10** | `UI-04`  | UI | 409 Conflict alert UI feedback | User-friendly conflict banner displayed | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
+| **FR-11** | BR-13, BR-15 | **AC-14**| `UI-05`  | UI | Requester dashboard rendering & drill-down | Clicking card navigates to filtered MyTickets | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
+| **FR-12** | BR-14, BR-15 | **AC-14**| `UI-06`  | UI | Staff dashboard rendering & drill-down | Clicking card navigates to filtered Queue | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
+| **FR-01** | BR-02 | **AC-01** | `E2E-01` | E2E | Actions Taken cross-role workflow | Staff creates/edits; Requester views read-only | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
+| **FR-07** | BR-08, BR-09 | **AC-06**| `E2E-02` | E2E | Resolution gate lifecycle E2E | Requester advises; Staff formally resolves | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
+| **FR-13** | BR-15 | **AC-14** | `E2E-03` | E2E | Dashboards drill-down navigation E2E | Live cards filter queues seamlessly in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **FR-16** | Handout §8.6| **AC-15** | `E2E-04` | E2E | Responsive viewport audit | Zero horizontal overflow across 3 viewports | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **FR-15** | Handout §8.5| **AC-16** | `REG-01` | Regression | Labs 1–3 full regression test suites | 100% of previous test suites pass | `e2e/lab-03/*` & `e2e/lab-02/*` | Planned |
 
 ---
 
@@ -48,21 +81,26 @@ The testing suite enforces full test-driven quality assurance:
 
 ```text
 server/tests/lab-04/
-├── actions-taken.api.test.ts          # AC-01, AC-02, AC-03, AC-04, AC-05
-├── ticket-workflow.api.test.ts        # AC-06, AC-07, AC-08, AC-09
-├── requester-dashboard.api.test.ts    # AC-10
-└── staff-dashboard.api.test.ts        # AC-11, AC-12
+├── unit/
+│   ├── follow-up-validation.unit.test.ts      # UNIT-01
+│   ├── status-transition-matrix.unit.test.ts  # UNIT-02
+│   ├── concurrency-check.unit.test.ts         # UNIT-03
+│   └── dashboard-calculator.unit.test.ts      # UNIT-04
+├── actions-taken.api.test.ts                  # API-01, API-02, API-03, API-04, API-05, API-06
+├── ticket-workflow.api.test.ts                # WF-01, WF-02, WF-03, API-07, API-08
+├── requester-dashboard.api.test.ts            # API-09
+└── staff-dashboard.api.test.ts                # API-10, API-11
 
 client/tests/lab-04/
-├── ActionsTaken.test.tsx              # UI-01, UI-02, UI-03
-├── TicketWorkflow.test.tsx            # UI-04
-├── RequesterDashboard.test.tsx        # UI-05
-└── StaffDashboard.test.tsx            # UI-06
+├── ActionsTaken.test.tsx                      # UI-01, UI-02, UI-03
+├── TicketWorkflow.test.tsx                    # UI-04
+├── RequesterDashboard.test.tsx                # UI-05
+└── StaffDashboard.test.tsx                    # UI-06
 
 e2e/lab-04/
-├── actions-taken-flow.spec.ts         # E2E-01
-├── ticket-resolution.spec.ts          # E2E-02
-└── dashboards.spec.ts                 # E2E-03, E2E-04
+├── actions-taken-flow.spec.ts                 # E2E-01
+├── ticket-resolution.spec.ts                  # E2E-02
+└── dashboards.spec.ts                         # E2E-03, E2E-04
 ```
 
 ---

@@ -68,11 +68,11 @@ The stakeholder requires:
 - **FR-07 (Authoritative Resolution Gate)**: Only IT Staff and Administrators shall be authorized to transition a ticket to `RESOLVED` or `CLOSED`. Direct requests by Requesters to transition to these statuses shall be rejected with `HTTP 403 Forbidden`.
 - **FR-08 (Advisory Resolution Indication)**: A Requester's submission of "Problem Appears Resolved" shall record advisory feedback without altering the official `currentStatus` of the ticket.
 - **FR-09 (Permitted Transition Matrix Enforcement)**: The backend shall strictly validate all ticket status transitions against the authorized 8-state transition matrix, rejecting unauthorized state hops with `HTTP 400 Bad Request`.
-- **FR-10 (Stale-Update Concurrency Handling)**: The system shall verify incoming status transition timestamps against current database state, safely rejecting outdated submissions with `HTTP 409 Conflict`.
+- **FR-10 (Mandatory Concurrency Control & Stale-Update Protection)**: The system shall enforce `expectedUpdatedAt` as a strictly mandatory parameter on all status transitions (`PATCH /api/staff/tickets/:id/status`), verifying it against the current database `updatedAt` timestamp and rejecting missing timestamps with `HTTP 400 Bad Request` and stale/outdated submissions with `HTTP 409 Conflict`.
 
 ### Operational Dashboards
-- **FR-11 (Requester Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/requester/dashboard`) returning authoritative metrics for the authenticated Requester: total open tickets, tickets waiting for requester, recently resolved tickets, and up to 5 recent tickets.
-- **FR-12 (IT Staff Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/staff/dashboard`) returning authoritative operational metrics: unassigned tickets, tickets owned by current staff user, counts by status, counts by IT priority, and recent queue tickets.
+- **FR-11 (Requester Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/requester/dashboard`) returning authoritative metrics strictly isolated to the authenticated Requester: `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and up to 5 recent tickets (`recentTickets`).
+- **FR-12 (IT Staff Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/staff/dashboard`) returning authoritative operational metrics for IT Staff: primary card counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), workload indicators (`unassignedTickets`), full 8-status breakdown (`byStatus`), 4-level priority breakdown (`byPriority`), and recent queue tickets (`recentTickets`).
 - **FR-13 (Dashboard Drill-Down Navigation)**: The frontend shall support interactive drill-down navigation from dashboard metric cards directly to pre-filtered ticket list and queue views.
 - **FR-14 (Dashboard Quick Actions)**: Dashboards shall provide contextual shortcut buttons for routine actions (Create Ticket, View My Tickets, Search Tickets, My Queue).
 
@@ -122,26 +122,46 @@ The table below defines the authoritative role-based access permissions for Spri
   - `CANCELLED` $\to$ (Terminal state; no transitions permitted)
 - **BR-08 (Resolution Authority Gate)**: Only authenticated users with role `IT_STAFF` or `ADMINISTRATOR` are permitted to transition a ticket into `RESOLVED` or `CLOSED`.
 - **BR-09 (Advisory Requester Indication)**: Setting `problemAppearsResolved = true` indicates user confirmation that their issue seems resolved, but does not alter `currentStatus`. IT Staff must formally inspect the ticket and execute the status transition to `RESOLVED`.
-- **BR-10 (Optimistic Concurrency Protection)**: When updating ticket status, the client must submit the ticket's known `updatedAt` timestamp. If the record's current database `updatedAt` is newer than the client's provided timestamp, the transition is aborted and returns `HTTP 409 Conflict`.
+- **BR-10 (Mandatory Optimistic Concurrency Protection)**: When transitioning ticket status (`PATCH /api/staff/tickets/:id/status`), the client MUST provide the ticket's known `expectedUpdatedAt` ISO timestamp. 
+  - If `expectedUpdatedAt` is missing or invalid, the backend rejects with `HTTP 400 Bad Request` (`VALIDATION_ERROR`).
+  - If `expectedUpdatedAt` does not match the database `ticket.updatedAt` timestamp, the transition is aborted and returns `HTTP 409 Conflict` (`STALE_UPDATE_CONFLICT`) along with `currentUpdatedAt` and actionable conflict details.
 - **BR-11 (Immutable Terminal State)**: Tickets in `CANCELLED` status cannot be modified, claimed, reassigned, or have new Actions Taken recorded.
 
 ### Dashboard Calculation Rules
 - **BR-12 (Authoritative Backend Computation)**: All dashboard metrics must be computed server-side via direct SQL/Prisma aggregation (`count()`, `groupBy()`) rather than fetching full ticket collections to the client.
 - **BR-13 (Requester Metric Definitions)**:
-  - `My Open Tickets`: Count of tickets where `requesterId = req.user.id` and `currentStatus IN ('NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED')`.
-  - `Waiting for Requester`: Count of tickets where `requesterId = req.user.id` and `currentStatus = 'WAITING_FOR_REQUESTER'`.
-  - `Recently Resolved`: Count of tickets where `requesterId = req.user.id` and `currentStatus = 'RESOLVED'`.
-  - `Closed`: Count of tickets where `requesterId = req.user.id` and `currentStatus = 'CLOSED'`.
-  - `My Recent Tickets`: Top 5 tickets owned by requester ordered by `updatedAt DESC`.
+  - `openTickets` (`My Open Tickets`): Count of tickets where `requesterId = req.user.id` and `currentStatus IN ('NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED')`.
+  - `inProgressTickets` (`In Progress`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'IN_PROGRESS'`.
+  - `waitingForRequesterTickets` (`Waiting for Requester`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'WAITING_FOR_REQUESTER'`.
+  - `resolvedTickets` (`Recently Resolved`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'RESOLVED'`.
+  - `closedTickets` (`Closed`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'CLOSED'`.
+  - `recentTickets` (`My Recent Tickets`): Top 5 tickets owned by requester ordered by `updatedAt DESC`.
 - **BR-14 (IT Staff Metric Definitions)**:
-  - `Unassigned Tickets`: Count of active tickets (`currentStatus NOT IN ('CLOSED', 'CANCELLED')`) where `ticketOwnerId IS NULL`.
-  - `My Assigned Tickets`: Count of active tickets where `ticketOwnerId = req.user.id`.
-  - `Tickets by Status`: Counts for each active status (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`).
-  - `Tickets by IT Priority`: Counts for each priority level (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) across active tickets.
-  - `Recent Queue Tickets`: Top 5 active tickets in the system ordered by `updatedAt DESC`.
+  - Primary Metric Cards (5 cards):
+    - `newTickets` (`New`): Count of active tickets where `currentStatus = 'NEW'`.
+    - `openTickets` (`Open`): Count of active tickets where `currentStatus = 'OPEN'`.
+    - `inProgressTickets` (`In Progress`): Count of active tickets where `currentStatus = 'IN_PROGRESS'`.
+    - `waitingForRequesterTickets` (`Waiting for Requester`): Count of active tickets where `currentStatus = 'WAITING_FOR_REQUESTER'`.
+    - `myAssignedTickets` (`My Assigned`): Count of active tickets where `ticketOwnerId = req.user.id` and `currentStatus NOT IN ('CLOSED', 'CANCELLED')`.
+  - Operational Queue Aggregations:
+    - `unassignedTickets` (`Unassigned Queue`): Count of active tickets where `ticketOwnerId IS NULL` and `currentStatus NOT IN ('CLOSED', 'CANCELLED')`.
+    - `byStatus`: Complete counts across all 8 lifecycle statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`).
+    - `byPriority`: Counts across all 4 priorities (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) across active tickets.
+    - `recentTickets` (`Recent Queue Tickets`): Top 5 active tickets in the system ordered by `updatedAt DESC`.
 - **BR-15 (Interactive Drill-Down Mapping)**:
-  - Clicking a Requester dashboard card navigates to `#/my-tickets` with query parameter matching the card's target status filter.
-  - Clicking an IT Staff dashboard card navigates to `#/staff-queue` with query parameter matching the card's status, assignment, or priority filter.
+  - Requester Dashboard Drill-Downs:
+    - `My Open Tickets` $\to$ `#/my-tickets?status=OPEN_GROUP` (shows active non-final tickets)
+    - `In Progress` $\to$ `#/my-tickets?status=IN_PROGRESS`
+    - `Waiting for Requester` $\to$ `#/my-tickets?status=WAITING_FOR_REQUESTER`
+    - `Recently Resolved` $\to$ `#/my-tickets?status=RESOLVED`
+    - `Closed` $\to$ `#/my-tickets?status=CLOSED`
+  - IT Staff Dashboard Drill-Downs:
+    - `New` $\to$ `#/staff-queue?status=NEW`
+    - `Open` $\to$ `#/staff-queue?status=OPEN`
+    - `In Progress` $\to$ `#/staff-queue?status=IN_PROGRESS`
+    - `Waiting for Requester` $\to$ `#/staff-queue?status=WAITING_FOR_REQUESTER`
+    - `My Assigned` $\to$ `#/staff-queue?owner=me`
+    - `Unassigned Queue` $\to$ `#/staff-queue?owner=unassigned`
 - **BR-16 (Safe Empty & Loading States)**: When metric counts are zero or lists are empty, dashboards display descriptive, friendly empty states with appropriate guidance rather than blank areas or raw zeros.
 
 ---
@@ -236,21 +256,22 @@ model ActionTaken {
 
 ## 9. Acceptance Criteria
 
-- **AC-01**: Given an authenticated IT Staff user, when a valid Action Taken is submitted with description and result, it is successfully created with `performedById` automatically set to the authenticated user ID and linked to the correct ticket.
-- **AC-02**: Given an authenticated IT Staff user, when an Action Taken is submitted with `isFollowUpRequired = true` but an empty `followUpNote`, the backend rejects the request with `HTTP 400 Bad Request`.
-- **AC-03**: Given an authenticated Requester user, when attempting to create or edit an Action Taken via API, the backend rejects the request with `HTTP 403 Forbidden`.
-- **AC-04**: Given an authenticated Requester user, when viewing an owned ticket detail, all existing Actions Taken are returned in chronological order in read-only format.
-- **AC-05**: Given an authenticated Requester user, when attempting to view Actions Taken on a ticket owned by another requester, the backend returns `HTTP 403 Forbidden`.
-- **AC-06**: Given an authenticated Requester user, when attempting to call the status transition endpoint to change status to `RESOLVED` or `CLOSED`, the backend rejects the request with `HTTP 403 Forbidden`.
-- **AC-07**: Given an authenticated Requester user, when marking "Problem Appears Resolved", the ticket's `problemAppearsResolved` flag is updated to `true`, but `currentStatus` remains unchanged.
-- **AC-08**: Given an authenticated IT Staff user, when attempting an invalid status transition (e.g. `NEW` $\to$ `RESOLVED`), the backend rejects the request with `HTTP 400 Bad Request` and a descriptive message.
-- **AC-09**: Given an authenticated IT Staff user, when submitting a status transition with an outdated `updatedAt` timestamp (stale update), the backend rejects the request with `HTTP 409 Conflict`.
-- **AC-10**: Given an authenticated Requester user, when calling `GET /api/requester/dashboard`, the response contains accurate counts and recent tickets isolated strictly to the authenticated user.
-- **AC-11**: Given an authenticated IT Staff user, when calling `GET /api/staff/dashboard`, the response returns accurate queue metrics (unassigned, assigned to self, status breakdown, IT priority breakdown) matching database counts.
-- **AC-12**: Given an authenticated Requester user, when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden`.
-- **AC-13**: Given an authenticated user on the Dashboard UI, clicking any summary metric card navigates to the respective ticket list with the active filter preset (drill-down).
-- **AC-14**: Given any screen in the application across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$).
-- **AC-15**: All regression tests for authentication, ticket creation, ticket queue, attachments, public comments, internal notes, and user management pass 100% without failure.
+- **AC-01**: Given an authenticated IT Staff user, when a valid Action Taken is submitted with description and result, it is successfully created with `performedById` automatically set to the authenticated user ID and linked to the correct ticket (FR-02, FR-03, BR-01, BR-02, BR-03).
+- **AC-02**: Given an authenticated IT Staff user, when an Action Taken is submitted with `isFollowUpRequired = true` but an empty `followUpNote`, the backend rejects the request with `HTTP 400 Bad Request` and descriptive validation details (FR-04, BR-04).
+- **AC-03**: Given an authenticated Requester user, when attempting to create or edit an Action Taken via API, the backend rejects the request with `HTTP 403 Forbidden` (FR-06).
+- **AC-04**: Given an authenticated Requester user, when viewing an owned ticket detail, all existing Actions Taken are returned in chronological order in read-only format (FR-01, FR-06, BR-05, BR-06).
+- **AC-05**: Given an authenticated Requester user, when attempting to view Actions Taken on a ticket owned by another requester, the backend returns `HTTP 403 Forbidden` (FR-01).
+- **AC-06**: Given an authenticated Requester user, when attempting to call the status transition endpoint to change status to `RESOLVED` or `CLOSED`, the backend rejects the request with `HTTP 403 Forbidden` (FR-07, BR-08).
+- **AC-07**: Given an authenticated Requester user, when marking "Problem Appears Resolved", the ticket's `problemAppearsResolved` flag is updated to `true`, but `currentStatus` remains unchanged (FR-08, BR-09).
+- **AC-08**: Given an authenticated IT Staff user, when attempting an invalid status transition (e.g. `NEW` $\to$ `RESOLVED`), the backend rejects the request with `HTTP 400 Bad Request` and descriptive transition error (FR-09, BR-07).
+- **AC-09**: Given an authenticated IT Staff user, when submitting a status transition missing the mandatory `expectedUpdatedAt` parameter, the backend rejects the request with `HTTP 400 Bad Request` (FR-10, BR-10).
+- **AC-10**: Given an authenticated IT Staff user, when submitting a status transition with an outdated or mismatched `expectedUpdatedAt` timestamp, the backend rejects the request with `HTTP 409 Conflict` returning `currentUpdatedAt` (FR-10, BR-10).
+- **AC-11**: Given an authenticated Requester user, when calling `GET /api/requester/dashboard`, the response returns authoritative counts for `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and `recentTickets` strictly isolated to the user (FR-11, BR-12, BR-13).
+- **AC-12**: Given an authenticated IT Staff user, when calling `GET /api/staff/dashboard`, the response returns accurate queue metrics: primary counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), `unassignedTickets`, full 8-status `byStatus`, and 4-level `byPriority` (FR-12, BR-12, BR-14).
+- **AC-13**: Given an authenticated Requester user, when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden` (FR-12).
+- **AC-14**: Given an authenticated user on the Dashboard UI, clicking any summary metric card navigates to the respective ticket list with the active filter preset (drill-down) (FR-13, BR-15).
+- **AC-15**: Given any screen in the application across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$) (FR-16).
+- **AC-16**: All regression tests for authentication, ticket creation, ticket queue, attachments, public comments, internal notes, and user management pass 100% without failure (FR-15).
 
 ---
 

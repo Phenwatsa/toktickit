@@ -1,6 +1,6 @@
 # TokTickIT Lab 4 — REST API Specification
 
-This document defines the complete REST API contract for TokTickIT Sprint 4 (Lab 4). It specifies endpoint paths, HTTP methods, headers, request and response payloads, status codes, RBAC rules, safe error schemas, and concurrency conflict handling.
+This document defines the authoritative REST API contracts for TokTickIT Sprint 4 (Lab 4). It specifies endpoint paths, HTTP methods, authentication headers, request and response payloads, status codes, RBAC rules, standardized error schemas, and optimistic concurrency control.
 
 ---
 
@@ -14,26 +14,31 @@ Content-Type: application/json
 ```
 
 ### 1.2 Standardized Safe Error Schema
-All error responses adhere to a uniform, safe JSON structure:
+All error responses across all endpoints adhere strictly to a uniform JSON envelope:
 ```json
 {
   "error": "Human-readable error explanation",
   "code": "STANDARDIZED_ERROR_CODE",
   "details": [
     {
-      "field": "followUpNote",
-      "message": "Follow-up note is required when follow-up is needed"
+      "field": "optionalField",
+      "message": "Specific field validation message"
     }
-  ]
+  ],
+  "currentUpdatedAt": "2026-10-10T14:35:00.000Z"
 }
 ```
+* **Mandatory Fields**: `error` (string), `code` (string), and `details` (array of objects; empty `[]` when no sub-field details exist).
+* **Conditional Field**: `currentUpdatedAt` (ISO 8601 string) is permitted exclusively on `HTTP 409 Conflict` to provide the client with the authoritative database timestamp for synchronization.
 
-Standard HTTP Error Codes:
-- `400 Bad Request`: Payload validation failed or invalid state transition.
-- `401 Unauthorized`: Missing, expired, or revoked token (`tokenVersion` mismatch).
-- `403 Forbidden`: Authenticated user lacks permission for the requested resource.
+### 1.3 Standard HTTP Status Codes
+- `200 OK`: Request succeeded.
+- `201 Created`: Entity successfully created.
+- `400 Bad Request`: Payload validation failed, required fields missing, or invalid status transition.
+- `401 Unauthorized`: Missing, malformed, expired, or revoked JWT token (`tokenVersion` mismatch).
+- `403 Forbidden`: Authenticated user lacks permission for the requested action or entity.
 - `404 Not Found`: Target entity does not exist.
-- `409 Conflict`: Concurrency / stale update detected.
+- `409 Conflict`: Concurrency conflict detected (stale update on ticket).
 - `500 Internal Server Error`: Unhandled server exception.
 
 ---
@@ -42,7 +47,7 @@ Standard HTTP Error Codes:
 
 ### 2.1 List Actions Taken for Ticket
 - **Endpoint**: `GET /api/tickets/:id/actions`
-- **Authorized Roles**: `REQUESTER` (owner only), `IT_STAFF`, `ADMINISTRATOR`
+- **Authorized Roles**: `REQUESTER` (owned tickets only), `IT_STAFF`, `ADMINISTRATOR`
 - **Path Parameters**:
   - `id`: Ticket ID (integer)
 - **Response**: `200 OK`
@@ -69,9 +74,18 @@ Standard HTTP Error Codes:
   ]
   ```
 - **Error Responses**:
-  - `401 Unauthorized`: Not logged in.
-  - `403 Forbidden`: Requester does not own this ticket.
-  - `404 Not Found`: Ticket not found.
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Requester attempts to view other user's ticket actions):
+    ```json
+    { "error": "You do not have permission to view actions on this ticket", "code": "FORBIDDEN", "details": [] }
+    ```
+  - `404 Not Found`:
+    ```json
+    { "error": "Ticket not found", "code": "NOT_FOUND", "details": [] }
+    ```
 
 ---
 
@@ -94,11 +108,11 @@ Standard HTTP Error Codes:
 - **Validation Rules**:
   - `actionDescription`: String, 5–2000 characters (required).
   - `result`: String, 3–2000 characters (required).
-  - `actionDateTime`: Valid ISO date string (optional, defaults to `new Date()`).
+  - `actionDateTime`: Valid ISO date string (optional, defaults to server current time).
   - `isFollowUpRequired`: Boolean (required, default `false`).
-  - `followUpNote`: String, required if `isFollowUpRequired === true` (min 3 chars), optional/null otherwise.
+  - `followUpNote`: String, **strictly required** when `isFollowUpRequired === true` (min 3 non-whitespace chars); optional or null when `false`.
   - `attachmentNotes`: String, max 500 characters (optional).
-  - `performedById`: **Auto-populated** from authenticated session user ID. Client payload overrides are ignored.
+  - `performedById`: **Auto-populated** from authenticated session user ID (`req.user.id`). Any client-supplied performer ID is ignored.
 - **Response**: `201 Created`
   ```json
   {
@@ -121,10 +135,31 @@ Standard HTTP Error Codes:
   }
   ```
 - **Error Responses**:
-  - `400 Bad Request`: Validation failure (e.g. missing follow-up note when follow-up required).
-  - `401 Unauthorized`: Not logged in.
-  - `403 Forbidden`: Caller is not IT Staff or Administrator.
-  - `404 Not Found`: Ticket not found.
+  - `400 Bad Request` (Validation error):
+    ```json
+    {
+      "error": "Validation failed",
+      "code": "VALIDATION_ERROR",
+      "details": [
+        {
+          "field": "followUpNote",
+          "message": "Follow-up note is required when follow-up is needed"
+        }
+      ]
+    }
+    ```
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Requester attempts creation):
+    ```json
+    { "error": "Access denied. Only IT Staff and Administrators may record Actions Taken.", "code": "FORBIDDEN", "details": [] }
+    ```
+  - `404 Not Found`:
+    ```json
+    { "error": "Ticket not found", "code": "NOT_FOUND", "details": [] }
+    ```
 
 ---
 
@@ -165,6 +200,7 @@ Standard HTTP Error Codes:
   ```
 - **Error Responses**:
   - `400 Bad Request`: Validation failure.
+  - `401 Unauthorized`: Unauthenticated.
   - `403 Forbidden`: Non-staff user.
   - `404 Not Found`: Action Taken record not found.
 
@@ -172,7 +208,7 @@ Standard HTTP Error Codes:
 
 ## 3. Ticket Workflow, Resolution Gate & Concurrency Endpoints
 
-### 3.1 Transition Ticket Status (with Concurrency Protection)
+### 3.1 Transition Ticket Status (with Mandatory Concurrency Protection)
 - **Endpoint**: `PATCH /api/staff/tickets/:id/status`
 - **Authorized Roles**: `IT_STAFF`, `ADMINISTRATOR`
 - **Path Parameters**:
@@ -185,10 +221,13 @@ Standard HTTP Error Codes:
   }
   ```
 - **Validation & Enforcement Rules**:
-  - `status`: Must be one of `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`.
+  - `status`: String, **strictly required**. Must be one of `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`.
   - Must satisfy the Permitted 8-Status Transition Matrix (BR-07).
-  - **Resolution Gate**: Only `IT_STAFF` or `ADMINISTRATOR` can invoke this endpoint to set status to `RESOLVED` or `CLOSED`.
-  - **Optimistic Concurrency Check**: If `expectedUpdatedAt` is provided and does not match the database `ticket.updatedAt` timestamp, returns `409 Conflict`.
+  - **Resolution Gate**: Only `IT_STAFF` or `ADMINISTRATOR` can invoke this endpoint to transition to `RESOLVED` or `CLOSED`. Requesters are blocked with `403 Forbidden`.
+  - **Mandatory Optimistic Concurrency Check**:
+    - `expectedUpdatedAt`: ISO 8601 string, **strictly required**.
+    - If `expectedUpdatedAt` is missing, returns `400 Bad Request` (`VALIDATION_ERROR`).
+    - If `new Date(expectedUpdatedAt).getTime() !== new Date(ticket.updatedAt).getTime()`, returns `409 Conflict` (`STALE_UPDATE_CONFLICT`) with current timestamp.
 - **Response**: `200 OK`
   ```json
   {
@@ -198,14 +237,50 @@ Standard HTTP Error Codes:
   }
   ```
 - **Error Responses**:
-  - `400 Bad Request`: Invalid status transition (e.g. from `NEW` to `RESOLVED`).
-  - `403 Forbidden`: Requester attempting to execute status transition.
-  - `404 Not Found`: Ticket not found.
-  - `409 Conflict`: Stale update detected (ticket was updated by another actor).
+  - `400 Bad Request` (Missing expectedUpdatedAt):
+    ```json
+    {
+      "error": "Validation failed",
+      "code": "VALIDATION_ERROR",
+      "details": [
+        {
+          "field": "expectedUpdatedAt",
+          "message": "expectedUpdatedAt timestamp is required for concurrency control."
+        }
+      ]
+    }
+    ```
+  - `400 Bad Request` (Invalid status transition):
+    ```json
+    {
+      "error": "Cannot transition status from NEW to RESOLVED. Permitted transitions from NEW are: OPEN, CANCELLED.",
+      "code": "INVALID_TRANSITION",
+      "details": []
+    }
+    ```
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden`:
+    ```json
+    { "error": "Access denied. Only IT Staff and Administrators may transition ticket status.", "code": "FORBIDDEN", "details": [] }
+    ```
+  - `404 Not Found`:
+    ```json
+    { "error": "Ticket not found", "code": "NOT_FOUND", "details": [] }
+    ```
+  - `409 Conflict` (Stale-update conflict):
     ```json
     {
       "error": "Conflict: Ticket has been modified by another user. Please refresh and try again.",
       "code": "STALE_UPDATE_CONFLICT",
+      "details": [
+        {
+          "field": "expectedUpdatedAt",
+          "message": "Provided timestamp does not match current ticket updatedAt timestamp."
+        }
+      ],
       "currentUpdatedAt": "2026-10-10T14:35:00.000Z"
     }
     ```
@@ -215,7 +290,7 @@ Standard HTTP Error Codes:
 ### 3.2 Requester Advisory Resolution Indication
 - **Endpoint**: `PATCH /api/requester/tickets/:id/resolve-indication`
 - **Authorized Roles**: `REQUESTER` (owner only)
-- **Description**: Requesters indicate that the issue appears resolved. This sets `problemAppearsResolved = true` without modifying `currentStatus`.
+- **Description**: Requesters indicate that the issue appears resolved. Sets `problemAppearsResolved = true` without modifying `currentStatus`.
 - **Response**: `200 OK`
   ```json
   {
@@ -224,6 +299,10 @@ Standard HTTP Error Codes:
     "currentStatus": "IN_PROGRESS"
   }
   ```
+- **Error Responses**:
+  - `401 Unauthorized`: Not logged in.
+  - `403 Forbidden`: User does not own this ticket or is not a Requester.
+  - `404 Not Found`: Ticket not found.
 
 ---
 
@@ -256,29 +335,50 @@ Standard HTTP Error Codes:
     ]
   }
   ```
+- **Metric Definitions**:
+  - `openTickets`: Count of owned tickets with status `IN ('NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED')`.
+  - `inProgressTickets`: Count of owned tickets with status `= 'IN_PROGRESS'`.
+  - `waitingForRequesterTickets`: Count of owned tickets with status `= 'WAITING_FOR_REQUESTER'`.
+  - `resolvedTickets`: Count of owned tickets with status `= 'RESOLVED'`.
+  - `closedTickets`: Count of owned tickets with status `= 'CLOSED'`.
+  - `recentTickets`: Array of up to 5 most recently updated owned tickets ordered by `updatedAt DESC`.
 - **Error Responses**:
-  - `401 Unauthorized`: Unauthenticated.
-  - `403 Forbidden`: User role is not `REQUESTER`.
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Non-requester user):
+    ```json
+    { "error": "Access denied. Only Requesters can access the Requester Dashboard.", "code": "FORBIDDEN", "details": [] }
+    ```
 
 ---
 
 ### 4.2 IT Staff Dashboard Metrics
 - **Endpoint**: `GET /api/staff/dashboard`
 - **Authorized Roles**: `IT_STAFF`, `ADMINISTRATOR`
-- **Description**: Computes system-wide operational workload metrics and current user queue assignments.
+- **Description**: Computes authoritative system-wide queue metrics and current user queue assignments.
 - **Response**: `200 OK`
   ```json
   {
     "metrics": {
+      "primary": {
+        "newTickets": 14,
+        "openTickets": 23,
+        "inProgressTickets": 18,
+        "waitingForRequesterTickets": 7,
+        "myAssignedTickets": 16
+      },
       "unassignedTickets": 6,
-      "myAssignedTickets": 16,
       "byStatus": {
         "new": 14,
         "open": 23,
         "inProgress": 18,
         "waitingForRequester": 7,
         "resolved": 12,
-        "closed": 45
+        "closed": 45,
+        "reopened": 2,
+        "cancelled": 1
       },
       "byPriority": {
         "low": 10,
@@ -301,16 +401,32 @@ Standard HTTP Error Codes:
     ]
   }
   ```
+- **Metric Definitions**:
+  - `primary.newTickets`: Active tickets with status `= 'NEW'`.
+  - `primary.openTickets`: Active tickets with status `= 'OPEN'`.
+  - `primary.inProgressTickets`: Active tickets with status `= 'IN_PROGRESS'`.
+  - `primary.waitingForRequesterTickets`: Active tickets with status `= 'WAITING_FOR_REQUESTER'`.
+  - `primary.myAssignedTickets`: Active tickets assigned to current user (`ticketOwnerId = req.user.id`).
+  - `unassignedTickets`: Active tickets unassigned (`ticketOwnerId IS NULL` and status not closed/cancelled).
+  - `byStatus`: Complete counts across all 8 lifecycle statuses.
+  - `byPriority`: Active ticket counts across all 4 IT priorities.
+  - `recentTickets`: Up to 5 most recently updated active tickets in system.
 - **Error Responses**:
-  - `401 Unauthorized`: Unauthenticated.
-  - `403 Forbidden`: User role is `REQUESTER`.
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Requester attempts staff dashboard):
+    ```json
+    { "error": "Access denied. Only IT Staff and Administrators can access the Staff Dashboard.", "code": "FORBIDDEN", "details": [] }
+    ```
 
 ---
 
 ### 4.3 Administrator Dashboard Metrics
 - **Endpoint**: `GET /api/admin/dashboard`
 - **Authorized Roles**: `ADMINISTRATOR`
-- **Description**: Extends operational queue metrics with system account distribution statistics.
+- **Description**: Extends operational queue metrics with user account distribution statistics.
 - **Response**: `200 OK`
   ```json
   {
@@ -331,4 +447,5 @@ Standard HTTP Error Codes:
   }
   ```
 - **Error Responses**:
-  - `403 Forbidden`: Non-administrators.
+  - `401 Unauthorized`: Unauthenticated.
+  - `403 Forbidden`: Non-administrator user.

@@ -89,12 +89,18 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
 
 ### 4.1 Requester Dashboard (`RequesterDashboard.tsx`)
 - **Header Banner**: "Welcome back, [First Name]!" with subtitle "Here's what's happening with your support requests."
-- **Metric Cards Grid (4 Cards)**:
-  1. `My Open Tickets`: Count of active open tickets.
-  2. `In Progress`: Count of tickets currently being worked on by IT.
-  3. `Resolved`: Count of resolved tickets.
-  4. `Closed`: Count of finalized tickets.
-- **Card Interactive Drill-Down**: Clicking any card navigates to `#/my-tickets?status=[STATUS]` with instant filter application.
+- **Primary Metric Cards Grid (5 Cards)**:
+  1. `My Open Tickets` (`openTickets`): Count of active open tickets (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`).
+  2. `In Progress` (`inProgressTickets`): Count of tickets actively being worked on by IT.
+  3. `Waiting for Requester` (`waitingForRequesterTickets`): Count of tickets awaiting user confirmation/action.
+  4. `Recently Resolved` (`resolvedTickets`): Count of resolved tickets awaiting closure.
+  5. `Closed` (`closedTickets`): Count of finalized tickets.
+- **Card Interactive Drill-Down**:
+  - `My Open Tickets` $\to$ `#/my-tickets?status=OPEN_GROUP`
+  - `In Progress` $\to$ `#/my-tickets?status=IN_PROGRESS`
+  - `Waiting for Requester` $\to$ `#/my-tickets?status=WAITING_FOR_REQUESTER`
+  - `Recently Resolved` $\to$ `#/my-tickets?status=RESOLVED`
+  - `Closed` $\to$ `#/my-tickets?status=CLOSED`
 - **My Recent Tickets (Left Panel)**:
   - Table showing Ticket Number, Summary, Status badge, and Updated Date.
   - Clicking a row opens the Requester Ticket Detail view.
@@ -107,18 +113,23 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
 ### 4.2 IT Staff Dashboard (`StaffDashboard.tsx`)
 - **Header Banner**: "Welcome back, [First Name]!" with "Refresh" button in the top-right corner.
 - **Primary Metric Cards Grid (5 Cards)**:
-  1. `New`: Unopened tickets.
-  2. `Open`: Acknowledged tickets.
-  3. `In Progress`: Active remediation.
-  4. `Waiting for Requester`: Blocked on user input.
-  5. `My Assigned`: Tickets where current staff member is owner.
-- **Secondary Workload Indicators**:
-  - `Unassigned Queue`: Amber highlighted callout for tickets needing triage.
-  - `Priority Breakdown`: Horizontal badge row showing Low, Medium, High, Urgent active counts.
+  1. `New` (`primary.newTickets`): Unopened tickets.
+  2. `Open` (`primary.openTickets`): Acknowledged tickets.
+  3. `In Progress` (`primary.inProgressTickets`): Active remediation.
+  4. `Waiting for Requester` (`primary.waitingForRequesterTickets`): Blocked on user input.
+  5. `My Assigned` (`primary.myAssignedTickets`): Active tickets where the logged-in staff member is owner.
+- **Secondary Workload & Status Breakdown Indicators**:
+  - `Unassigned Queue`: Amber highlighted callout for active tickets needing triage (`unassignedTickets`).
+  - `Full Lifecycle Status Distribution (8 Statuses)`: Complete pill badges showing live counts across all 8 states (`byStatus`): `New`, `Open`, `In Progress`, `Waiting for Requester`, `Resolved`, `Closed`, `Reopened`, and `Cancelled`.
+  - `Priority Breakdown`: Horizontal badge row showing Low, Medium, High, Urgent active counts (`byPriority`).
 - **Card Interactive Drill-Down**:
-  - Clicking `My Assigned` navigates to `#/staff-queue?owner=me`.
-  - Clicking `Unassigned` navigates to `#/staff-queue?owner=unassigned`.
-  - Clicking any status card navigates to `#/staff-queue?status=[STATUS]`.
+  - `New` $\to$ `#/staff-queue?status=NEW`
+  - `Open` $\to$ `#/staff-queue?status=OPEN`
+  - `In Progress` $\to$ `#/staff-queue?status=IN_PROGRESS`
+  - `Waiting for Requester` $\to$ `#/staff-queue?status=WAITING_FOR_REQUESTER`
+  - `My Assigned` $\to$ `#/staff-queue?owner=me`
+  - `Unassigned Queue` $\to$ `#/staff-queue?owner=unassigned`
+  - Any status badge in breakdown $\to$ `#/staff-queue?status=[STATUS]`
 - **Recent Queue Tickets (Left Panel)**:
   - Table displaying Ticket Number, Summary, IT Priority badge, Status badge, Requester, and Updated Date.
 - **Quick Actions (Right Panel)**:
