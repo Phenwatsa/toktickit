@@ -243,11 +243,25 @@ model ActionTaken {
    - *Rationale*: Modeling `ActionTaken` as a discrete relational entity (`ActionTaken`) rather than a JSON array inside `Ticket` preserves third normal form (3NF), allows foreign key integrity to the `User` table for performer attribution, enables indexed queries on `actionDateTime` and `performedById` for staff workload reporting, and supports Prisma relational validation. Cascading deletion ensures ticket cleanup during tests without orphan action records.
 2. **Decision 2: Optimistic Concurrency Control via Timestamp Validation (`updatedAt`)**
    - *Rationale*: Service desk environments frequently involve multiple staff members reviewing the same ticket queue simultaneously. Using Prisma's automatic `@updatedAt` timestamp as an optimistic concurrency barrier ensures that if Staff Member A modifies a ticket while Staff Member B has the screen open, Staff Member B's stale status transition is rejected with `409 Conflict`, preventing accidental state overwrites without requiring heavy pessimistic database locks.
+   - *Concurrency Protection Scope Clarification*: Optimistic concurrency verification (`expectedUpdatedAt`) is strictly mandated for **Ticket Status Transitions** (`PATCH /api/staff/tickets/:id/status`) to guard against state collision during triage and resolution. Actions Taken (`ActionTaken`) are modeled as append-friendly chronological activity logs ($1:N$); edits to existing actions (`PATCH /api/tickets/:id/actions/:actionId`) are audited and tracked via Prisma's model-level `@updatedAt` timestamp and do not trigger concurrency locks on the parent ticket.
 
-### 7.3 Migration & Backfill Strategy
-- Non-destructive migration: `ActionTaken` is an additive model. All existing tickets from Labs 1, 2, and 3 remain completely valid without requiring backfill data.
-- Dashboard queries gracefully handle tickets with zero Actions Taken using standard outer joins or counts.
-- Idempotent seed script (`prisma/seed.ts`) is updated to seed realistic Actions Taken for existing tickets across diverse IT staff members.
+### 7.3 Migration, Backfill & Rollback/Recovery Strategy (Required by Handout §5.2)
+- **Non-Destructive Forward Migration**: `ActionTaken` is an additive model. All existing tickets, users, attachments, comments, and notes from Labs 1, 2, and 3 remain completely valid without requiring backfill data.
+- **Legacy Ticket Handling**: Dashboard calculations and ticket views treat legacy tickets with zero Actions Taken seamlessly using standard SQL outer joins or Prisma relation counts.
+- **Rollback & Disaster Recovery Strategy**:
+  - *Rollback Command*: If the Lab 4 migration must be reverted, the rollback is executed via Prisma CLI: `npx prisma migrate resolve --rolled-back <migration_name>` followed by dropping the `ActionTaken` table (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`).
+  - *Recovery Verification*: Automated test (`MIG-01`) verifies that reverting the migration leaves all legacy tables (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) 100% intact with zero data loss or constraint corruption.
+
+### 7.4 Required Seed Scenarios Mapping (Required by Handout §5.3)
+The idempotent seed script (`prisma/seed.ts`) populates realistic data covering all five required test dimensions, mapped directly to planned verification suites:
+
+| Seed Scenario Dimension | Seeded Characteristics in `seed.ts` | Target Verification Suite |
+| :--- | :--- | :--- |
+| **1. Lifecycle Statuses** | Seed tickets across all 8 statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`) | Verified by `WF-03` & `API-10` (`byStatus` breakdown) |
+| **2. IT Priorities** | Seed tickets across all 4 priorities (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) | Verified by `API-10` (`byPriority` breakdown) |
+| **3. Ownership Distribution** | Seed tickets with assigned owner (`ticketOwnerId = staff.id`) and unassigned queue (`ticketOwnerId = null`) | Verified by `API-10` (`myAssignedTickets`, `unassignedTickets`) |
+| **4. Actions Taken Multiplicity** | Seed tickets with exactly 0, 1, and multiple ($\ge 2$) Actions Taken lines with varied staff performers | Verified by `API-04`, `UI-01a`, `E2E-01` |
+| **5. Dashboard Metrics Sets** | Seed active users with non-zero metrics and clean/fresh user accounts with zero metrics | Verified by `API-09`, `API-10`, `UI-05`, `UI-06` empty states |
 
 ---
 
@@ -270,7 +284,7 @@ model ActionTaken {
 - **AC-01**: Given an authenticated IT Staff user, when a valid Action Taken is submitted with description and result, it is successfully created with `performedById` automatically set to the authenticated user ID and linked to the correct ticket (FR-02, FR-03, BR-01, BR-02, BR-03).
 - **AC-02**: Given an authenticated IT Staff user, when an Action Taken is submitted with `isFollowUpRequired = true` but an empty `followUpNote`, the backend rejects the request with `HTTP 400 Bad Request` and descriptive validation details (FR-04, BR-04).
 - **AC-03**: Given an authenticated Requester user, when attempting to create (`POST`) or edit (`PATCH`) an Action Taken via API, the backend rejects the request with `HTTP 403 Forbidden` (FR-06).
-- **AC-04**: Given an authenticated Requester user, when viewing an owned ticket detail, all existing Actions Taken are returned in chronological order in read-only format (FR-01, FR-06, BR-05, BR-06).
+- **AC-04**: Given an authenticated Requester user, when viewing an owned ticket, all existing Actions Taken are retrieved via API in chronological order and rendered in read-only format with Add/Edit controls completely omitted (FR-01, FR-06, BR-05, BR-06).
 - **AC-05**: Given an authenticated Requester user, when attempting to view Actions Taken on a ticket owned by another requester, the backend returns `HTTP 403 Forbidden` (FR-01).
 - **AC-06**: Given an authenticated IT Staff user, when updating an existing Action Taken (`PATCH /api/tickets/:id/actions/:actionId`) with valid data, the record is updated in the database and returned with updated fields and `updatedAt` timestamp (FR-05, BR-01, BR-02).
 - **AC-07**: Given an authenticated Requester user, when attempting to call the status transition endpoint to change status to `RESOLVED` or `CLOSED`, the backend rejects the request with `HTTP 403 Forbidden` (FR-07, BR-08).
@@ -281,12 +295,16 @@ model ActionTaken {
 - **AC-12**: Given an authenticated Requester user, when calling `GET /api/requester/dashboard`, the response returns authoritative counts for `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and `recentTickets` strictly isolated to the user (FR-11, BR-12, BR-13).
 - **AC-13**: Given an authenticated IT Staff user, when calling `GET /api/staff/dashboard`, the response returns accurate queue metrics: primary counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), `unassignedTickets`, full 8-status `byStatus`, and 4-level `byPriority` (FR-12, BR-12, BR-14).
 - **AC-14**: Given an authenticated Requester user, when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden` (FR-12).
-- **AC-15**: Given an authenticated user on the Dashboard UI, clicking any summary metric card navigates to the respective ticket list with the active filter preset (drill-down) (FR-13, BR-15).
+- **AC-15a**: Given an authenticated Requester on the Dashboard UI, clicking any summary metric card navigates to the My Tickets view with the corresponding status filter preset (drill-down) (FR-13, BR-15).
+- **AC-15b**: Given an authenticated IT Staff user on the Dashboard UI, clicking any primary metric card or unassigned queue indicator navigates to the Staff Ticket Queue with the corresponding filter preset (drill-down) (FR-13, BR-15).
 - **AC-16**: Given an authenticated user on either Requester or Staff Dashboard UI, the Quick Actions panel renders operational shortcut links (Requester: Create Ticket, View My Tickets; IT Staff: Create Ticket, Search Tickets, My Queue) that navigate directly to target functional views upon click (FR-14, BR-13, BR-14).
 - **AC-17**: Given any screen in the application across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$), all interactive controls and status badges adhere to Zen Green design tokens (`--zg-primary`, `--zg-surface`, `--zg-border`), and components render without text clipping or overlapping modal/action controls (FR-17).
 - **AC-18**: All regression tests for authentication, ticket creation, ticket queue, attachments, public comments, internal notes, and user management pass 100% without failure (FR-16).
-- **AC-19**: Given an authenticated Administrator user, when calling `GET /api/admin/dashboard`, the response returns authoritative operational metrics (`totalActiveTickets`, `unassignedTickets`) and user account distribution metrics (`totalUsers`, `activeUsers`, `inactiveUsers`, `byRole`); and requests from non-administrators return `HTTP 403 Forbidden` (FR-15, BR-17).
+- **AC-19a**: Given an authenticated Administrator user, when calling `GET /api/admin/dashboard`, the response returns `HTTP 200 OK` with authoritative operational summaries (`totalActiveTickets`, `unassignedTickets`) and user account distribution metrics (`totalUsers`, `activeUsers`, `inactiveUsers`, `byRole`) (FR-15, BR-17).
+- **AC-19b**: Given an authenticated non-administrator user (Requester or IT Staff), when attempting to call `GET /api/admin/dashboard`, the backend rejects the request with `HTTP 403 Forbidden` (FR-15, BR-17).
 - **AC-20**: Given an authenticated Administrator on the Dashboard UI, the view renders operational queue indicators, user account statistics, role distribution badges, and quick action navigation to User Management (`#/admin-users`) conforming to Zen Green styling without text clipping or overlapping controls (FR-15, FR-17).
+- **AC-21**: Given a rollback of the Lab 4 Prisma migration, all legacy tables (Users, Tickets, Attachments, Comments, Notes) remain completely intact and functional with zero data corruption (Handout §5.2).
+- **AC-22**: Given the execution of the seed script, realistic tickets are populated idempotently covering all 8 statuses, 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, and non-zero/zero dashboard metric sets (Handout §5.3).
 
 ---
 

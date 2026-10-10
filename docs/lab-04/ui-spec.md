@@ -74,7 +74,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   - `Result`: Textarea (min 3 chars, placeholder: "Describe the outcome or findings...").
   - `Performed By`: Read-only field showing current user name: "Logged-in Staff Member (Auto-assigned)".
   - `Follow-Up Required?`: Checkbox toggle.
-  - `Follow-Up Note`: Textarea that dynamically appears or becomes mandatory when the checkbox is active. If blank upon submit, red inline validation message: "Follow-up note is required when follow-up is needed."
+  - `Follow-Up Note`: Textarea that dynamically appears or becomes mandatory when the checkbox is active (enforcing at least 3 non-whitespace characters per BR-04). If blank or containing fewer than 3 non-whitespace characters upon submit, red inline validation message: "Follow-up note is required (minimum 3 characters) when follow-up is needed."
   - `Attachment Notes`: Optional text field referencing file names or diagnostic images.
 - **Footer**: "Cancel" and "Save Action Taken" buttons with loading spinner during submission.
 
@@ -176,11 +176,11 @@ To guarantee compliance with FR-16 and AC-17, test suites (specifically `E2E-04`
 
 ---
 
-## 6. Accessibility, Focus & Visual Polish Checklist
+## 6. Accessibility, Focus & Visual Polish Checklist (Pre-Implementation Acceptance Contract)
 
-- [x] **Visual Focus Indicators**: All interactive elements (buttons, inputs, links, metric cards) feature clear `--zg-primary` focus rings (`outline: 2px solid #006B3C; outline-offset: 2px`).
-- [x] **Non-Color Status Cues**: Status badges include distinct textual labels and distinct background shapes/borders alongside color.
-- [x] **Touch Targets**: All clickable targets meet WCAG 2.1 AA minimum size ($44\text{px} \times 44\text{px}$).
-- [x] **Empty States**: If a user has zero tickets or no actions taken, display friendly Zen Green illustration/icon and helpful prompt rather than an empty blank container.
-- [x] **Conflict Feedback (409)**: Clear, accessible alert banner prompting the user to reload the ticket without losing unsaved form text.
-- [x] **No Clipping / Overlapping**: Cards, modals, and sticky action bars strictly avoid overlapping content or truncating critical IDs.
+- [ ] **Visual Focus Indicators**: All interactive elements (buttons, inputs, links, metric cards) feature clear `--zg-primary` focus rings (`outline: 2px solid #006B3C; outline-offset: 2px`).
+- [ ] **Non-Color Status Cues**: Status badges include distinct textual labels and distinct background shapes/borders alongside color.
+- [ ] **Touch Targets**: All clickable targets meet Apple Human Interface Guidelines and WCAG 2.1 AAA Target Size (Enhanced) standards ($44\text{px} \times 44\text{px}$).
+- [ ] **Empty States**: If a user has zero tickets or no actions taken, display friendly Zen Green illustration/icon and helpful prompt rather than an empty blank container.
+- [ ] **Conflict Feedback (409)**: Clear, accessible alert banner prompting the user to reload the ticket without losing unsaved form text.
+- [ ] **No Clipping / Overlapping**: Cards, modals, and sticky action bars strictly avoid overlapping content or truncating critical IDs.

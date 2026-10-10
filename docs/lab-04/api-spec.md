@@ -6,12 +6,16 @@ This document defines the authoritative REST API contracts for TokTickIT Sprint 
 
 ## 1. Authentication & Common Conventions
 
-### 1.1 Headers
-All protected endpoints require an authenticated JWT Bearer token:
+### 1.1 Headers & Lab 3 Authentication Architecture Reconciliation
+All protected endpoints require an authenticated JWT Bearer token adhering strictly to the established Lab 3 security middleware (`server/src/middleware/auth.ts`):
 ```http
 Authorization: Bearer <jwt-token>
 Content-Type: application/json
 ```
+* **Payload Structure**: The JWT payload contains `{ userId: number, email: string, role: Role, tokenVersion: number, mustChangePassword: boolean }`.
+* **Session Lifecycle & Revocation**: Handled via `requireAuth` middleware. If `tokenVersion` in the JWT does not match the active `tokenVersion` in the database, or if the user is inactive (`isActive === false`), the request is rejected immediately with `HTTP 401 Unauthorized` (`UNAUTHORIZED`).
+* **Session Attribution**: Authenticated user identity (`req.user`) is injected into the Express request context for automated actor attribution (`performedById = req.user.id`).
+* **Backward Compatibility**: Completely preserves existing authentication, login, and password change flows from Lab 3.
 
 ### 1.2 Standardized Safe Error Schema
 All error responses across all endpoints adhere strictly to a uniform JSON envelope:
@@ -207,6 +211,10 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 ---
 
 ## 3. Ticket Workflow, Resolution Gate & Concurrency Endpoints
+
+### 3.0 Concurrency Protection Scope
+* **Scope Boundary**: Optimistic concurrency control via mandatory `expectedUpdatedAt` is strictly mandated for **Ticket Status Transitions** (`PATCH /api/staff/tickets/:id/status`), where concurrent triage/resolution between staff members poses a severe race condition risk.
+* **Actions Taken Record Scope**: Individual `ActionTaken` entries represent discrete, chronological audit logs ($1:N$). Edits to an individual Action Taken (`PATCH /api/tickets/:id/actions/:actionId`) are audited and tracked via Prisma's model-level `@updatedAt` timestamp and do not mutate or conflict with overall ticket status transitions.
 
 ### 3.1 Transition Ticket Status (with Mandatory Concurrency Protection)
 - **Endpoint**: `PATCH /api/staff/tickets/:id/status`

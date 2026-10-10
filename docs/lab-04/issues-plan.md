@@ -47,12 +47,12 @@ This document provides the definitive planning specification for GitHub Issues (
     - Include cases where Actions Taken are performed by the Ticket Owner as well as other IT Staff members.
     - Ensure safe repeated execution without constraint violations.
   - **Actions Taken REST APIs (`server/src/routes/actionsTaken.ts`):**
-    - `GET /api/tickets/:id/actions`: Retrieve Actions Taken for a ticket (accessible to permitted Requester owner and IT Staff).
-    - `POST /api/tickets/:id/actions`: Create Action Taken (strictly restricted to `IT_STAFF`; auto-set `performedById` from authenticated session).
-    - `PATCH /api/tickets/:id/actions/:actionId`: Update Action Taken details (restricted to `IT_STAFF`).
+    - `GET /api/tickets/:id/actions`: Retrieve Actions Taken for a ticket (accessible to permitted Requester owner, IT Staff, and Administrator).
+    - `POST /api/tickets/:id/actions`: Create Action Taken (strictly restricted to `IT_STAFF` and `ADMINISTRATOR`; auto-set `performedById` from authenticated session).
+    - `PATCH /api/tickets/:id/actions/:actionId`: Update Action Taken details (restricted to `IT_STAFF` and `ADMINISTRATOR`).
     - Validation: Enforce `followUpNote` as mandatory when `isFollowUpRequired === true`.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/actions-taken.api.test.ts` covering creation, listing, updating, validation rules, and role authorization rejection (403 for Requester/Admin).
+    - Author and execute `server/tests/lab-04/actions-taken.api.test.ts` covering creation, listing, updating, validation rules, and role authorization rejection (403 for Requester; 201/200 for IT Staff & Admin).
 * **Out-of-Scope & Deferred Dependencies:**
   - Actions Taken UI components in React (deferred to Issue 23 (#54)).
   - Status transition matrix and resolution gate enforcement (deferred to Issue 22 (#53)).
@@ -60,7 +60,7 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Acceptance Criteria:**
   - [ ] Prisma migration executes cleanly without losing data from earlier labs.
   - [ ] Seed script runs idempotently and populates realistic Actions Taken records.
-  - [ ] Requesters and Admins are blocked from creating or modifying Actions Taken (HTTP 403 Forbidden).
+  - [ ] Requesters are blocked from creating or modifying Actions Taken (HTTP 403 Forbidden); IT Staff and Administrators are permitted.
   - [ ] Submitting an Action Taken with `isFollowUpRequired = true` without a note returns HTTP 400 validation error.
   - [ ] 100% of tests in `server/tests/lab-04/actions-taken.api.test.ts` pass.
 * **AI Verification Note:**

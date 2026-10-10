@@ -9,7 +9,7 @@
 
 | PR | Branch | Scope / Feature | Verdict | Target Branch |
 |:---|:---|:---|:---|:---|
-| [PR #51](https://github.com/Phenwatsa/toktickit/pull/51) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Pending Review** | `lab4-staging` |
+| [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Revisions Applied** | `lab4-staging` |
 | [PR #52](https://github.com/Phenwatsa/toktickit/pull/52) | `feature/lab4-1-actions-taken-foundation` | Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API | **Planned** | `lab4-staging` |
 | [PR #53](https://github.com/Phenwatsa/toktickit/pull/53) | `feature/lab4-2-ticket-workflow-enforcement` | Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement) | **Planned** | `lab4-staging` |
 | [PR #54](https://github.com/Phenwatsa/toktickit/pull/54) | `feature/lab4-3-actions-taken-ui` | Issue 23 (#54): Actions Taken UI & Ticket Detail Integration (Frontend) | **Planned** | `lab4-staging` |
@@ -20,15 +20,25 @@
 
 ---
 
-### [PR #51](https://github.com/Phenwatsa/toktickit/pull/51) — Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD)
+### [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) — Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD)
 * **Branch:** `docs/lab4-spec-and-test-plan`
 * **Target branch:** `lab4-staging`
-* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/51](https://github.com/Phenwatsa/toktickit/pull/51)
+* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/59](https://github.com/Phenwatsa/toktickit/pull/59)
 * **Review Cycle 1 — Feedback received from @lephirada:**
-  *(Pending review)*
+  > "The documentation is well structured and covers the main Lab 4 requirements, including Actions Taken, the resolution gate, concurrency handling, role-based dashboards, and responsive UI specifications. Before approval, I think a few points need clarification to ensure the specifications are consistent and safe to use for implementation.
+  > 
+  > 1. Authentication contract: api-spec.md specifies JWT Bearer authentication. Please reconcile this with the existing Lab 3 authentication mechanism and explicitly document the approved approach so the new APIs remain compatible with the existing application.
+  > 2. Acceptance criteria and test traceability: Please review the AC-to-test mappings in tests.md, especially the shared AC-15 and AC-19 entries. Separate criteria where they represent distinct behaviors, and ensure each criterion has clear, testable coverage.
+  > 3. Follow-up validation consistency: BR-04 requires at least three non-whitespace characters in the follow-up note, but the UI validation description does not explicitly reflect the same minimum length. Please align the API, UI, and planned tests.
+  > 4. Concurrency scope: Please clarify whether optimistic concurrency protection applies only to ticket status transitions or also to edits of other records, including Actions Taken.
+  > 5. Migration recovery and seed coverage: Please document the migration rollback or recovery strategy and its planned verification. Also, explicitly map the required seed scenarios ticket statuses, priorities, assigned and unassigned ownership, zero/one/multiple Actions Taken, and zero/non-zero dashboard metrics to the planned tests."
 * **How I responded (Cycle 1):**
-  *(Pending response)*
-* **Verdict:** **Pending Review**
+  - **Authentication reconciliation**: Reconciled and documented in `api-spec.md` Section 1.1 confirming complete compatibility with Lab 3 JWT Bearer auth (`userId`, `role`, `tokenVersion`, and `mustChangePassword` enforced via `requireAuth`).
+  - **Discrete Acceptance Criteria & Traceability**: Separated shared ACs into discrete criteria (`AC-15a` Requester drill-down, `AC-15b` Staff drill-down, `AC-19a` Admin dashboard metrics 200, `AC-19b` Non-admin 403 rejection) and aligned `AC-04` with `UI-03` for frontend read-only presentation.
+  - **Follow-up Note validation length**: Aligned `ui-spec.md` Section 3.3 and `specification.md` to explicitly enforce the 3 non-whitespace character minimum length with matching error feedback across API, UI, and test suites.
+  - **Concurrency protection scope**: Clarified in `specification.md` Section 7.2 and `api-spec.md` Section 3 that mandatory `expectedUpdatedAt` optimistic concurrency applies strictly to Ticket Workflow Status Transitions (`PATCH /api/staff/tickets/:id/status`), while Actions Taken function as append-friendly chronological audit logs tracked via Prisma `@updatedAt`.
+  - **Migration recovery & seed coverage**: Documented the rollback/recovery strategy in `specification.md` Section 7.3 and added a comprehensive Seed Scenario Mapping Matrix covering all 8 statuses, 4 priorities, assignment states, action multiplicity (0, 1, multiple), and dashboard zero/non-zero metrics linked to planned tests.
+* **Verdict:** **Revisions Applied (Ready for Final Approval)**
 
 ---
 
