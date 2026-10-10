@@ -36,7 +36,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 5. **End-to-End Playwright Tests (`e2e/lab-04/`)**:
    Full browser workflows executed under real session cookies/tokens:
    - `actions-taken-flow.spec.ts`: End-to-end recording of actions by staff and administrator, editing, and requester read-only audit (`E2E-01`).
-   - `ticket-resolution.spec.ts`: Requester advisory resolution $\to$ IT Staff formal review $\to$ official `RESOLVED` status transition (`E2E-02`).
+   - `ticket-resolution.spec.ts`: Requester advisory resolution $\to$ IT Staff / Administrator formal review $\to$ official `RESOLVED` status transition (`E2E-02`).
    - `dashboards.spec.ts`: Live dashboard metric counts verification against database records, drill-down navigation, Quick Actions, and responsive audits (`E2E-03a`, `E2E-03b`, `E2E-04`).
 6. **Regression Tests**:
    Continuous test runs ensuring that legacy features from Labs 1–3 remain functional with zero regressions across:
@@ -59,8 +59,8 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-05** | BR-01, BR-02 | **AC-06** | `API-06` | API | IT Staff and Administrator update existing Action Taken | Returns 200 with updated fields & timestamp for both roles | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-06** | BR-06 | **AC-03** | `API-03a`| API | Requester Action creation blocked | 403 Forbidden returned | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-06** | BR-06 | **AC-03** | `API-03b`| API | Requester Action modification blocked | 403 Forbidden returned | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **FR-07** | BR-08 | **AC-07** | `WF-01`  | Workflow | Resolution gate: Requester cannot resolve/close | Requester calling resolve/close rejected (403) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| **FR-08** | BR-09 | **AC-08** | `WF-02`  | Workflow | Advisory resolution indication | `problemAppearsResolved = true`; status unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-07** | BR-08 | **AC-07** | `WF-01`  | Workflow | Resolution gate: Requester cannot resolve/close | Requester calling resolve/close rejected (403); IT Staff and Administrator permitted | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-08** | BR-09 | **AC-08** | `WF-02`  | Workflow | Advisory resolution indication | `problemAppearsResolved = true`; status unchanged; IT Staff or Administrator executes formal resolution | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **FR-09** | BR-07 | **AC-09** | `UNIT-02`| Unit | 8-status transition matrix validator | Validates all valid/invalid state hops | `server/tests/lab-04/unit/status-transition-matrix.unit.test.ts` | Planned |
 | **FR-09** | BR-07 | **AC-09** | `WF-03`  | Workflow | Multi-step lifecycle status flow | Transitions sequentially through valid states | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **FR-10** | BR-10 | **AC-10** | `UNIT-03`| Unit | Optimistic concurrency comparator | Flags missing or mismatched timestamp | `server/tests/lab-04/unit/concurrency-check.unit.test.ts` | Planned |
@@ -80,7 +80,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-14** | BR-13 | **AC-16** | `UI-07a` | UI | Requester Dashboard Quick Actions navigation | Clicking 'Create Ticket' and 'View All My Tickets' triggers correct route navigation | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | **FR-14** | BR-14 | **AC-16** | `UI-07b` | UI | Staff Dashboard Quick Actions navigation | Clicking 'Create Ticket', 'Search Tickets', and 'My Assigned Queue' triggers correct route navigation | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | **FR-01, FR-02, FR-05, FR-06** | BR-01..03, BR-05..06 | **AC-01, AC-03, AC-04, AC-06** | `E2E-01` | E2E | Actions Taken complete cross-role workflow (Staff & Admin create/edit, Requester read-only audit) | Staff and Admin create/edit action; Requester views in chronological order with zero edit controls | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
-| **FR-07** | BR-08, BR-09 | **AC-07**| `E2E-02` | E2E | Resolution gate lifecycle E2E | Requester advises; Staff formally resolves | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
+| **FR-07** | BR-08, BR-09 | **AC-07**| `E2E-02` | E2E | Resolution gate lifecycle E2E | Requester advises; Staff and Administrator formally resolve | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
 | **FR-13** | BR-15 | **AC-15a, AC-15b** | `E2E-03a`| E2E | Dashboards drill-down navigation E2E | Live cards filter queues seamlessly in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | **FR-14** | BR-13, BR-14 | **AC-16** | `E2E-03b`| E2E | Cross-role Dashboard Quick Actions browser interaction (Requester & Staff) | Shortcut actions for both Requester and Staff navigate seamlessly to target views in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | **FR-15** | BR-17 | **AC-19a**| `API-12` | API | Admin dashboard operational & user distribution metrics | Returns 200 with operational summary and accurate user stats | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |

@@ -73,7 +73,7 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Required branch:** `feature/lab4-2-ticket-workflow-enforcement`
 * **In-Scope:**
   - **Resolution Gate Backend Enforcement:**
-    - Restrict transitioning status to `RESOLVED` and `CLOSED` strictly to `IT_STAFF`.
+    - Restrict transitioning status to `RESOLVED` and `CLOSED` strictly to `IT_STAFF` and `ADMINISTRATOR`.
     - Enforce that Requester's "Problem Appears Resolved" (`problemAppearsResolved = true`) remains purely advisory and does NOT alter `currentStatus`.
   - **Strict Status Transition Matrix:**
     - Enforce permitted status transitions across all 8 statuses: `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, and `CANCELLED`.
@@ -82,12 +82,12 @@ This document provides the definitive planning specification for GitHub Issues (
     - Implement optimistic concurrency detection (e.g. verifying `updatedAt` timestamp or version token upon status change).
     - Return HTTP 409 Conflict with safe messaging when an update is attempted on stale data.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security, and 409 Conflict handling.
+    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security (permitting IT Staff and Admin, blocking Requester), and 409 Conflict handling.
 * **Out-of-Scope & Deferred Dependencies:**
   - Frontend status dropdown adjustments (deferred to Issue 23 (#54)).
   - Dashboard metric calculations (deferred to Issue 24 (#55)).
 * **Acceptance Criteria:**
-  - [ ] Direct API attempts by Requesters to set status to `RESOLVED` are strictly blocked (HTTP 403).
+  - [ ] Direct API attempts by Requesters to set status to `RESOLVED` or `CLOSED` are strictly blocked (HTTP 403); IT Staff and Administrators are permitted.
   - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400.
   - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes.
   - [ ] 100% of tests in `server/tests/lab-04/ticket-workflow.api.test.ts` pass.
@@ -103,7 +103,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Actions Taken UI Component (`client/src/components/ActionsTakenSection.tsx`):**
     - Render ordered list of Actions Taken displaying: Action Date/Time, Action Description, Result, Performed by (auto-populated name), Follow-Up badge, Follow-Up Note (if present), and Attachment Notes.
     - Responsive table on desktop transforming cleanly to readable card layout on mobile.
-  - **IT Staff Mode:**
+  - **IT Staff & Administrator Mode:**
     - "Add Action Taken" button triggering create form/modal.
     - Performed by is automatically populated from authenticated session.
     - Dynamic Follow-Up checkbox with required note field conditional validation.
@@ -111,7 +111,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Requester Mode:**
     - Read-only presentation; create/edit controls are completely hidden.
   - **Ticket Workflow UI Polish:**
-    - Reflect permitted status transitions in the IT Staff action dropdown.
+    - Reflect permitted status transitions in the IT Staff & Administrator action dropdown.
     - Display safe conflict alerts if a 409 status is returned.
   - **Automated UI Tests:**
     - `client/tests/lab-04/ActionsTaken.test.tsx`: Test list rendering, create form, validation, and role-based control visibility.
@@ -120,7 +120,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - Dashboard views and navigation (deferred to Issue 25 (#56)).
   - Playwright E2E browser tests (deferred to Issue 26 (#57)).
 * **Acceptance Criteria:**
-  - [ ] IT Staff can create and edit Actions Taken with immediate list refresh.
+  - [ ] IT Staff and Administrators can create and edit Actions Taken with immediate list refresh.
   - [ ] Requesters can view Actions Taken on owned tickets with zero edit controls available.
   - [ ] Form prevents submission if Follow-Up is checked without note text.
   - [ ] Layout conforms to Zen Green design standards with zero horizontal overflow on mobile viewports.

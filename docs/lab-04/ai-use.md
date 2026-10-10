@@ -19,7 +19,7 @@
 ### 1. The Role of Spec-Driven Development (Spec DD) in Sprint 4
 In Sprint 4, Spec-Driven Development (Spec DD) provided vital architectural guardrails before writing code. By formalizing `specification.md`, `api-spec.md`, `ui-spec.md`, and `tests.md`, we eliminated ambiguity regarding:
 - The distinction between overall Ticket ownership (coordination) and individual Action execution (performer attribution).
-- The Resolution Gate: ensuring that Requester problem resolution indication remains purely advisory, while formal status transition is strictly restricted to IT Staff at the backend layer.
+- The Resolution Gate: ensuring that Requester problem resolution indication remains purely advisory, while formal status transition is strictly restricted to IT Staff and Administrators at the backend layer.
 - Optimistic concurrency control using `@updatedAt` to safeguard against stale updates.
 - 100% traceability from Functional Requirements through Business Rules to Acceptance Criteria and automated tests.
 

@@ -121,7 +121,7 @@ The table below defines the authoritative role-based access permissions for Spri
   - `REOPENED` $\to$ `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED`
   - `CANCELLED` $\to$ (Terminal state; no transitions permitted)
 - **BR-08 (Resolution Authority Gate)**: Only authenticated users with role `IT_STAFF` or `ADMINISTRATOR` are permitted to transition a ticket into `RESOLVED` or `CLOSED`.
-- **BR-09 (Advisory Requester Indication)**: Setting `problemAppearsResolved = true` indicates user confirmation that their issue seems resolved, but does not alter `currentStatus`. IT Staff must formally inspect the ticket and execute the status transition to `RESOLVED`.
+- **BR-09 (Advisory Requester Indication)**: Setting `problemAppearsResolved = true` indicates user confirmation that their issue seems resolved, but does not alter `currentStatus`. IT Staff or Administrator must formally inspect the ticket and execute the status transition to `RESOLVED`.
 - **BR-10 (Mandatory Optimistic Concurrency Protection)**: When transitioning ticket status (`PATCH /api/staff/tickets/:id/status`), the client MUST provide the ticket's known `expectedUpdatedAt` ISO timestamp. 
   - If `expectedUpdatedAt` is missing or invalid, the backend rejects with `HTTP 400 Bad Request` (`VALIDATION_ERROR`).
   - If `expectedUpdatedAt` does not match the database `ticket.updatedAt` timestamp, the transition is aborted and returns `HTTP 409 Conflict` (`STALE_UPDATE_CONFLICT`) along with `currentUpdatedAt` and actionable conflict details.
@@ -300,7 +300,7 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 ## 9. Acceptance Criteria
 
 - **AC-01**: Given an authenticated IT Staff or Administrator user, when a valid Action Taken is submitted with description and result, it is successfully created with `performedById` automatically set to the authenticated user ID and linked to the correct ticket (FR-02, FR-03, BR-01, BR-02, BR-03).
-- **AC-02**: Given an authenticated IT Staff or Administrator user, when an Action Taken is submitted with `isFollowUpRequired = true` but `followUpNote` is empty, contains only whitespace, or has fewer than 3 non-whitespace characters, the backend rejects the request with `HTTP 400 Bad Request` (`VALIDATION_ERROR`) and descriptive validation details: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed." (FR-04, BR-04).
+- **AC-02**: Given an authenticated IT Staff or Administrator user, when an Action Taken is submitted with `isFollowUpRequired = true` but `followUpNote` is empty, contains only whitespace, or has fewer than 3 non-whitespace characters, the backend rejects the request with `HTTP 400 Bad Request` (`VALIDATION_ERROR`) and descriptive validation details: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed" (FR-04, BR-04).
 - **AC-03**: Given an authenticated Requester user, when attempting to create (`POST`) or edit (`PATCH`) an Action Taken via API, the backend rejects the request with `HTTP 403 Forbidden` (FR-06).
 - **AC-04**: Given an authenticated Requester user, when viewing an owned ticket, all existing Actions Taken are retrieved via API in chronological order and rendered in read-only format with Add/Edit controls completely omitted (FR-01, FR-06, BR-05, BR-06).
 - **AC-05**: Given an authenticated Requester user, when attempting to view Actions Taken on a ticket owned by another requester, the backend returns `HTTP 403 Forbidden` (FR-01).
@@ -350,6 +350,6 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 ## 11. Assumptions and Implementation Decisions
 
 1. **Auto-Populated Performer**: The system relies on the verified JWT claims (`req.user.id`) to assign `performedById`. Even if a client sends a different user ID in the JSON body, the backend silently ignores or strictly overrides it with the authenticated session ID.
-2. **Advisory Resolution Flag Behavior**: Marking a ticket as "Problem Appears Resolved" by a Requester does not prevent further communication or actions. When an IT Staff user subsequently transitions the ticket to `RESOLVED`, the advisory flag remains `true` as an audit record.
+2. **Advisory Resolution Flag Behavior**: Marking a ticket as "Problem Appears Resolved" by a Requester does not prevent further communication or actions. When an IT Staff or Administrator user subsequently transitions the ticket to `RESOLVED`, the advisory flag remains `true` as an audit record.
 3. **Drill-Down Routing Architecture**: Drill-down interactions utilize URL hash parameters (e.g. `#/my-tickets?status=WAITING_FOR_REQUESTER` or `#/staff-queue?owner=unassigned`) to preserve browser history, allow shareable links, and enable predictable back-button navigation.
 4. **Dashboard Aggregation Scope**: Dashboard metrics compute against non-cancelled tickets for active workloads, with explicit cards for resolved and closed tickets to reflect operational throughput.
