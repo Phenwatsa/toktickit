@@ -75,8 +75,9 @@ The stakeholder requires:
 - **FR-12 (IT Staff Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/staff/dashboard`) returning authoritative operational metrics for IT Staff: primary card counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), workload indicators (`unassignedTickets`), full 8-status breakdown (`byStatus`), 4-level priority breakdown (`byPriority`), and recent queue tickets (`recentTickets`).
 - **FR-13 (Dashboard Drill-Down Navigation)**: The frontend shall support interactive drill-down navigation from dashboard metric cards directly to pre-filtered ticket list and queue views.
 - **FR-14 (Dashboard Quick Actions)**: Dashboards shall provide contextual shortcut buttons for routine actions (Requester: Create Ticket, View My Tickets; IT Staff: Create Ticket, Search Tickets, My Queue).
-- **FR-15 (Regression Continuity)**: All endpoints, views, and behaviors from Labs 1, 2, and 3 (Categories, Tickets, Attachments, Auth, Comments, Internal Notes, Admin User Management) shall function without regression.
-- **FR-16 (Zen Green UI Consistency & Responsive Polish)**: All newly introduced and existing screens shall conform to the Zen Green design system across Desktop, Tablet, and Mobile viewports without text clipping, overlapping controls, or horizontal page scrolling.
+- **FR-15 (Administrator Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/admin/dashboard`) returning authoritative operational ticket summaries (`totalActiveTickets`, `unassignedTickets`) alongside concise user account statistics (`totalUsers`, `activeUsers`, `inactiveUsers`, and breakdown `byRole`) strictly accessible to Administrators.
+- **FR-16 (Regression Continuity)**: All endpoints, views, and behaviors from Labs 1, 2, and 3 (Categories, Tickets, Attachments, Auth, Comments, Internal Notes, Admin User Management) shall function without regression.
+- **FR-17 (Zen Green UI Consistency & Responsive Polish)**: All newly introduced and existing screens shall conform to the Zen Green design system across Desktop, Tablet, and Mobile viewports without text clipping, overlapping controls, or horizontal page scrolling.
 
 ---
 
@@ -94,6 +95,7 @@ The table below defines the authoritative role-based access permissions for Spri
 | **Mark Problem Appears Resolved** | ✅ (Owned tickets) | ❌ (403) | ❌ (403) | Advisory endpoint; preserves `currentStatus` |
 | **View Requester Dashboard** | ✅ (Own data only)| ❌ (403) | ❌ (403) | `requireRole("REQUESTER")`; isolated strictly to `req.user.id` |
 | **View IT Staff Dashboard** | ❌ (403) | ✅ | ✅ | `requireRole(["IT_STAFF", "ADMINISTRATOR"])`; returns `403 Forbidden` for Requester |
+| **View Administrator Dashboard** | ❌ (403) | ❌ (403) | ✅ | `requireRole("ADMINISTRATOR")`; returns `403 Forbidden` for non-administrators |
 | **Manage User Accounts** | ❌ (403) | ❌ (403) | ✅ | Restricted strictly to `ADMINISTRATOR` (carried forward from Lab 3) |
 
 ---
@@ -161,6 +163,10 @@ The table below defines the authoritative role-based access permissions for Spri
     - `My Assigned` $\to$ `#/staff-queue?owner=me`
     - `Unassigned Queue` $\to$ `#/staff-queue?owner=unassigned`
 - **BR-16 (Safe Empty & Loading States)**: When metric counts are zero or lists are empty, dashboards display descriptive, friendly empty states with appropriate guidance rather than blank areas or raw zeros.
+- **BR-17 (Administrator Dashboard Calculation Rules & Access)**:
+  - `operational`: Summarizes non-final system tickets (`totalActiveTickets = count(currentStatus NOT IN ('CLOSED', 'CANCELLED'))`, `unassignedTickets = count(ticketOwnerId IS NULL AND currentStatus NOT IN ('CLOSED', 'CANCELLED'))`).
+  - `users`: Computes authoritative account counts from `User` records (`totalUsers`, `activeUsers = count(isActive = true)`, `inactiveUsers = count(isActive = false)`), alongside distribution counts by role (`requester`, `itStaff`, `administrator`).
+  - Access is restricted exclusively to authenticated users with role `ADMINISTRATOR`. Requester or IT Staff requests receive `HTTP 403 Forbidden`.
 
 ---
 
@@ -193,6 +199,12 @@ The table below defines the authoritative role-based access permissions for Spri
   - Row of 5 primary metric cards: New (`newTickets`), Open (`openTickets`), In Progress (`inProgressTickets`), Waiting for Requester (`waitingForRequesterTickets`), and My Assigned (`myAssignedTickets`).
   - Secondary workload indicators: Unassigned Queue highlight card (`unassignedTickets`), Full Lifecycle Status Distribution pill badges displaying live counts across all 8 statuses (`byStatus`: New, Open, In Progress, Waiting for Requester, Resolved, Closed, Reopened, Cancelled), and 4-level Priority distribution badges (`byPriority`: Low, Medium, High, Urgent).
   - 2-column lower section: "Recent Queue Tickets" on the left, "Quick Actions" on the right (Create Ticket, Search Tickets, My Assigned Queue).
+- **Administrator Dashboard (`AdminDashboard.tsx`)**:
+  - Operational & administrative overview banner with system health and refresh controls.
+  - Upper Metric Cards Grid: Operational Queue (`Total Active Tickets`, `Unassigned Queue`) alongside User Statistics (`Total Users`, `Active Users`, `Inactive Users`).
+  - User Role Distribution Badges: Live count badges for `Requesters`, `IT Staff`, and `Administrators`.
+  - 2-column lower section: "Recent System Queue" list on the left, "Administrative Quick Actions" on the right ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "+ Create Ticket").
+  - Drill-down: Clicking User summary cards navigates to `#/admin-users`; clicking Unassigned Queue navigates to `#/staff-queue?owner=unassigned`.
 
 ### Responsive Breakpoints
 - **Desktop ($1280\text{px}+$ )**: Full multi-column grid layouts, data tables with complete column visibility.
@@ -249,6 +261,7 @@ model ActionTaken {
 | `PATCH` | `/api/staff/tickets/:id/status` | IT Staff, Administrator | Execute status transition with mandatory concurrency check | 200, 400, 401, 403, 404, 409 |
 | `GET` | `/api/requester/dashboard` | Requester | Retrieve authenticated Requester's 5 summary metrics | 200, 401, 403 |
 | `GET` | `/api/staff/dashboard` | IT Staff, Administrator | Retrieve system queue operational metrics & 8-status breakdown | 200, 401, 403 |
+| `GET` | `/api/admin/dashboard` | Administrator | Retrieve operational queue summary & user account metrics | 200, 401, 403 |
 
 ---
 
@@ -270,8 +283,10 @@ model ActionTaken {
 - **AC-14**: Given an authenticated Requester user, when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden` (FR-12).
 - **AC-15**: Given an authenticated user on the Dashboard UI, clicking any summary metric card navigates to the respective ticket list with the active filter preset (drill-down) (FR-13, BR-15).
 - **AC-16**: Given an authenticated user on either Requester or Staff Dashboard UI, the Quick Actions panel renders operational shortcut links (Requester: Create Ticket, View My Tickets; IT Staff: Create Ticket, Search Tickets, My Queue) that navigate directly to target functional views upon click (FR-14, BR-13, BR-14).
-- **AC-17**: Given any screen in the application across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$), all interactive controls and status badges adhere to Zen Green design tokens (`--zg-primary`, `--zg-surface`, `--zg-border`), and components render without text clipping or overlapping modal/action controls (FR-16).
-- **AC-18**: All regression tests for authentication, ticket creation, ticket queue, attachments, public comments, internal notes, and user management pass 100% without failure (FR-15).
+- **AC-17**: Given any screen in the application across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$), all interactive controls and status badges adhere to Zen Green design tokens (`--zg-primary`, `--zg-surface`, `--zg-border`), and components render without text clipping or overlapping modal/action controls (FR-17).
+- **AC-18**: All regression tests for authentication, ticket creation, ticket queue, attachments, public comments, internal notes, and user management pass 100% without failure (FR-16).
+- **AC-19**: Given an authenticated Administrator user, when calling `GET /api/admin/dashboard`, the response returns authoritative operational metrics (`totalActiveTickets`, `unassignedTickets`) and user account distribution metrics (`totalUsers`, `activeUsers`, `inactiveUsers`, `byRole`); and requests from non-administrators return `HTTP 403 Forbidden` (FR-15, BR-17).
+- **AC-20**: Given an authenticated Administrator on the Dashboard UI, the view renders operational queue indicators, user account statistics, role distribution badges, and quick action navigation to User Management (`#/admin-users`) conforming to Zen Green styling without text clipping or overlapping controls (FR-15, FR-17).
 
 ---
 

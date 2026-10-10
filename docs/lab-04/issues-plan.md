@@ -16,7 +16,7 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Required branch:** `docs/lab4-spec-and-test-plan`
 * **In-Scope:**
   - Author complete engineering contract files in `docs/lab-04/`:
-    - `docs/lab-04/specification.md`: Sprint Goal, Stakeholder Request, In/Out Scope, numbered Functional Requirements (FR-01 to FR-16), Business Rules (BR-01 to BR-16 covering Actions Taken, ticket resolution gate, and dashboard calculations), Central Authorization Matrix, Concurrency/stale-update strategy, Database migration rationale, and Definition of Done.
+    - `docs/lab-04/specification.md`: Sprint Goal, Stakeholder Request, In/Out Scope, numbered Functional Requirements (FR-01 to FR-17), Business Rules (BR-01 to BR-17 covering Actions Taken, ticket resolution gate, and dashboard calculations), Central Authorization Matrix, Concurrency/stale-update strategy, Database migration rationale, and Definition of Done.
     - `docs/lab-04/api-spec.md`: Formal REST contracts for Actions Taken endpoints, Requester Dashboard API, and IT Staff Dashboard API (endpoints, methods, payload schemas, HTTP status codes 200, 201, 400, 401, 403, 404, 409, and safe error schemas).
     - `docs/lab-04/ui-spec.md`: Zen Green design token alignments, screen structure for Requester and Staff Dashboards, Actions Taken section on Ticket Detail, responsive breakpoints (Desktop 1280px, Tablet 768px, Mobile 375px), and accessibility checklist.
     - `docs/lab-04/tests.md`: Planned test matrix covering Unit, API/Integration, UI Component, Workflow, Regression, and E2E Playwright tests with 100% Acceptance Criteria (AC-xx) traceability.

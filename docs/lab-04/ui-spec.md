@@ -137,6 +137,26 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
 
 ---
 
+### 4.3 Administrator Dashboard (`AdminDashboard.tsx`)
+- **Header Banner**: "Welcome back, [First Name]!" with subtitle "System Administration & Service Desk Overview" and "Refresh" button.
+- **Primary Metric Cards Grid**:
+  1. `Total Active Tickets` (`operational.totalActiveTickets`): Count of non-closed/non-cancelled tickets across the system.
+  2. `Unassigned Queue` (`operational.unassignedTickets`): Active unassigned tickets needing assignment.
+  3. `Total Users` (`users.totalUsers`): Total registered user accounts.
+  4. `Active Users` (`users.activeUsers`): Active accounts.
+  5. `Inactive Users` (`users.inactiveUsers`): Deactivated accounts.
+- **Role Distribution Badges**: Horizontal badge row displaying Requesters (`users.byRole.requester`), IT Staff (`users.byRole.itStaff`), and Administrators (`users.byRole.administrator`).
+- **Quick Actions (Right Panel)**:
+  - "Manage Users": Primary action navigating directly to User Management (`#/admin-users`).
+  - "Ticket Queue": Navigates to operational ticket queue (`#/staff-queue`).
+  - "+ Create Ticket": Quick link to ticket creation form (`#/create-ticket`).
+- **Recent Queue Overview (Left Panel)**: Table displaying recent system tickets with priority, status, and assigned staff.
+- **Interactive Drill-Down**:
+  - Clicking `Total Users` / `Active Users` / `Inactive Users` navigates to `#/admin-users`.
+  - Clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`.
+
+---
+
 ## 5. Responsive Layout & Viewport Rules
 
 The interface adapts smoothly across three standard test viewports:

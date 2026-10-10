@@ -18,7 +18,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    Supertest suites asserting HTTP status codes, request validation, database interactions, and RBAC isolation:
    - `actions-taken.api.test.ts`: Tests CRUD endpoints, auto-performer attribution, and cross-user isolation.
    - `requester-dashboard.api.test.ts`: Tests Requester metrics calculation and strict tenant isolation.
-   - `staff-dashboard.api.test.ts`: Tests Staff queue metrics, status breakdowns, priority breakdowns, and non-staff 403 rejection.
+   - `staff-dashboard.api.test.ts`: Tests Staff queue metrics, status breakdowns, priority breakdowns, Admin operational & user metrics (`API-12`), and non-permitted 403 rejections (`API-11`, `API-13`).
 3. **Workflow Tests (`server/tests/lab-04/ticket-workflow.api.test.ts`)**:
    Stateful multi-step lifecycle integration tests:
    - Multi-step status progression (`NEW` $\to$ `OPEN` $\to$ `IN_PROGRESS` $\to$ `WAITING_FOR_REQUESTER` $\to$ `RESOLVED` $\to$ `CLOSED`).
@@ -28,8 +28,8 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    Vitest & React Testing Library component tests:
    - `ActionsTaken.test.tsx`: Tests list rendering, modal form state, validation error banners, and read-only Requester presentation.
    - `TicketWorkflow.test.tsx`: Tests status transition controls, resolution feedback, and 409 conflict alert handling.
-   - `RequesterDashboard.test.tsx`: Tests metric cards rendering, empty state, and drill-down navigation triggers.
-   - `StaffDashboard.test.tsx`: Tests 5 primary cards, 8-status breakdown, priority badges, and drill-down routing.
+   - `RequesterDashboard.test.tsx`: Tests metric cards rendering, empty state, drill-down triggers, and Requester Quick Actions (`UI-07a`).
+   - `StaffDashboard.test.tsx`: Tests 5 primary cards, 8-status breakdown, priority badges, drill-down routing, Staff Quick Actions (`UI-07b`), and Admin dashboard overview & navigation (`UI-08`).
 5. **End-to-End Playwright Tests (`e2e/lab-04/`)**:
    Full browser workflows executed under real session cookies/tokens:
    - `actions-taken-flow.spec.ts`: End-to-end recording of actions by staff, editing, and requester read-only audit.
@@ -77,8 +77,11 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-07** | BR-08, BR-09 | **AC-07**| `E2E-02` | E2E | Resolution gate lifecycle E2E | Requester advises; Staff formally resolves | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
 | **FR-13** | BR-15 | **AC-15** | `E2E-03a`| E2E | Dashboards drill-down navigation E2E | Live cards filter queues seamlessly in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | **FR-14** | BR-13, BR-14 | **AC-16** | `E2E-03b`| E2E | Cross-role Dashboard Quick Actions browser interaction (Requester & Staff) | Shortcut actions for both Requester and Staff navigate seamlessly to target views in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **FR-16** | Handout §8.6, §7| **AC-17** | `E2E-04` | E2E | Responsive layout, overlap, clipping, and Zen Green token audit | Zero horizontal overflow (scrollWidth === clientWidth), zero control collisions/clipping, and Zen Green tokens verified | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **FR-15** | Handout §8.5| **AC-18** | `REG-01` | Regression | Labs 1–3 full regression test suites | 100% of previous test suites pass | `e2e/lab-03/*` & `e2e/lab-02/*` | Planned |
+| **FR-15** | BR-17 | **AC-19** | `API-12` | API | Admin dashboard operational & user distribution metrics | Returns 200 with operational summary and accurate user stats | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| **FR-15** | Matrix | **AC-19** | `API-13` | API | Non-admin blocked from admin dashboard | Returns 403 Forbidden for Requester and IT Staff | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| **FR-15, FR-17** | BR-17 | **AC-20** | `UI-08`  | UI | Admin dashboard overview rendering & user navigation | Renders operational tiles, user distribution stats, and User Management link | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
+| **FR-17** | Handout §8.6, §7| **AC-17** | `E2E-04` | E2E | Responsive layout, overlap, clipping, and Zen Green token audit | Zero horizontal overflow (scrollWidth === clientWidth), zero control collisions/clipping, and Zen Green tokens verified | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **FR-16** | Handout §8.5| **AC-18** | `REG-01` | Regression | Labs 1–3 full regression test suites | 100% of previous test suites pass | `e2e/lab-03/*` & `e2e/lab-02/*` | Planned |
 
 ---
 
@@ -94,13 +97,13 @@ server/tests/lab-04/
 ├── actions-taken.api.test.ts                  # API-01, API-02, API-03a, API-03b, API-04, API-05, API-06
 ├── ticket-workflow.api.test.ts                # WF-01, WF-02, WF-03, API-07, API-08
 ├── requester-dashboard.api.test.ts            # API-09
-└── staff-dashboard.api.test.ts                # API-10, API-11
+└── staff-dashboard.api.test.ts                # API-10, API-11, API-12, API-13
 
 client/tests/lab-04/
 ├── ActionsTaken.test.tsx                      # UI-01a, UI-01b, UI-02, UI-03
 ├── TicketWorkflow.test.tsx                    # UI-04
 ├── RequesterDashboard.test.tsx                # UI-05, UI-07a
-└── StaffDashboard.test.tsx                    # UI-06, UI-07b
+└── StaffDashboard.test.tsx                    # UI-06, UI-07b, UI-08
 
 e2e/lab-04/
 ├── actions-taken-flow.spec.ts                 # E2E-01
