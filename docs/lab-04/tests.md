@@ -15,12 +15,12 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    - `concurrency-check.unit.test.ts` (`UNIT-03`): Validates optimistic concurrency timestamp comparison logic.
    - `dashboard-calculator.unit.test.ts` (`UNIT-04`): Validates aggregation logic for metric counts.
 2. **API & Database Integration Tests (`server/tests/lab-04/`)**:
-   Supertest suites asserting HTTP status codes, request validation, database interactions, RBAC isolation, schema rollback, and seed integrity:
+   Supertest suites and integration tests (17 planned tests total: 15 API endpoint tests and 2 Database integration tests) asserting HTTP status codes, request validation, database interactions, RBAC isolation, schema rollback, and seed integrity:
    - `actions-taken.api.test.ts`: Tests CRUD endpoints, auto-performer attribution, ticket scoping check (404 on cross-ticket patch), rejection of actions on CANCELLED tickets (`API-14`), and cross-user isolation for both `IT_STAFF` and `ADMINISTRATOR` roles (`API-01`–`API-06`, `API-14`).
    - `ticket-workflow.api.test.ts`: Tests status transitions, optimistic concurrency validation (missing/malformed ISO returns 400 `API-07`, stale timestamp returns 409 `API-08`), and rejection of status transitions on CANCELLED tickets (`API-14`).
    - `requester-dashboard.api.test.ts`: Tests Requester metrics calculation and strict tenant isolation (`API-09`).
    - `staff-dashboard.api.test.ts`: Tests Staff queue metrics, status breakdowns, priority breakdowns, Admin operational & user metrics (`API-12`), and non-permitted 403 rejections (`API-11`, `API-13`).
-   - `migration-recovery.test.ts` (`MIG-01`): Tests physical schema teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`), Prisma migration history synchronization (`npx prisma migrate resolve --rolled-back`), legacy schema/data preservation, and subsequent forward re-application via `npx prisma migrate deploy` (`AC-21`).
+   - `migration-recovery.test.ts` (`MIG-01`): Tests migration disaster recovery and schema rollback: executes physical schema teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`), synchronizes Prisma migration state (`prisma migrate resolve --rolled-back` for failed deployment recovery / tracking reset for applied migration), confirms legacy tables/data (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) remain 100% intact, and verifies forward `npx prisma migrate deploy` reapplies cleanly (`AC-21`).
    - `seed-data.test.ts` (`SEED-01`): Tests repeated seed execution (`prisma/seed.ts` run 1 and run 2 idempotency check), asserting zero constraint collisions, invariant record counts, and directly asserting all 8 lifecycle statuses, 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, and zero/non-zero dashboard metric profiles (`AC-22`).
 3. **Workflow Tests (`server/tests/lab-04/ticket-workflow.api.test.ts`)**:
    Stateful multi-step lifecycle integration tests:
@@ -92,7 +92,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-16** | Handout §8.5| **AC-18** | `REG-01` | Regression (Server) | Labs 1–3 Server API & Unit regression suites | 100% of previous server test suites pass without regression | `server/tests/lab-01/*`, `server/tests/lab-02/*`, `server/tests/lab-03/*` | Planned |
 | **FR-16** | Handout §8.5| **AC-18** | `REG-02` | Regression (Client) | Labs 1–3 Client UI component regression suites | 100% of previous client test suites pass without regression | `client/tests/lab-01/*`, `client/tests/lab-02/*`, `client/tests/lab-03/*` | Planned |
 | **FR-16** | Handout §8.5| **AC-18** | `REG-03` | Regression (E2E) | Labs 2–3 Full-stack E2E workflow regression suites | 100% of previous Playwright E2E suites pass without regression | `e2e/lab-02/*`, `e2e/lab-03/*` | Planned |
-| **Migration** | Handout §5.2 | **AC-21** | `MIG-01` | Integration / DB | Migration rollback & legacy table integrity recovery | Executes physical teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`), synchronizes history (`prisma migrate resolve --rolled-back`), confirms legacy tables/data remain 100% intact, and verifies forward `migrate deploy` reapplies cleanly | `server/tests/lab-04/migration-recovery.test.ts` | Planned |
+| **Migration** | Handout §5.2 | **AC-21** | `MIG-01` | Integration / DB | Migration rollback & legacy table integrity recovery | Executes physical teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`), synchronizes Prisma history (`prisma migrate resolve --rolled-back` on failed migration state or tracking reset for applied migration), confirms legacy tables/data remain 100% intact, and verifies forward `migrate deploy` reapplies cleanly | `server/tests/lab-04/migration-recovery.test.ts` | Planned |
 | **Seed** | Handout §5.3 | **AC-22** | `SEED-01` | Integration / DB | Idempotent seed data 5 scenario dimensions plus repeated-run verification | Executes `seed.ts` consecutively (run 1 & run 2); confirms zero duplicate key collisions, invariant record counts, and directly asserts presence of all 8 statuses, 4 priorities, assigned/unassigned tickets, 0/1/multiple Actions Taken, and zero/non-zero dashboard metrics | `server/tests/lab-04/seed-data.test.ts` | Planned |
 
 ---
@@ -132,15 +132,14 @@ e2e/lab-04/
 
 ### Planned Test Suite Breakdown (42 Total Planned Tests)
 
-| Test Category | Test Count | Test IDs | Primary Test Files |
+| Testing Level | Test Count | Test IDs | Primary Test Files |
 | :--- | :---: | :--- | :--- |
-| **Unit Tests** | 4 | `UNIT-01` to `UNIT-04` | `follow-up-validation`, `status-transition-matrix`, `concurrency-check`, `dashboard-calculator` |
-| **API Integration Tests** | 15 | `API-01` to `API-14` (`API-03a`, `API-03b`) | `actions-taken.api.test.ts`, `requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts`, `ticket-workflow.api.test.ts` |
-| **DB & Migration Tests** | 2 | `MIG-01`, `SEED-01` | `migration-recovery.test.ts`, `seed-data.test.ts` |
-| **Workflow Tests** | 3 | `WF-01`, `WF-02`, `WF-03` | `ticket-workflow.api.test.ts` |
-| **UI Component Tests** | 10 | `UI-01a` to `UI-08` (`UI-01a`, `UI-01b`, `UI-07a`, `UI-07b`) | `ActionsTaken`, `TicketWorkflow`, `RequesterDashboard`, `StaffDashboard`, `AdminDashboard` |
-| **E2E Playwright Tests** | 5 | `E2E-01`, `E2E-02`, `E2E-03a`, `E2E-03b`, `E2E-04` | `actions-taken-flow.spec.ts`, `ticket-resolution.spec.ts`, `dashboards.spec.ts` |
-| **Regression Suites** | 3 | `REG-01`, `REG-02`, `REG-03` | Server regression (`REG-01`), Client regression (`REG-02`), E2E regression (`REG-03`) |
-| **Total** | **42** | | Across all 7 test categories |
+| **1. Unit Tests** | 4 | `UNIT-01` to `UNIT-04` | `follow-up-validation`, `status-transition-matrix`, `concurrency-check`, `dashboard-calculator` |
+| **2. API & Database Integration Tests** | 17 | `API-01` to `API-14` (API: 15), `MIG-01`, `SEED-01` (DB: 2) | `actions-taken.api.test.ts`, `requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts`, `ticket-workflow.api.test.ts`, `migration-recovery.test.ts`, `seed-data.test.ts` |
+| **3. Workflow Tests** | 3 | `WF-01`, `WF-02`, `WF-03` | `ticket-workflow.api.test.ts` |
+| **4. UI Component Tests** | 10 | `UI-01a` to `UI-08` (`UI-01a`, `UI-01b`, `UI-07a`, `UI-07b`) | `ActionsTaken`, `TicketWorkflow`, `RequesterDashboard`, `StaffDashboard`, `AdminDashboard` |
+| **5. E2E Playwright Tests** | 5 | `E2E-01`, `E2E-02`, `E2E-03a`, `E2E-03b`, `E2E-04` | `actions-taken-flow.spec.ts`, `ticket-resolution.spec.ts`, `dashboards.spec.ts` |
+| **6. Regression Suites** | 3 | `REG-01`, `REG-02`, `REG-03` | Server regression (`REG-01`), Client regression (`REG-02`), E2E regression (`REG-03`) |
+| **Total** | **42** | | Across all 6 testing levels |
 
 *Test execution results will be recorded progressively during implementation issues and finalized prior to release.*
