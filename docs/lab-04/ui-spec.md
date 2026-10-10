@@ -55,7 +55,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
 - **Section Header**:
   - Title: "Actions Taken" with item count badge (e.g. `Actions Taken (3)`).
   - Subtext: "Operational record of diagnostic and remediation activities."
-  - Action Button (IT Staff only): "+ Add Action Taken" (`zen-btn-primary`).
+  - Action Button (IT Staff and Administrator): "+ Add Action Taken" (`zen-btn-primary`).
 - **Action Item Card**:
   - **Top Row**: Action Date/Time (formatted e.g. `Oct 10, 2026, 2:30 PM`), Performed By badge (`By Alex Taylor`), and Follow-Up indicator badge.
   - **Content Body**:
@@ -69,7 +69,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
 
 ### 3.3 Create & Edit Modal/Drawer (`ActionTakenModal.tsx`)
 - **Fields**:
-  - `Action Date/Time`: Datetime-local input (defaults to current local timestamp).
+  - `Action Date/Time`: Datetime-local input (defaults to current local timestamp; converted to UTC ISO-8601 string `YYYY-MM-DDTHH:mm:ss.sssZ` upon submission).
   - `Action Description`: Textarea (min 5 chars, placeholder: "Describe the specific activity taken...").
   - `Result`: Textarea (min 3 chars, placeholder: "Describe the outcome or findings...").
   - `Performed By`: Read-only field showing current user name: "Logged-in Staff Member (Auto-assigned)".
@@ -97,7 +97,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   4. `Recently Resolved` (`resolvedTickets`): Count of resolved tickets awaiting closure.
   5. `Closed` (`closedTickets`): Count of finalized tickets.
 - **Card Interactive Drill-Down**:
-  - `My Open Tickets` $\to$ `#/my-tickets?status=OPEN_GROUP`
+  - `My Open Tickets` $\to$ `#/my-tickets?status=OPEN_GROUP` (preset filter displaying active non-final tickets: `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`)
   - `In Progress` $\to$ `#/my-tickets?status=IN_PROGRESS`
   - `Waiting for Requester` $\to$ `#/my-tickets?status=WAITING_FOR_REQUESTER`
   - `Recently Resolved` $\to$ `#/my-tickets?status=RESOLVED`
@@ -169,7 +169,7 @@ The interface adapts smoothly across three standard test viewports:
 | **Mobile** | $375\text{px} \times 667\text{px}$ | 1 column stacked metric cards; full-width action buttons ($44\text{px}+$ touch targets); tables transform into vertical card stacks; zero horizontal overflow ($scrollWidth === clientWidth$). |
 
 ### 5.1 Responsive, Overlap & Token Verification Protocol
-To guarantee compliance with FR-16 and AC-17, test suites (specifically `E2E-04` and UI component tests) execute the following programmatic checks:
+To guarantee compliance with FR-17 and AC-17, test suites (specifically `E2E-04` and UI component tests across the four core responsive screens: Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/tickets/:id`) execute the following programmatic checks:
 1. **Zero Horizontal Overflow**: Assert `document.body.scrollWidth === document.body.clientWidth` and `window.scrollX === 0` across all three viewports.
 2. **No Overlapping Interactive Elements**: Programmatically verify that sticky headers, action buttons, Quick Action shortcut tiles, and modal dialogs do not collide (intersecting bounding boxes) across viewports.
 3. **No Clipped Text or Cutoff Labels**: Elements must retain complete visibility without truncation of critical identifiers (Ticket IDs, status badges, timestamps).

@@ -48,11 +48,11 @@ This document provides the definitive planning specification for GitHub Issues (
     - Ensure safe repeated execution without constraint violations.
   - **Actions Taken REST APIs (`server/src/routes/actionsTaken.ts`):**
     - `GET /api/tickets/:id/actions`: Retrieve Actions Taken for a ticket (accessible to permitted Requester owner, IT Staff, and Administrator).
-    - `POST /api/tickets/:id/actions`: Create Action Taken (strictly restricted to `IT_STAFF` and `ADMINISTRATOR`; auto-set `performedById` from authenticated session).
-    - `PATCH /api/tickets/:id/actions/:actionId`: Update Action Taken details (restricted to `IT_STAFF` and `ADMINISTRATOR`).
-    - Validation: Enforce `followUpNote` as mandatory when `isFollowUpRequired === true`.
+    - `POST /api/tickets/:id/actions`: Create Action Taken (strictly restricted to `IT_STAFF` and `ADMINISTRATOR`; auto-set `performedById` from authenticated session). Rejects requests on `CANCELLED` tickets with HTTP 400 (`TICKET_CANCELLED`).
+    - `PATCH /api/tickets/:id/actions/:actionId`: Update Action Taken details (restricted to `IT_STAFF` and `ADMINISTRATOR`). Enforces ticket scoping: if `actionId` does not belong to `:id`, returns HTTP 404 (`NOT_FOUND`). Rejects requests on `CANCELLED` tickets with HTTP 400 (`TICKET_CANCELLED`).
+    - Validation: Enforce `followUpNote` as mandatory (minimum 3 non-whitespace characters) when `isFollowUpRequired === true`.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/actions-taken.api.test.ts` covering creation, listing, updating, validation rules, and role authorization rejection (403 for Requester; 201/200 for IT Staff & Admin).
+    - Author and execute `server/tests/lab-04/actions-taken.api.test.ts` covering creation, listing, updating, validation rules, cross-ticket scoping (404), terminal cancelled rejection (`API-14`), and role authorization rejection (403 for Requester; 201/200 for IT Staff & Admin).
 * **Out-of-Scope & Deferred Dependencies:**
   - Actions Taken UI components in React (deferred to Issue 23 (#54)).
   - Status transition matrix and resolution gate enforcement (deferred to Issue 22 (#53)).
@@ -62,6 +62,8 @@ This document provides the definitive planning specification for GitHub Issues (
   - [ ] Seed script runs idempotently and populates realistic Actions Taken records.
   - [ ] Requesters are blocked from creating or modifying Actions Taken (HTTP 403 Forbidden); IT Staff and Administrators are permitted.
   - [ ] Submitting an Action Taken with `isFollowUpRequired = true` without a note returns HTTP 400 validation error.
+  - [ ] Modifying an Action Taken belonging to another ticket returns HTTP 404 Not Found.
+  - [ ] Attempting to add or modify Actions Taken on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`).
   - [ ] 100% of tests in `server/tests/lab-04/actions-taken.api.test.ts` pass.
 * **AI Verification Note:**
   > Verify only backend migration, seed, route handlers, and `actions-taken.api.test.ts`. Do not fail verification due to missing UI elements or unmerged PR status.
@@ -78,18 +80,23 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Strict Status Transition Matrix:**
     - Enforce permitted status transitions across all 8 statuses: `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, and `CANCELLED`.
     - Reject forbidden transitions with descriptive HTTP 400 errors.
+    - Reject any transition attempt on a terminal `CANCELLED` ticket with HTTP 400 (`TICKET_CANCELLED`).
   - **Concurrency & Stale-Update Protection:**
-    - Implement optimistic concurrency detection (e.g. verifying `updatedAt` timestamp or version token upon status change).
-    - Return HTTP 409 Conflict with safe messaging when an update is attempted on stale data.
+    - Implement optimistic concurrency detection verifying mandatory `expectedUpdatedAt` ISO-8601 UTC timestamp.
+    - Missing `expectedUpdatedAt` returns HTTP 400 (`VALIDATION_ERROR`).
+    - Malformed ISO-8601 timestamp returns HTTP 400 (`VALIDATION_ERROR`).
+    - Stale timestamp mismatch returns HTTP 409 (`STALE_UPDATE_CONFLICT`) with `currentUpdatedAt`.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security (permitting IT Staff and Admin, blocking Requester), and 409 Conflict handling.
+    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security (permitting IT Staff and Admin, blocking Requester), missing/malformed timestamp rejection (400), stale conflict handling (409), and cancelled ticket rejection (400 `TICKET_CANCELLED`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Frontend status dropdown adjustments (deferred to Issue 23 (#54)).
   - Dashboard metric calculations (deferred to Issue 24 (#55)).
 * **Acceptance Criteria:**
   - [ ] Direct API attempts by Requesters to set status to `RESOLVED` or `CLOSED` are strictly blocked (HTTP 403); IT Staff and Administrators are permitted.
   - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400.
+  - [ ] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`).
   - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes.
+  - [ ] Attempting to transition a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`).
   - [ ] 100% of tests in `server/tests/lab-04/ticket-workflow.api.test.ts` pass.
 * **AI Verification Note:**
   > Verify backend status validation and concurrency handling in `ticket-workflow.api.test.ts`. Do not fail verification due to missing frontend UI integration or unmerged PR status.
@@ -136,24 +143,26 @@ This document provides the definitive planning specification for GitHub Issues (
 * **In-Scope:**
   - **Requester Dashboard Endpoint (`GET /api/requester/dashboard`):**
     - Restricted to authenticated Requester; isolated strictly to `req.user.id`.
-    - Returns: Total Open Tickets, Tickets Waiting for Requester, Recently Resolved Tickets, and Recent Tickets list (up to 5 items).
+    - Returns: `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and `recentTickets` list (up to 5 items).
   - **IT Staff Dashboard Endpoint (`GET /api/staff/dashboard`):**
-    - Restricted strictly to `IT_STAFF` (and reusable for `ADMINISTRATOR`).
-    - Returns: Unassigned Tickets count, My Assigned Tickets count, Tickets by Status counts, Tickets by IT Priority counts, and Recent Queue Tickets.
-  - **Admin Dashboard Extensions (`GET /api/admin/dashboard` or staff reuse):**
-    - Reuse IT Staff operational summary with optional user account statistics.
+    - Restricted to `IT_STAFF` and `ADMINISTRATOR`.
+    - Returns: 5 primary cards (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), workload indicators (`unassignedTickets`), full 8-status breakdown (`byStatus`), 4-priority breakdown (`byPriority`), and `recentTickets`.
+  - **Admin Dashboard Endpoint (`GET /api/admin/dashboard`):**
+    - Restricted strictly to `ADMINISTRATOR`.
+    - Returns: operational summaries (`totalActiveTickets`, `unassignedTickets`) alongside user account distribution statistics (`totalUsers`, `activeUsers`, `inactiveUsers`, and breakdown `byRole`).
   - **Database Query Optimization:**
     - Use Prisma `count()` and targeted queries to compute metrics efficiently.
   - **Automated Backend Tests:**
     - Author and execute `server/tests/lab-04/requester-dashboard.api.test.ts` (test metric accuracy and strict user isolation).
-    - Author and execute `server/tests/lab-04/staff-dashboard.api.test.ts` (test queue metrics and role restriction).
+    - Author and execute `server/tests/lab-04/staff-dashboard.api.test.ts` (test queue metrics, Admin operational/user stats, and role restrictions).
 * **Out-of-Scope & Deferred Dependencies:**
   - Client-side Dashboard UI rendering (deferred to Issue 25 (#56)).
   - Playwright E2E browser verification (deferred to Issue 26 (#57)).
 * **Acceptance Criteria:**
   - [ ] Requester dashboard metrics match database counts and never expose tickets belonging to other users.
-  - [ ] IT Staff dashboard endpoint calculates accurate counts for unassigned, assigned, and status groups.
-  - [ ] Requester calling Staff Dashboard endpoint receives HTTP 403 Forbidden.
+  - [ ] IT Staff dashboard endpoint calculates accurate counts for primary cards, unassigned queue, 8-status distribution, and priorities.
+  - [ ] Administrator dashboard endpoint returns accurate operational queue and user account distribution metrics.
+  - [ ] Non-permitted roles receive HTTP 403 Forbidden on role-restricted dashboard endpoints.
   - [ ] 100% of tests in `requester-dashboard.api.test.ts` and `staff-dashboard.api.test.ts` pass.
 * **AI Verification Note:**
   > Verify backend dashboard routes and tests. Do not check for Dashboard UI rendering or fail due to unmerged PR status.
@@ -165,31 +174,39 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Required branch:** `feature/lab4-5-dashboard-ui`
 * **In-Scope:**
   - **Requester Dashboard View (`client/src/pages/RequesterDashboard.tsx`):**
-    - Metric cards: My Open Tickets, In Progress, Resolved, Closed.
+    - 5 Metric cards: My Open Tickets (`openTickets`), In Progress (`inProgressTickets`), Waiting for Requester (`waitingForRequesterTickets`), Recently Resolved (`resolvedTickets`), Closed (`closedTickets`).
     - My Recent Tickets list with status badges and timestamps.
     - Quick actions: "Create Ticket", "View My Tickets".
-    - Drill-down: Clicking a metric card navigates to `MyTickets` pre-filtered by that status.
+    - Drill-down: Clicking metric cards navigates to `MyTickets` pre-filtered (`#/my-tickets?status=OPEN_GROUP`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`).
   - **IT Staff Dashboard View (`client/src/pages/StaffDashboard.tsx`):**
-    - Metric cards: New, Open, In Progress, Waiting for Requester, My Assigned.
-    - Recent Tickets list with priority badges and assignees.
+    - 5 Primary cards: New, Open, In Progress, Waiting for Requester, My Assigned.
+    - Workload badges: Unassigned Queue highlight, 8-status distribution pills, 4-priority badges.
+    - Recent Queue Tickets list with priority badges and assignees.
     - Quick actions: "Create Ticket", "Search Tickets", "My Queue".
-    - Drill-down: Clicking a metric card navigates to `StaffTicketQueue` with active filter preset.
+    - Drill-down: Clicking metric cards/badges navigates to `StaffTicketQueue` with active filter presets.
+  - **Administrator Dashboard View (`client/src/pages/AdminDashboard.tsx`):**
+    - Overview banner with system health and refresh controls.
+    - Upper Metric Cards Grid: Operational Queue (`Total Active Tickets`, `Unassigned Queue`) alongside User Statistics (`Total Users`, `Active Users`, `Inactive Users`).
+    - User Role Distribution Badges: Requesters, IT Staff, Administrators.
+    - Recent System Queue list and Administrative Quick Actions ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "+ Create Ticket").
+    - Drill-down: User metric cards drill down to `#/admin-users`; Unassigned Queue card drills down to `#/staff-queue?owner=unassigned`.
   - **App Shell & Navigation Updates (`App.tsx`, `Header.tsx`):**
-    - Add "Dashboard" link to Header navigation bar for all roles with active state indicator.
-    - Set Dashboard as the default landing view upon login.
+    - Add role-aware "Dashboard" link to Header navigation bar for all roles with active state indicator.
+    - Set role-appropriate Dashboard as the default landing view upon login.
     - Loading skeletons, empty states, and manual refresh controls.
   - **Automated UI Tests:**
-    - Author `client/tests/lab-04/RequesterDashboard.test.tsx` (metrics rendering, empty state, drill-down).
+    - Author `client/tests/lab-04/RequesterDashboard.test.tsx` (metrics rendering, empty state, drill-down, quick actions).
     - Author `client/tests/lab-04/StaffDashboard.test.tsx` (cards rendering, quick actions, drill-down).
+    - Author `client/tests/lab-04/AdminDashboard.test.tsx` (operational cards, user stats, quick actions, drill-down `UI-08`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Playwright E2E browser testing (deferred to Issue 26 (#57)).
   - Final release documentation (deferred to Issue 27 (#58)).
 * **Acceptance Criteria:**
-  - [ ] Both Dashboards load authoritative metrics and handle empty/loading states gracefully.
+  - [ ] Requester, Staff, and Administrator Dashboards load authoritative metrics and handle empty/loading states gracefully.
   - [ ] Clicking any metric card drills down into the respective filtered queue/list screen.
   - [ ] Header navigation bar correctly highlights the active Dashboard tab.
   - [ ] Layout is fully responsive across Desktop, Tablet, and Mobile with zero clipping.
-  - [ ] 100% of Vitest tests in `RequesterDashboard.test.tsx` and `StaffDashboard.test.tsx` pass.
+  - [ ] 100% of Vitest tests in `RequesterDashboard.test.tsx`, `StaffDashboard.test.tsx`, and `AdminDashboard.test.tsx` pass.
 * **AI Verification Note:**
   > Verify Dashboard components, navigation routing, and Vitest test files. Do not fail verification on pending PR merge or missing Playwright E2E files.
 
@@ -200,17 +217,18 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Required branch:** `feature/lab4-6-e2e-and-responsive`
 * **In-Scope:**
   - **Playwright E2E Test Suites (`e2e/lab-04/`):**
-    - `actions-taken-flow.spec.ts`: IT Staff adding/editing Actions Taken, validation trigger, and Requester read-only verification.
+    - `actions-taken-flow.spec.ts`: IT Staff and Administrator adding/editing Actions Taken, validation trigger, and Requester read-only verification.
     - `ticket-resolution.spec.ts`: Requester advisory indication, IT Staff formal resolution, status transitions, and stale conflict handling.
-    - `dashboards.spec.ts`: Requester and IT Staff dashboard loading, metric validation against UI, and drill-down navigation.
+    - `dashboards.spec.ts`: Requester, IT Staff, and Administrator dashboard loading, metric validation against UI, Quick Actions, and drill-down navigation.
   - **Regression Testing:**
     - Execute existing Lab 1, 2, and 3 E2E test suites to guarantee zero regression on Auth, Attachments, Comments, Notes, and Admin User Management.
   - **Responsive Layout Audit:**
-    - Automated viewport check across Desktop (1280x800), Tablet (768x1024), and Mobile (375x667), asserting `scrollWidth === clientWidth` (zero horizontal overflow).
+    - Automated viewport check across Desktop (1280x800), Tablet (768x1024), and Mobile (375x667) across the four core responsive screens (Requester Dashboard, IT Staff Dashboard, Administrator Dashboard, Ticket Detail), asserting `scrollWidth === clientWidth` (zero horizontal overflow).
   - **Screenshot Artifacts Generation:**
     - Capture and save structured screenshots into `artifacts/lab-04/screenshots/`:
       - `staff-dashboard/`
       - `requester-dashboard/`
+      - `admin-dashboard/`
       - `actions-taken/`
 * **Out-of-Scope & Deferred Dependencies:**
   - Final PDF compiling and report submission (deferred to Issue 27 (#58)).
@@ -229,7 +247,7 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Required branch:** `docs/lab4-documentation`
 * **In-Scope:**
   - **Peer Review Record (`docs/lab-04/reviewer.md`):**
-    - Document all PRs (#51 to #58), review comments from peer reviewer, developer responses, fixes applied, and final approvals.
+    - Document all Pull Requests for Sprint 4 (PR #59 for Issue #51, and PRs for Issues #52 through #58), review comments from peer reviewer, developer responses, fixes applied, and final approvals.
     - Document reciprocal review feedback for partner.
   - **AI Usage Log & Reflection (`docs/lab-04/ai-use.md`):**
     - Record LLM model used (Antigravity AI / Gemini 3.8 Flash).

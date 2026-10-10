@@ -9,7 +9,7 @@
 
 | PR | Branch | Scope / Feature | Verdict | Target Branch |
 |:---|:---|:---|:---|:---|
-| [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Revisions Applied** | `lab4-staging` |
+| [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Revisions Applied (Cycle 2 Alignment Complete)** | `lab4-staging` |
 | [PR #52](https://github.com/Phenwatsa/toktickit/pull/52) | `feature/lab4-1-actions-taken-foundation` | Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API | **Planned** | `lab4-staging` |
 | [PR #53](https://github.com/Phenwatsa/toktickit/pull/53) | `feature/lab4-2-ticket-workflow-enforcement` | Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement) | **Planned** | `lab4-staging` |
 | [PR #54](https://github.com/Phenwatsa/toktickit/pull/54) | `feature/lab4-3-actions-taken-ui` | Issue 23 (#54): Actions Taken UI & Ticket Detail Integration (Frontend) | **Planned** | `lab4-staging` |
@@ -36,9 +36,15 @@
   - **Authentication reconciliation**: Reconciled and documented in `api-spec.md` Section 1.1 confirming complete compatibility with Lab 3 JWT Bearer auth (`userId`, `role`, `tokenVersion`, and `mustChangePassword` enforced via `requireAuth`).
   - **Discrete Acceptance Criteria & Traceability**: Separated shared ACs into discrete criteria (`AC-15a` Requester drill-down, `AC-15b` Staff drill-down, `AC-19a` Admin dashboard metrics 200, `AC-19b` Non-admin 403 rejection) and aligned `AC-04` with `UI-03` for frontend read-only presentation.
   - **Follow-up Note validation length**: Aligned `ui-spec.md` Section 3.3 and `specification.md` to explicitly enforce the 3 non-whitespace character minimum length with matching error feedback across API, UI, and test suites.
-  - **Concurrency protection scope**: Clarified in `specification.md` Section 7.2 and `api-spec.md` Section 3 that mandatory `expectedUpdatedAt` optimistic concurrency applies strictly to Ticket Workflow Status Transitions (`PATCH /api/staff/tickets/:id/status`), while Actions Taken function as append-friendly chronological audit logs tracked via Prisma `@updatedAt`.
+  - **Concurrency protection scope**: Clarified in `specification.md` Section 7.2 and `api-spec.md` Section 3 that mandatory `expectedUpdatedAt` optimistic concurrency applies strictly to Ticket Workflow Status Transitions (`PATCH /api/staff/tickets/:id/status`), while Actions Taken function as append-friendly chronological activity logs tracked via Prisma `@updatedAt`.
   - **Migration recovery & seed coverage**: Documented the rollback/recovery strategy in `specification.md` Section 7.3 and added a comprehensive Seed Scenario Mapping Matrix covering all 8 statuses, 4 priorities, assignment states, action multiplicity (0, 1, multiple), and dashboard zero/non-zero metrics linked to planned tests.
-* **Verdict:** **Revisions Applied (Ready for Final Approval)**
+* **Review Cycle 2 — Cross-Document Consistency Review & Harmonization:**
+  - **Role Authorization Symmetry**: Reconciled Administrator and IT Staff permissions across `specification.md` (§1, §2, §4.1, FR-02/05/09/14), `ui-spec.md` (§3.2, §3.3, §4.3), and `issues-plan.md` (Issues 21–25) ensuring both roles are authorized to create/edit Actions Taken and execute ticket status transitions.
+  - **Ticket Scoping Invariant**: Enforced backend ticket scoping check on `PATCH /api/tickets/:id/actions/:actionId` returning `HTTP 404 Not Found` (`NOT_FOUND`) if `actionId` does not belong to `:id`.
+  - **Optimistic Concurrency 3 Failure Cases**: Rigorously documented the three distinct failure outcomes on `PATCH /api/staff/tickets/:id/status`: missing timestamp (400), malformed ISO date string (400), and stale timestamp conflict (409) across `specification.md` (BR-10, AC-10, AC-11), `api-spec.md` (§3.1), and `tests.md` (`API-07`, `API-08`).
+  - **Terminal CANCELLED Ticket Immutability**: Formalized rejection of POST/PATCH actions and status transitions on `CANCELLED` tickets with `HTTP 400 Bad Request` (`TICKET_CANCELLED`), mapped to new criterion `AC-23` and automated test `API-14` (bringing planned test suites to 42 total).
+  - **Standardized Error Formatting & Envelopes**: Cleaned validation error messages to eliminate trailing punctuation, added full JSON error response envelopes to all endpoints in `api-spec.md` (§3.2, §4.3), and documented UTC ISO-8601 timestamp conversion conventions.
+* **Verdict:** **Revisions Applied (Addressing Peer Review Consistency Observations — Ready for Approval)**
 
 ---
 

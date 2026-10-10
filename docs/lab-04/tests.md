@@ -16,7 +16,8 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    - `dashboard-calculator.unit.test.ts` (`UNIT-04`): Validates aggregation logic for metric counts.
 2. **API & Database Integration Tests (`server/tests/lab-04/`)**:
    Supertest suites asserting HTTP status codes, request validation, database interactions, RBAC isolation, schema rollback, and seed integrity:
-   - `actions-taken.api.test.ts`: Tests CRUD endpoints, auto-performer attribution, and cross-user isolation for both `IT_STAFF` and `ADMINISTRATOR` roles (`API-01`–`API-06`).
+   - `actions-taken.api.test.ts`: Tests CRUD endpoints, auto-performer attribution, ticket scoping check (404 on cross-ticket patch), rejection of actions on CANCELLED tickets (`API-14`), and cross-user isolation for both `IT_STAFF` and `ADMINISTRATOR` roles (`API-01`–`API-06`, `API-14`).
+   - `ticket-workflow.api.test.ts`: Tests status transitions, optimistic concurrency validation (missing/malformed ISO returns 400 `API-07`, stale timestamp returns 409 `API-08`), and rejection of status transitions on CANCELLED tickets (`API-14`).
    - `requester-dashboard.api.test.ts`: Tests Requester metrics calculation and strict tenant isolation (`API-09`).
    - `staff-dashboard.api.test.ts`: Tests Staff queue metrics, status breakdowns, priority breakdowns, Admin operational & user metrics (`API-12`), and non-permitted 403 rejections (`API-11`, `API-13`).
    - `migration-recovery.test.ts` (`MIG-01`): Tests physical schema teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`), Prisma migration history synchronization (`npx prisma migrate resolve --rolled-back`), legacy schema/data preservation, and subsequent forward re-application via `npx prisma migrate deploy` (`AC-21`).
@@ -32,12 +33,12 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    - `TicketWorkflow.test.tsx`: Tests status transition controls, resolution feedback, and 409 conflict alert handling (`UI-04`).
    - `RequesterDashboard.test.tsx`: Tests metric cards rendering, empty state, drill-down triggers, and Requester Quick Actions (`UI-05`, `UI-07a`).
    - `StaffDashboard.test.tsx`: Tests 5 primary cards, 8-status breakdown, priority badges, drill-down routing, and Staff Quick Actions (`UI-06`, `UI-07b`).
-   - `AdminDashboard.test.tsx`: Tests Admin dashboard overview rendering, user account statistics, and User Management navigation (`UI-08`).
+   - `AdminDashboard.test.tsx`: Tests Admin dashboard overview rendering, user account statistics, Quick Actions ("User Management", "Ticket Queue", "Create Ticket"), and Recent Queue overview list (`UI-08`).
 5. **End-to-End Playwright Tests (`e2e/lab-04/`)**:
    Full browser workflows executed under real session cookies/tokens:
    - `actions-taken-flow.spec.ts`: End-to-end recording of actions by staff and administrator, editing, and requester read-only audit (`E2E-01`).
    - `ticket-resolution.spec.ts`: Requester advisory resolution $\to$ IT Staff / Administrator formal review $\to$ official `RESOLVED` status transition (`E2E-02`).
-   - `dashboards.spec.ts`: Live dashboard metric counts verification against database records, drill-down navigation, Quick Actions, and responsive audits (`E2E-03a`, `E2E-03b`, `E2E-04`).
+   - `dashboards.spec.ts`: Live dashboard metric counts verification against database records, drill-down navigation, Quick Actions across Requester, Staff, and Admin, and responsive audits across the four core responsive screens (`E2E-03a`, `E2E-03b`, `E2E-04`).
 6. **Regression Tests**:
    Continuous test runs ensuring that legacy features from Labs 1–3 remain functional with zero regressions across:
    - `REG-01` (Server Regression): All server API and unit test suites across Labs 1, 2, and 3 (`server/tests/lab-01/*`, `server/tests/lab-02/*`, `server/tests/lab-03/*`).
@@ -56,7 +57,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-03** | BR-03 | **AC-01** | `API-01` | API | Performer auto-attribution from session (Staff & Admin) | `performedById` matches authenticated user ID for both roles | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-04** | BR-04 | **AC-02** | `UNIT-01`| Unit | Follow-up note validator logic (empty, whitespace, < 3 chars, $\ge 3$ chars) | Returns false for empty/whitespace or < 3 non-whitespace chars; returns true for $\ge 3$ non-whitespace chars | `server/tests/lab-04/unit/follow-up-validation.unit.test.ts` | Planned |
 | **FR-04** | BR-04 | **AC-02** | `API-02` | API | Conditional validation on Action creation & update | 400 Bad Request with "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed" when blank, whitespace, or < 3 chars; 201/200 when $\ge 3$ chars | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| **FR-05** | BR-01, BR-02 | **AC-06** | `API-06` | API | IT Staff and Administrator update existing Action Taken | Returns 200 with updated fields & timestamp for both roles | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| **FR-05** | BR-01, BR-02 | **AC-06** | `API-06` | API | IT Staff and Administrator update Action Taken; verify cross-ticket 404 scoping | Returns 200 with updated fields for valid update; returns 404 Not Found if action belongs to another ticket | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-06** | BR-06 | **AC-03** | `API-03a`| API | Requester Action creation blocked | 403 Forbidden returned | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-06** | BR-06 | **AC-03** | `API-03b`| API | Requester Action modification blocked | 403 Forbidden returned | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-07** | BR-08 | **AC-07** | `WF-01`  | Workflow | Resolution gate: Requester cannot resolve/close | Requester calling resolve/close rejected (403); IT Staff and Administrator permitted | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
@@ -64,12 +65,13 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-09** | BR-07 | **AC-09** | `UNIT-02`| Unit | 8-status transition matrix validator | Validates all valid/invalid state hops | `server/tests/lab-04/unit/status-transition-matrix.unit.test.ts` | Planned |
 | **FR-09** | BR-07 | **AC-09** | `WF-03`  | Workflow | Multi-step lifecycle status flow | Transitions sequentially through valid states | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **FR-10** | BR-10 | **AC-10** | `UNIT-03`| Unit | Optimistic concurrency comparator | Flags missing or mismatched timestamp | `server/tests/lab-04/unit/concurrency-check.unit.test.ts` | Planned |
-| **FR-10** | BR-10 | **AC-10** | `API-07` | API | Missing `expectedUpdatedAt` rejection | 400 Bad Request with validation details | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-10** | BR-10 | **AC-10** | `API-07` | API | Missing or malformed `expectedUpdatedAt` rejection | 400 Bad Request (`VALIDATION_ERROR`) on missing or malformed ISO date string | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **FR-10** | BR-10 | **AC-11** | `API-08` | API | Stale update detection & conflict | 409 Conflict with `currentUpdatedAt` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **FR-11** | BR-12, BR-13 | **AC-12**| `UNIT-04`| Unit | Requester metrics calculator logic | Computes all 5 distinct metric formulas | `server/tests/lab-04/unit/dashboard-calculator.unit.test.ts` | Planned |
 | **FR-11** | BR-13 | **AC-12** | `API-09` | API | Requester dashboard metrics isolation | Returns 200 with 5 metrics for owned tickets | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| **FR-12** | BR-14 | **AC-13** | `API-10` | API | Staff dashboard queue metrics & byStatus | Returns 200 with 5 primary cards & all 8 statuses | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| **FR-12** | BR-14 | **AC-13** | `API-10` | API | Staff dashboard queue metrics, breakdowns & recent queue | Returns 200 with 5 primary cards, `unassignedTickets`, 8 statuses `byStatus`, 4 priorities `byPriority`, and `recentTickets` | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | **FR-12** | Matrix | **AC-14** | `API-11` | API | Requester blocked from staff dashboard | 403 Forbidden returned | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| **FR-02, FR-05, FR-09** | BR-11 | **AC-23** | `API-14` | API | Reject modifications and status transitions on CANCELLED ticket | Returns 400 Bad Request (`TICKET_CANCELLED`) when attempting to create/update actions or change status on cancelled ticket | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **FR-02** | BR-03 | **AC-01** | `UI-01a` | UI | Actions Taken list & create modal (Staff & Admin) | Form submits and list updates with new action item for both roles | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
 | **FR-05** | BR-01 | **AC-06** | `UI-01b` | UI | Actions Taken edit form & state update (Staff & Admin) | Existing action updated with edited content for both roles | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
 | **FR-04** | BR-04 | **AC-02** | `UI-02`  | UI | Follow-up note UI inline validation (empty, whitespace, < 3 chars, $\ge 3$ chars) | Blocks submit and displays "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed" on blank/whitespace/< 3 chars; permits submit on $\ge 3$ chars | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
@@ -82,16 +84,16 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-01, FR-02, FR-05, FR-06** | BR-01..03, BR-05..06 | **AC-01, AC-03, AC-04, AC-06** | `E2E-01` | E2E | Actions Taken complete cross-role workflow (Staff & Admin create/edit, Requester read-only audit) | Staff and Admin create/edit action; Requester views in chronological order with zero edit controls | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
 | **FR-07** | BR-08, BR-09 | **AC-07**| `E2E-02` | E2E | Resolution gate lifecycle E2E | Requester advises; Staff and Administrator formally resolve | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
 | **FR-13** | BR-15 | **AC-15a, AC-15b** | `E2E-03a`| E2E | Dashboards drill-down navigation E2E | Live cards filter queues seamlessly in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| **FR-14** | BR-13, BR-14 | **AC-16** | `E2E-03b`| E2E | Cross-role Dashboard Quick Actions browser interaction (Requester & Staff) | Shortcut actions for both Requester and Staff navigate seamlessly to target views in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **FR-14** | BR-13, BR-14, BR-17 | **AC-16** | `E2E-03b`| E2E | Cross-role Dashboard Quick Actions browser interaction (Requester, Staff, Admin) | Shortcut actions for Requester, IT Staff, and Administrator navigate seamlessly to target views in browser | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | **FR-15** | BR-17 | **AC-19a**| `API-12` | API | Admin dashboard operational & user distribution metrics | Returns 200 with operational summary and accurate user stats | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | **FR-15** | Matrix | **AC-19b**| `API-13` | API | Non-admin blocked from admin dashboard | Returns 403 Forbidden for Requester and IT Staff | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| **FR-15, FR-17** | BR-17 | **AC-20** | `UI-08`  | UI | Admin dashboard overview rendering & user navigation | Renders operational tiles, user distribution stats, and User Management link | `client/tests/lab-04/AdminDashboard.test.tsx` | Planned |
-| **FR-17** | Handout §8.6, §7| **AC-17** | `E2E-04` | E2E | Responsive layout, overlap, clipping, and Zen Green token audit | Zero horizontal overflow (scrollWidth === clientWidth), zero control collisions/clipping, and Zen Green tokens verified | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| **FR-14, FR-15, FR-17** | BR-17 | **AC-16, AC-20** | `UI-08`  | UI | Admin dashboard overview, statistics & Quick Actions | Renders operational cards, user distribution stats, administrative Quick Actions (User Management, Ticket Queue, Create Ticket), and Recent Queue list | `client/tests/lab-04/AdminDashboard.test.tsx` | Planned |
+| **FR-17** | Handout §8.6, §7| **AC-17** | `E2E-04` | E2E | Responsive layout, overlap, clipping, and Zen Green token audit across 4 core screens | Zero horizontal overflow (scrollWidth === clientWidth), zero control collisions/clipping, and Zen Green tokens verified across Desktop, Tablet, and Mobile for Requester, Staff, Admin dashboards and Ticket Detail | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | **FR-16** | Handout §8.5| **AC-18** | `REG-01` | Regression (Server) | Labs 1–3 Server API & Unit regression suites | 100% of previous server test suites pass without regression | `server/tests/lab-01/*`, `server/tests/lab-02/*`, `server/tests/lab-03/*` | Planned |
 | **FR-16** | Handout §8.5| **AC-18** | `REG-02` | Regression (Client) | Labs 1–3 Client UI component regression suites | 100% of previous client test suites pass without regression | `client/tests/lab-01/*`, `client/tests/lab-02/*`, `client/tests/lab-03/*` | Planned |
 | **FR-16** | Handout §8.5| **AC-18** | `REG-03` | Regression (E2E) | Labs 2–3 Full-stack E2E workflow regression suites | 100% of previous Playwright E2E suites pass without regression | `e2e/lab-02/*`, `e2e/lab-03/*` | Planned |
 | **Migration** | Handout §5.2 | **AC-21** | `MIG-01` | Integration / DB | Migration rollback & legacy table integrity recovery | Executes physical teardown (`DROP TABLE IF EXISTS "ActionTaken" CASCADE;`), synchronizes history (`prisma migrate resolve --rolled-back`), confirms legacy tables/data remain 100% intact, and verifies forward `migrate deploy` reapplies cleanly | `server/tests/lab-04/migration-recovery.test.ts` | Planned |
-| **Seed** | Handout §5.3 | **AC-22** | `SEED-01` | Integration / DB | Idempotent seed data 5-dimension verification | Executes `seed.ts` consecutively (run 1 & run 2); confirms zero duplicate key collisions, invariant record counts, and directly asserts presence of all 8 statuses, 4 priorities, assigned/unassigned tickets, 0/1/multiple Actions Taken, and zero/non-zero dashboard metrics | `server/tests/lab-04/seed-data.test.ts` | Planned |
+| **Seed** | Handout §5.3 | **AC-22** | `SEED-01` | Integration / DB | Idempotent seed data 5 scenario dimensions plus repeated-run verification | Executes `seed.ts` consecutively (run 1 & run 2); confirms zero duplicate key collisions, invariant record counts, and directly asserts presence of all 8 statuses, 4 priorities, assigned/unassigned tickets, 0/1/multiple Actions Taken, and zero/non-zero dashboard metrics | `server/tests/lab-04/seed-data.test.ts` | Planned |
 
 ---
 
@@ -104,8 +106,8 @@ server/tests/lab-04/
 │   ├── status-transition-matrix.unit.test.ts  # UNIT-02
 │   ├── concurrency-check.unit.test.ts         # UNIT-03
 │   └── dashboard-calculator.unit.test.ts      # UNIT-04
-├── actions-taken.api.test.ts                  # API-01, API-02, API-03a, API-03b, API-04, API-05, API-06
-├── ticket-workflow.api.test.ts                # WF-01, WF-02, WF-03, API-07, API-08
+├── actions-taken.api.test.ts                  # API-01, API-02, API-03a, API-03b, API-04, API-05, API-06, API-14
+├── ticket-workflow.api.test.ts                # WF-01, WF-02, WF-03, API-07, API-08, API-14
 ├── requester-dashboard.api.test.ts            # API-09
 ├── staff-dashboard.api.test.ts                # API-10, API-11, API-12, API-13
 ├── migration-recovery.test.ts                 # MIG-01
@@ -126,6 +128,19 @@ e2e/lab-04/
 
 ---
 
-## 4. Test Execution Summary Log (To be updated upon test execution)
+## 4. Test Suites Summary & Execution Log
+
+### Planned Test Suite Breakdown (42 Total Planned Tests)
+
+| Test Category | Test Count | Test IDs | Primary Test Files |
+| :--- | :---: | :--- | :--- |
+| **Unit Tests** | 4 | `UNIT-01` to `UNIT-04` | `follow-up-validation`, `status-transition-matrix`, `concurrency-check`, `dashboard-calculator` |
+| **API Integration Tests** | 15 | `API-01` to `API-14` (`API-03a`, `API-03b`) | `actions-taken.api.test.ts`, `requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts`, `ticket-workflow.api.test.ts` |
+| **DB & Migration Tests** | 2 | `MIG-01`, `SEED-01` | `migration-recovery.test.ts`, `seed-data.test.ts` |
+| **Workflow Tests** | 3 | `WF-01`, `WF-02`, `WF-03` | `ticket-workflow.api.test.ts` |
+| **UI Component Tests** | 10 | `UI-01a` to `UI-08` (`UI-01a`, `UI-01b`, `UI-07a`, `UI-07b`) | `ActionsTaken`, `TicketWorkflow`, `RequesterDashboard`, `StaffDashboard`, `AdminDashboard` |
+| **E2E Playwright Tests** | 5 | `E2E-01` to `E2E-04` (`E2E-03a`, `E2E-03b`) | `actions-taken-flow.spec.ts`, `ticket-resolution.spec.ts`, `dashboards.spec.ts` |
+| **Regression Suites** | 3 | `REG-01`, `REG-02`, `REG-03` | Server regression (`REG-01`), Client regression (`REG-02`), E2E regression (`REG-03`) |
+| **Total** | **42** | | Across all 6 testing levels |
 
 *Test execution results will be recorded progressively during implementation issues and finalized prior to release.*

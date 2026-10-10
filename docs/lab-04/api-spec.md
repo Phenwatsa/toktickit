@@ -112,8 +112,8 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 - **Validation Rules**:
   - `actionDescription`: String, 5–2000 characters (required).
   - `result`: String, 3–2000 characters (required).
-  - `actionDateTime`: Valid ISO date string (optional, defaults to server current time).
-  - `isFollowUpRequired`: Boolean (required, default `false`).
+  - `actionDateTime`: Valid ISO-8601 UTC date string (`YYYY-MM-DDTHH:mm:ss.sssZ`) (optional, defaults to server current UTC timestamp).
+  - `isFollowUpRequired`: Boolean (optional, default `false`).
   - `followUpNote`: String, **strictly required** when `isFollowUpRequired === true` (minimum 3 non-whitespace characters; values that are empty, whitespace-only, or under 3 non-whitespace characters are rejected); optional or null when `false`.
   - `attachmentNotes`: String, max 500 characters (optional).
   - `performedById`: **Auto-populated** from authenticated session user ID (`req.user.id`). Any client-supplied performer ID is ignored.
@@ -152,6 +152,10 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       ]
     }
     ```
+  - `400 Bad Request` (Ticket cancelled):
+    ```json
+    { "error": "Cannot add Actions Taken to a cancelled ticket", "code": "TICKET_CANCELLED", "details": [] }
+    ```
   - `401 Unauthorized`:
     ```json
     { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
@@ -173,6 +177,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 - **Path Parameters**:
   - `id`: Ticket ID (integer)
   - `actionId`: Action Taken ID (integer)
+  - **Ticket Scoping Invariant**: The backend verifies that `action.ticketId === :id`. If `actionId` does not exist or does not belong to ticket `:id`, the backend returns `404 Not Found` (`NOT_FOUND`) with message `"Action Taken record not found under this ticket"`.
 - **Request Body**:
   ```json
   {
@@ -187,7 +192,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   - `actionDescription`: String, 5–2000 characters (optional on update).
   - `result`: String, 3–2000 characters (optional on update).
   - `isFollowUpRequired`: Boolean (optional on update).
-  - `followUpNote`: String, strictly required when `isFollowUpRequired === true` (minimum 3 non-whitespace characters; values that are empty, whitespace-only, or under 3 non-whitespace characters are rejected); optional or null when `false`.
+  - `followUpNote`: String (optional on update). Evaluated against effective state: if resulting `isFollowUpRequired === true`, `followUpNote` must contain at least 3 non-whitespace characters; if `isFollowUpRequired === false`, `followUpNote` may be null or cleared.
   - `attachmentNotes`: String, max 500 characters (optional on update).
 - **Response**: `200 OK`
   ```json
@@ -222,6 +227,10 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       ]
     }
     ```
+  - `400 Bad Request` (Ticket cancelled):
+    ```json
+    { "error": "Cannot modify Actions Taken on a cancelled ticket", "code": "TICKET_CANCELLED", "details": [] }
+    ```
   - `401 Unauthorized`:
     ```json
     { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
@@ -232,7 +241,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `404 Not Found`:
     ```json
-    { "error": "Action Taken record not found", "code": "NOT_FOUND", "details": [] }
+    { "error": "Action Taken record not found under this ticket", "code": "NOT_FOUND", "details": [] }
     ```
 
 ---
@@ -260,9 +269,11 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   - Must satisfy the Permitted 8-Status Transition Matrix (BR-07).
   - **Resolution Gate**: Only `IT_STAFF` or `ADMINISTRATOR` can invoke this endpoint to transition to `RESOLVED` or `CLOSED`. Requesters are blocked with `403 Forbidden`.
   - **Mandatory Optimistic Concurrency Check**:
-    - `expectedUpdatedAt`: ISO 8601 string, **strictly required**.
-    - If `expectedUpdatedAt` is missing, returns `400 Bad Request` (`VALIDATION_ERROR`).
-    - If `new Date(expectedUpdatedAt).getTime() !== new Date(ticket.updatedAt).getTime()`, returns `409 Conflict` (`STALE_UPDATE_CONFLICT`) with current timestamp.
+    - `expectedUpdatedAt`: ISO-8601 UTC string, **strictly required**.
+    - Evaluates 3 distinct concurrency scenarios:
+      1. **Missing**: If `expectedUpdatedAt` is omitted, null, or empty, returns `400 Bad Request` (`VALIDATION_ERROR`).
+      2. **Malformed**: If `expectedUpdatedAt` is not a valid ISO-8601 date string, returns `400 Bad Request` (`VALIDATION_ERROR`).
+      3. **Stale/Mismatched**: If `new Date(expectedUpdatedAt).getTime() !== new Date(ticket.updatedAt).getTime()`, returns `409 Conflict` (`STALE_UPDATE_CONFLICT`) with current timestamp.
 - **Response**: `200 OK`
   ```json
   {
@@ -285,6 +296,19 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       ]
     }
     ```
+  - `400 Bad Request` (Malformed expectedUpdatedAt):
+    ```json
+    {
+      "error": "Validation failed",
+      "code": "VALIDATION_ERROR",
+      "details": [
+        {
+          "field": "expectedUpdatedAt",
+          "message": "expectedUpdatedAt must be a valid ISO-8601 UTC date string."
+        }
+      ]
+    }
+    ```
   - `400 Bad Request` (Invalid status transition):
     ```json
     {
@@ -292,6 +316,10 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
       "code": "INVALID_TRANSITION",
       "details": []
     }
+    ```
+  - `400 Bad Request` (Ticket cancelled):
+    ```json
+    { "error": "Cannot transition status of a cancelled ticket", "code": "TICKET_CANCELLED", "details": [] }
     ```
   - `401 Unauthorized`:
     ```json
@@ -335,9 +363,18 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   }
   ```
 - **Error Responses**:
-  - `401 Unauthorized`: Not logged in.
-  - `403 Forbidden`: User does not own this ticket or is not a Requester.
-  - `404 Not Found`: Ticket not found.
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (User does not own ticket or is not Requester):
+    ```json
+    { "error": "Access denied. Only the ticket requester can indicate resolution.", "code": "FORBIDDEN", "details": [] }
+    ```
+  - `404 Not Found`:
+    ```json
+    { "error": "Ticket not found", "code": "NOT_FOUND", "details": [] }
+    ```
 
 ---
 
@@ -482,5 +519,11 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   }
   ```
 - **Error Responses**:
-  - `401 Unauthorized`: Unauthenticated.
-  - `403 Forbidden`: Non-administrator user.
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Non-administrator user):
+    ```json
+    { "error": "Access denied. Only Administrators can access the Administrator Dashboard.", "code": "FORBIDDEN", "details": [] }
+    ```
