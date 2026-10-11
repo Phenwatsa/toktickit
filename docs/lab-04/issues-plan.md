@@ -44,7 +44,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - Preserve backward compatibility: existing tickets without Actions Taken remain completely valid.
   - **Migration Deployment & Rollback Recovery Tests (`server/tests/lab-04/migration-recovery.test.ts`):**
     - `MIG-01`: Verify clean migration deployment via `npx prisma migrate deploy` on an isolated test database with preceding baseline migrations recorded as applied, confirming 100% legacy data preservation and schema integrity (`AC-21`).
-    - `MIG-02`: Simulate migration failure recovery via `npx prisma migrate resolve --rolled-back` and confirm clean re-application without schema corruption (`AC-21`).
+    - `MIG-02`: Simulate migration failure recovery via schema inspection, compensatory cleanup (e.g. `DROP TABLE IF EXISTS "ActionTaken" CASCADE;` restoring clean baseline state), resolving via `npx prisma migrate resolve --rolled-back`, and confirming clean re-application without schema corruption (`AC-21`).
   - **Idempotent Seed Data (`server/prisma/seed.ts` & `server/tests/lab-04/seed-data.test.ts`):**
     - Seed tickets covering all 5 required dimensions: all 8 lifecycle statuses, 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, and zero/non-zero dashboard metric profiles (`SEED-01`, `AC-22`).
     - Include cases where Actions Taken are performed by the Ticket Owner as well as other IT Staff members.
@@ -63,7 +63,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - Dashboard aggregation APIs (deferred to Issue 24 (#55)).
 * **Acceptance Criteria:**
   - [ ] Prisma migration executes cleanly without losing data from earlier labs (`AC-21`, `MIG-01`).
-  - [ ] Migration rollback recovery simulation resolves cleanly via `prisma migrate resolve --rolled-back` (`AC-21`, `MIG-02`).
+  - [ ] Migration rollback recovery simulation resolves cleanly via schema rollback cleanup and `prisma migrate resolve --rolled-back` (`AC-21`, `MIG-02`).
   - [ ] Seed script runs idempotently across 2 consecutive runs and populates all 5 required scenario dimensions (`AC-22`, `SEED-01`).
   - [ ] Requesters are blocked from creating or modifying Actions Taken (HTTP 403 Forbidden); IT Staff and Administrators are permitted (`AC-03`, `API-03a/b`).
   - [ ] Submitting an Action Taken with `isFollowUpRequired = true` without a note (< 3 non-whitespace characters) returns HTTP 400 validation error (`AC-02`, `API-02`).
@@ -99,7 +99,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - Stale timestamp mismatch returns HTTP 409 (`STALE_UPDATE_CONFLICT`, `API-08`, `AC-11`) with `currentUpdatedAt`.
   - **Automated Backend Tests:**
     - Author and execute `server/tests/lab-04/unit/follow-up-validation.unit.test.ts` (`UNIT-01`), `status-transition-matrix.unit.test.ts` (`UNIT-02`), and `concurrency-check.unit.test.ts` (`UNIT-03`).
-    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions (`WF-03`), resolution gate security (`WF-01`), advisory resolution (`WF-02`), missing/malformed timestamp rejection (`API-07`), stale conflict handling (`API-08`), cancelled ticket rejection (`API-14b`), and inactive assignee rejection (`API-15`).
+    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions (`WF-03`), resolution gate security (`WF-01`), advisory resolution (`WF-02`), missing/malformed timestamp rejection (`API-07`), stale conflict handling (`API-08`), cancelled ticket rejection (`API-14b`), inactive assignee rejection (`API-15`), and Administrator supervisory ticket queue retrieval and status transition execution (`API-10b`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Frontend status dropdown adjustments (deferred to Issue 23 (#54)).
   - Dashboard metric calculations (deferred to Issue 24 (#55)).
@@ -107,6 +107,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - [ ] Direct API attempts by Requesters to set status to `RESOLVED` or `CLOSED` are strictly blocked (HTTP 403); IT Staff and Administrators are permitted (`AC-07`, `WF-01`).
   - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400 (`AC-09`, `UNIT-02`, `WF-03`).
   - [ ] Ticket reassignment to inactive or non-IT Staff targets returns HTTP 400 Bad Request (`INVALID_OWNER`, `AC-25`, `API-15`).
+  - [ ] Administrator possesses authorized supervisory access to retrieve the Staff Ticket Queue (`GET /api/staff/tickets`) and execute ticket status transitions (`PATCH /api/staff/tickets/:id/status`) (`API-10b`).
   - [ ] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`, `AC-10`, `API-07`).
   - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes (`AC-11`, `API-08`).
   - [ ] Attempting to transition status or indicate resolution on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`, `API-14b`).
@@ -163,7 +164,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - Restricted to authenticated Requester; isolated strictly to `req.user.id`.
     - Returns: `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets` (all resolved tickets owned by requester without date filtering), `closedTickets`, and `recentTickets` list (up to 5 items) (`AC-12`, `API-09`).
   - **IT Staff Dashboard Endpoint (`GET /api/staff/dashboard`):**
-    - Restricted strictly to `IT_STAFF` (`API-10a`, `AC-13`). Administrators and Requesters are blocked with HTTP 403 Forbidden (`API-11`, `AC-14`).
+    - Restricted strictly to `IT_STAFF` (`API-10`, `AC-13`). Administrators and Requesters are blocked with HTTP 403 Forbidden (`API-11`, `AC-14`).
     - Returns: 5 primary cards (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets` scoped to current staff user), workload indicators (`unassignedTickets`), full 8-status breakdown (`byStatus`), 4-priority breakdown (`byPriority`), and `recentTickets`.
   - **Admin Dashboard Endpoint (`GET /api/admin/dashboard`):**
     - Restricted strictly to `ADMINISTRATOR` (`API-12`, `AC-19a`). Requesters and IT Staff receive HTTP 403 Forbidden (`API-13`, `AC-19b`).
@@ -173,14 +174,14 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Automated Backend Tests:**
     - `server/tests/lab-04/unit/dashboard-calculator.unit.test.ts` (`UNIT-04`).
     - `server/tests/lab-04/requester-dashboard.api.test.ts` (`API-09`).
-    - `server/tests/lab-04/staff-dashboard.api.test.ts` (`API-10a`, `API-10b`, `API-11`, `API-12`, `API-13`).
+    - `server/tests/lab-04/staff-dashboard.api.test.ts` (`API-10`, `API-11`, `API-12`, `API-13`).
     - `server/tests/lab-04/performance-smoke.test.ts` (`PERF-SMOKE-01`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Client-side Dashboard UI rendering (deferred to Issue 25 (#56)).
   - Playwright E2E browser verification (deferred to Issue 26 (#57)).
 * **Acceptance Criteria:**
   - [ ] Requester dashboard metrics match database counts and never expose tickets belonging to other users (`AC-12`, `API-09`).
-  - [ ] IT Staff users receive HTTP 200 OK with accurate counts for primary cards (including `myAssignedTickets` scoped to staff user), unassigned queue, 8-status distribution, priorities, and recent queue tickets on `GET /api/staff/dashboard` (`AC-13`, `API-10a`).
+  - [ ] IT Staff users receive HTTP 200 OK with accurate counts for primary cards (including `myAssignedTickets` scoped to staff user), unassigned queue, 8-status distribution, priorities, and recent queue tickets on `GET /api/staff/dashboard` (`AC-13`, `API-10`).
   - [ ] Administrator dashboard endpoint returns accurate operational queue, user account distribution metrics, and recent system tickets (`AC-19a`, `API-12`).
   - [ ] Non-permitted roles receive HTTP 403 Forbidden on role-restricted dashboard endpoints (`AC-14`, `AC-19b`, `API-11`, `API-13`).
   - [ ] Performance smoke benchmarks verify response latency under thresholds (< 300ms dashboard, < 200ms actions list) (`PERF-SMOKE-01`).

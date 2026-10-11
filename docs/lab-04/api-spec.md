@@ -442,6 +442,54 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 
 ---
 
+### 3.4 Staff Ticket Queue Retrieval & Supervisory Oversight
+- **Endpoint**: `GET /api/staff/tickets`
+- **Authorized Roles**: `IT_STAFF`, `ADMINISTRATOR`
+- **Description**: Retrieves paginated tickets from the system queue with filtering (status, priority, ownerId, search), sorting, and pagination. Frontline IT Staff use this queue for day-to-day ticket handling; Administrators possess supervisory read access for operational queue oversight.
+- **Query Parameters**:
+  - `status`: String, optional (e.g. `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`).
+  - `priority`: String, optional (`LOW`, `MEDIUM`, `HIGH`, `URGENT`).
+  - `ownerId`: String/Number, optional (numeric staff ID, `'unassigned'`, or `'all'`).
+  - `search`: String, optional (keyword match on ticket number, title, or description).
+  - `page`: Integer, optional (default `1`).
+  - `pageSize`: Integer, optional (default `10`, max `100`).
+  - `sortBy`: String, optional (`createdAt`, `updatedAt`, `ticketNumber`, `itPriority`).
+  - `sortOrder`: String, optional (`asc`, `desc`).
+- **Response**: `200 OK`
+  ```json
+  {
+    "totalRecords": 45,
+    "page": 1,
+    "pageSize": 10,
+    "totalPages": 5,
+    "tickets": [
+      {
+        "id": 10,
+        "ticketNumber": "TKT-2026-001230",
+        "summary": "Cannot access internal wiki",
+        "currentStatus": "IN_PROGRESS",
+        "requestedPriority": "HIGH",
+        "itPriority": "HIGH",
+        "ticketOwner": { "id": 2, "name": "Alex Taylor" },
+        "requester": { "id": 5, "name": "Charlie Brown" },
+        "createdAt": "2026-10-10T10:00:00.000Z",
+        "updatedAt": "2026-10-10T14:30:00.000Z"
+      }
+    ]
+  }
+  ```
+- **Error Responses**:
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Requester attempts queue access):
+    ```json
+    { "error": "Access denied", "code": "FORBIDDEN", "details": [] }
+    ```
+
+---
+
 ## 4. Role-Appropriate Dashboard Endpoints
 
 ### 4.1 Requester Dashboard Metrics
