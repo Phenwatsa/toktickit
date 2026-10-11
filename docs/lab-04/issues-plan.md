@@ -52,7 +52,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - `PATCH /api/tickets/:id/actions/:actionId`: Update Action Taken details (restricted to `IT_STAFF` and `ADMINISTRATOR`). Enforces ticket scoping: if `actionId` does not belong to `:id`, returns HTTP 404 (`NOT_FOUND`). Rejects requests on `CANCELLED` tickets with HTTP 400 (`TICKET_CANCELLED`).
     - Validation: Enforce `followUpNote` as mandatory (minimum 3 non-whitespace characters) when `isFollowUpRequired === true`.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/actions-taken.api.test.ts` covering creation, listing, updating, validation rules, cross-ticket scoping (404), terminal cancelled rejection (`API-14`), and role authorization rejection (403 for Requester; 201/200 for IT Staff & Admin).
+    - Author and execute `server/tests/lab-04/actions-taken.api.test.ts` covering creation, listing, updating, validation rules, cross-ticket scoping (404), terminal cancelled rejection (`API-14a`), and role authorization rejection (403 for Requester; 201/200 for IT Staff & Admin).
 * **Out-of-Scope & Deferred Dependencies:**
   - Actions Taken UI components in React (deferred to Issue 23 (#54)).
   - Status transition matrix and resolution gate enforcement (deferred to Issue 22 (#53)).
@@ -63,7 +63,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - [ ] Requesters are blocked from creating or modifying Actions Taken (HTTP 403 Forbidden); IT Staff and Administrators are permitted.
   - [ ] Submitting an Action Taken with `isFollowUpRequired = true` without a note returns HTTP 400 validation error.
   - [ ] Modifying an Action Taken belonging to another ticket returns HTTP 404 Not Found.
-  - [ ] Attempting to add or modify Actions Taken on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`).
+  - [ ] Attempting to add or modify Actions Taken on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `API-14a`).
   - [ ] 100% of tests in `server/tests/lab-04/actions-taken.api.test.ts` pass.
 * **AI Verification Note:**
   > Verify only backend migration, seed, route handlers, and `actions-taken.api.test.ts`. Do not fail verification due to missing UI elements or unmerged PR status.
@@ -87,7 +87,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - Malformed ISO-8601 timestamp returns HTTP 400 (`VALIDATION_ERROR`).
     - Stale timestamp mismatch returns HTTP 409 (`STALE_UPDATE_CONFLICT`) with `currentUpdatedAt`.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security (permitting IT Staff and Admin, blocking Requester), missing/malformed timestamp rejection (400), stale conflict handling (409), and cancelled ticket rejection (400 `TICKET_CANCELLED`, `API-14`).
+    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions, resolution gate security (permitting IT Staff and Admin, blocking Requester), missing/malformed timestamp rejection (400), stale conflict handling (409), and cancelled ticket rejection (400 `TICKET_CANCELLED`, `API-14b`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Frontend status dropdown adjustments (deferred to Issue 23 (#54)).
   - Dashboard metric calculations (deferred to Issue 24 (#55)).
@@ -96,7 +96,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400.
   - [ ] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`).
   - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes.
-  - [ ] Attempting to transition a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`).
+  - [ ] Attempting to transition status or indicate resolution on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`, `API-14b`). Pre-existing ticket operations from Labs 1–2 retain baseline behavior under regression suites.
   - [ ] 100% of tests in `server/tests/lab-04/ticket-workflow.api.test.ts` pass.
 * **AI Verification Note:**
   > Verify backend status validation and concurrency handling in `ticket-workflow.api.test.ts`. Do not fail verification due to missing frontend UI integration or unmerged PR status.
@@ -153,16 +153,17 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Database Query Optimization:**
     - Use Prisma `count()` and targeted queries to compute metrics efficiently.
   - **Automated Backend Tests:**
-    - Author and execute `server/tests/lab-04/requester-dashboard.api.test.ts` (test metric accuracy and strict user isolation).
-    - Author and execute `server/tests/lab-04/staff-dashboard.api.test.ts` (test queue metrics, Admin operational/user stats, and role restrictions).
+    - Author and execute `server/tests/lab-04/requester-dashboard.api.test.ts` (test metric accuracy and strict user isolation `API-09`).
+    - Author and execute `server/tests/lab-04/staff-dashboard.api.test.ts` (test queue metrics for IT Staff `API-10a` and Administrator `API-10b`, Admin operational/user stats `API-12`, and role restrictions `API-11`, `API-13`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Client-side Dashboard UI rendering (deferred to Issue 25 (#56)).
   - Playwright E2E browser verification (deferred to Issue 26 (#57)).
 * **Acceptance Criteria:**
-  - [ ] Requester dashboard metrics match database counts and never expose tickets belonging to other users.
-  - [ ] IT Staff and Administrator users receive HTTP 200 OK with accurate counts for primary cards, unassigned queue, 8-status distribution, and priorities on `GET /api/staff/dashboard`.
-  - [ ] Administrator dashboard endpoint returns accurate operational queue and user account distribution metrics.
-  - [ ] Non-permitted roles receive HTTP 403 Forbidden on role-restricted dashboard endpoints.
+  - [ ] Requester dashboard metrics match database counts and never expose tickets belonging to other users (`AC-12`, `API-09`).
+  - [ ] IT Staff users receive HTTP 200 OK with accurate counts for primary cards (including `myAssignedTickets` scoped to staff user), unassigned queue, 8-status distribution, priorities, and recent queue tickets on `GET /api/staff/dashboard` (`AC-13a`, `API-10a`).
+  - [ ] Administrator users receive HTTP 200 OK with accurate counts for primary cards (including `myAssignedTickets` scoped to admin user), unassigned queue, 8-status distribution, priorities, and recent queue tickets on `GET /api/staff/dashboard` (`AC-13b`, `API-10b`).
+  - [ ] Administrator dashboard endpoint returns accurate operational queue and user account distribution metrics (`AC-19a`, `API-12`).
+  - [ ] Non-permitted roles receive HTTP 403 Forbidden on role-restricted dashboard endpoints (`AC-14`, `AC-19b`, `API-11`, `API-13`).
   - [ ] 100% of tests in `requester-dashboard.api.test.ts` and `staff-dashboard.api.test.ts` pass.
 * **AI Verification Note:**
   > Verify backend dashboard routes and tests. Do not check for Dashboard UI rendering or fail due to unmerged PR status.
@@ -189,21 +190,21 @@ This document provides the definitive planning specification for GitHub Issues (
     - Upper Metric Cards Grid: Operational Queue (`Total Active Tickets`, `Unassigned Queue`) alongside User Statistics (`Total Users`, `Active Users`, `Inactive Users`).
     - User Role Distribution Badges: Requesters, IT Staff, Administrators.
     - Recent System Queue list and Administrative Quick Actions ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "Create Ticket" linking to `#/create-ticket`).
-    - Drill-down: Clicking `Total Active Tickets` navigates to `#/staff-queue`; clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`; clicking User metric cards navigates to `#/admin-users`.
+    - Drill-down: Clicking `Total Active Tickets` navigates to `#/staff-queue`; clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`; clicking User metric cards (`Total Users`, `Active Users`, `Inactive Users`) navigates to `#/admin-users`.
   - **App Shell & Navigation Updates (`App.tsx`, `Header.tsx`):**
     - Add role-aware "Dashboard" link to Header navigation bar for all roles with active state indicator.
     - Set role-appropriate Dashboard as the default landing view upon login.
     - Loading skeletons, empty states, and manual refresh controls.
   - **Automated UI Tests:**
-    - Author `client/tests/lab-04/RequesterDashboard.test.tsx` (metrics rendering, empty state, drill-down, quick actions).
-    - Author `client/tests/lab-04/StaffDashboard.test.tsx` (cards rendering, quick actions, drill-down).
-    - Author `client/tests/lab-04/AdminDashboard.test.tsx` (operational cards, user stats, quick actions, drill-down `UI-08`).
+    - Author `client/tests/lab-04/RequesterDashboard.test.tsx` (metrics rendering, empty state, drill-down, quick actions `UI-05`, `UI-07a`).
+    - Author `client/tests/lab-04/StaffDashboard.test.tsx` (cards rendering, quick actions, drill-down `UI-06`, `UI-07b`).
+    - Author `client/tests/lab-04/AdminDashboard.test.tsx` (operational cards, user stats, quick actions, drill-down across all 5 cards `UI-08`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Playwright E2E browser testing (deferred to Issue 26 (#57)).
   - Final release documentation (deferred to Issue 27 (#58)).
 * **Acceptance Criteria:**
   - [ ] Requester, Staff, and Administrator Dashboards load authoritative metrics and handle empty/loading states gracefully.
-  - [ ] Clicking any metric card drills down into the respective filtered queue/list screen.
+  - [ ] Clicking metric cards on Requester and Staff Dashboards drills down into pre-filtered views; clicking Admin operational cards (`Total Active Tickets`, `Unassigned Queue`) drills down into `#/staff-queue` (with owner filter where applicable), and clicking User metric cards (`Total Users`, `Active Users`, `Inactive Users`) drills down into `#/admin-users` (`AC-15a`, `AC-15b`, `AC-20`).
   - [ ] Header navigation bar correctly highlights the active Dashboard tab.
   - [ ] Layout is fully responsive across Desktop, Tablet, and Mobile with zero clipping.
   - [ ] 100% of Vitest tests in `RequesterDashboard.test.tsx`, `StaffDashboard.test.tsx`, and `AdminDashboard.test.tsx` pass.
@@ -217,13 +218,13 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Required branch:** `feature/lab4-6-e2e-and-responsive`
 * **In-Scope:**
   - **Playwright E2E Test Suites (`e2e/lab-04/`):**
-    - `actions-taken-flow.spec.ts`: IT Staff and Administrator adding/editing Actions Taken, validation trigger, and Requester read-only verification.
-    - `ticket-resolution.spec.ts`: Requester advisory indication, IT Staff formal resolution, status transitions, and stale conflict handling.
-    - `dashboards.spec.ts`: Requester, IT Staff, and Administrator dashboard loading, metric validation against UI, Quick Actions, and drill-down navigation.
+    - `actions-taken-flow.spec.ts`: IT Staff and Administrator adding/editing Actions Taken, validation trigger, and Requester read-only verification (`E2E-01`).
+    - `ticket-resolution.spec.ts`: Requester advisory indication, IT Staff formal resolution, status transitions, and stale conflict handling (`E2E-02`).
+    - `dashboards.spec.ts`: Requester, IT Staff, and Administrator dashboard loading, metric validation against UI, Quick Actions, and drill-down navigation (`E2E-03a`, `E2E-03b`).
   - **Regression Testing:**
-    - Execute existing Lab 1, 2, and 3 E2E test suites to guarantee zero regression on Auth, Attachments, Comments, Notes, and Admin User Management.
-  - **Responsive Layout Audit:**
-    - Automated viewport check across Desktop (1280x800), Tablet (768x1024), and Mobile (375x667) across the four core responsive screens (Requester Dashboard, IT Staff Dashboard, Administrator Dashboard, Ticket Detail), asserting `scrollWidth === clientWidth` (zero horizontal overflow).
+    - Execute existing Lab 1, 2, and 3 E2E test suites to guarantee zero regression on Auth, Attachments, Comments, Notes, and Admin User Management (`REG-01`, `REG-02`, `REG-03`).
+  - **Responsive Layout Audit (`dashboards.spec.ts` `E2E-04`):**
+    - Automated viewport audit across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) across all four core responsive screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, Ticket Detail `#/tickets/:id`), asserting zero horizontal overflow (`scrollWidth === clientWidth`), zero interactive control collisions, no clipped text, and conformance to Zen Green design tokens (`--zg-primary`, `--zg-bg-page`, `--zg-surface`, `--zg-border`) per FR-17 and AC-17.
   - **Screenshot Artifacts Generation:**
     - Capture and save structured screenshots into `artifacts/lab-04/screenshots/`:
       - `staff-dashboard/`
@@ -235,7 +236,7 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Acceptance Criteria:**
   - [ ] All Lab 4 Playwright E2E specs pass 100% in headless mode.
   - [ ] Zero regression errors across Labs 1, 2, and 3 test suites.
-  - [ ] Zero horizontal scrollbars detected on any screen across Desktop, Tablet, and Mobile.
+  - [ ] Responsive audit confirms zero horizontal overflow (`scrollWidth === clientWidth`), zero control collisions, no text clipping, and valid Zen Green tokens across all four core screens (Requester Dashboard, IT Staff Dashboard, Administrator Dashboard, Ticket Detail) on Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) viewports (`AC-17`, `E2E-04`).
   - [ ] All required screenshots are captured clearly at standard viewports and stored in the artifacts directory.
 * **AI Verification Note:**
   > Verify E2E test files, passing execution results, and presence of generated screenshot files. Do not fail on unmerged PR status.

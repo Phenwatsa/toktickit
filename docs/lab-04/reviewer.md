@@ -9,7 +9,7 @@
 
 | PR | Branch | Scope / Feature | Verdict | Target Branch |
 |:---|:---|:---|:---|:---|
-| [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Revisions Applied (Cycle 2 Alignment Complete)** | `lab4-staging` |
+| [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Revisions Applied (Cycle 4 Refinements Complete — Ready for Partner Approval)** | `lab4-staging` |
 | [PR #52](https://github.com/Phenwatsa/toktickit/pull/52) | `feature/lab4-1-actions-taken-foundation` | Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API | **Planned** | `lab4-staging` |
 | [PR #53](https://github.com/Phenwatsa/toktickit/pull/53) | `feature/lab4-2-ticket-workflow-enforcement` | Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement) | **Planned** | `lab4-staging` |
 | [PR #54](https://github.com/Phenwatsa/toktickit/pull/54) | `feature/lab4-3-actions-taken-ui` | Issue 23 (#54): Actions Taken UI & Ticket Detail Integration (Frontend) | **Planned** | `lab4-staging` |
@@ -50,8 +50,16 @@
   - **Staff Dashboard `recentTickets` Alignment**: Aligned `AC-13` with `FR-12`, `api-spec.md` (§4.2), and `API-10` by explicitly including `recentTickets` in the authoritative response criteria.
   - **Responsive Scope Clarification**: Reconciled `ui-spec.md` (§5.1) and `tests.md` (`E2E-04`) to specify that `E2E-04` is the automated test suite responsible for the full responsive audit across all 4 core screens at all 3 viewports, while UI component tests verify isolated component mounting and internal structures.
   - **Design Tokens Consistency**: Harmonized the 4 required Zen Green design tokens (`--zg-primary`, `--zg-bg-page`, `--zg-surface`, `--zg-border`) identically across `specification.md` (`AC-17`), `ui-spec.md` (§5.1), and `tests.md` (`E2E-04`).
-  - **Active Ticket Scope Decision (CLOSED vs CANCELLED)**: Explicitly defined in `specification.md` (FR-02, BR-01) that "active ticket" denotes any non-cancelled ticket (`currentStatus !== 'CANCELLED'`). Actions Taken may be recorded or updated across all lifecycle statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`), while `CANCELLED` remains the sole immutable terminal state rejecting mutations with `HTTP 400 Bad Request` (`TICKET_CANCELLED`).
-* **Verdict:** **Revisions Applied (Cycle 3 Refinements Complete — Ready for Partner Approval)**
+* **Review Cycle 4 — Traceability Matrix, Admin Access & Contract Harmonization:**
+  - **Admin Access on Staff Dashboard (`AC-13a`/`AC-13b`, `API-10a`/`API-10b`)**: Split acceptance criteria and test IDs to explicitly verify positive `HTTP 200 OK` and accurate queue metrics (`myAssignedTickets` scoped to user) separately for both `IT_STAFF` (`AC-13a`, `API-10a`) and `ADMINISTRATOR` (`AC-13b`, `API-10b`), rather than solely asserting non-requester rejection.
+  - **Admin Dashboard Drill-Down Scope Harmonization (`UI-08`, `AC-20`)**: Standardized drill-down destinations across all 5 metric cards (`Total Active Tickets` -> `#/staff-queue`, `Unassigned Queue` -> `#/staff-queue?owner=unassigned`, `Total Users` / `Active Users` / `Inactive Users` -> `#/admin-users`) consistently across `specification.md`, `ui-spec.md`, `tests.md` (`UI-08`), and `issues-plan.md` (Issue 25).
+  - **CANCELLED Scope Boundary Clarification (`BR-11`, `AC-23`, `API-14a`/`API-14b`)**: Explicitly demarcated Sprint 4 contracted and tested endpoints (Actions Taken creation/modification, status transitions, advisory indications) from pre-existing Lab 1–2 baseline operations (ticket metadata editing, claiming, reassignment) safeguarded under regression suites (`REG-01`, `REG-02`, `REG-03`).
+  - **Responsive Protocol Alignment across FR-17, AC-17, Issue 26 & E2E-04**: Harmonized all four core screens (Requester Dashboard, IT Staff Dashboard, Administrator Dashboard, Ticket Detail), standard viewports (Desktop $1280\text{px}$, Tablet $768\text{px}$, Mobile $375\text{px}$), and validation criteria across specification, UI spec, test plan, and issue plan.
+  - **Discrete Traceability for API-14**: Cleanly separated `API-14` in RTM into `API-14a` (`server/tests/lab-04/actions-taken.api.test.ts`) and `API-14b` (`server/tests/lab-04/ticket-workflow.api.test.ts`), establishing 1:1 test file traceability.
+  - **Quick Actions Naming Standardization**: Unified button and tile labels across all documents: Requester ("Create Ticket", "View All My Tickets"), IT Staff ("Create Ticket", "Search Tickets", "My Assigned Queue"), and Administrator ("User Management", "Ticket Queue", "Create Ticket").
+  - **Error Message Formatting Alignment**: Removed trailing periods across top-level `error` explanations and response messages in `api-spec.md` to ensure uniform contract assertions matching the reviewer log.
+  - **Authoritative Test Count Audit**: Reconciled test architecture to exactly 44 planned tests across 6 testing levels (4 Unit, 19 API & DB Integration [17 API + 2 DB], 3 Workflow, 10 UI, 5 E2E, 3 Regression) with 100% mutual consistency.
+* **Verdict:** **Revisions Applied (Cycle 4 Refinements Complete — Ready for Partner Approval)**
 
 ---
 

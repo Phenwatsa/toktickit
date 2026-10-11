@@ -162,7 +162,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `403 Forbidden` (Requester attempts creation):
     ```json
-    { "error": "Access denied. Only IT Staff and Administrators may record Actions Taken.", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only IT Staff and Administrators may record Actions Taken", "code": "FORBIDDEN", "details": [] }
     ```
   - `404 Not Found`:
     ```json
@@ -237,7 +237,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `403 Forbidden` (Requester attempts update):
     ```json
-    { "error": "Access denied. Only IT Staff and Administrators may modify Actions Taken.", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only IT Staff and Administrators may modify Actions Taken", "code": "FORBIDDEN", "details": [] }
     ```
   - `404 Not Found`:
     ```json
@@ -327,7 +327,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `403 Forbidden`:
     ```json
-    { "error": "Access denied. Only IT Staff and Administrators may transition ticket status.", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only IT Staff and Administrators may transition ticket status", "code": "FORBIDDEN", "details": [] }
     ```
   - `404 Not Found`:
     ```json
@@ -336,7 +336,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   - `409 Conflict` (Stale-update conflict):
     ```json
     {
-      "error": "Conflict: Ticket has been modified by another user. Please refresh and try again.",
+      "error": "Conflict: Ticket has been modified by another user. Please refresh and try again",
       "code": "STALE_UPDATE_CONFLICT",
       "details": [
         {
@@ -357,7 +357,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 - **Response**: `200 OK`
   ```json
   {
-    "message": "Problem indicated as resolved. IT Staff will review and formally resolve the ticket.",
+    "message": "Problem indicated as resolved. IT Staff will review and formally resolve the ticket",
     "problemAppearsResolved": true,
     "currentStatus": "IN_PROGRESS"
   }
@@ -373,7 +373,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `403 Forbidden` (User does not own ticket or is not Requester):
     ```json
-    { "error": "Access denied. Only the ticket requester can indicate resolution.", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only the ticket requester can indicate resolution", "code": "FORBIDDEN", "details": [] }
     ```
   - `404 Not Found`:
     ```json
@@ -425,7 +425,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `403 Forbidden` (Non-requester user):
     ```json
-    { "error": "Access denied. Only Requesters can access the Requester Dashboard.", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only Requesters can access the Requester Dashboard", "code": "FORBIDDEN", "details": [] }
     ```
 
 ---
@@ -494,7 +494,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `403 Forbidden` (Requester attempts staff dashboard):
     ```json
-    { "error": "Access denied. Only IT Staff and Administrators can access the Staff Dashboard.", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only IT Staff and Administrators can access the Staff Dashboard", "code": "FORBIDDEN", "details": [] }
     ```
 
 ---
@@ -529,5 +529,5 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```
   - `403 Forbidden` (Non-administrator user):
     ```json
-    { "error": "Access denied. Only Administrators can access the Administrator Dashboard.", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only Administrators can access the Administrator Dashboard", "code": "FORBIDDEN", "details": [] }
     ```

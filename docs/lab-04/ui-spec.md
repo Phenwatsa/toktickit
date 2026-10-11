@@ -106,7 +106,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   - Table showing Ticket Number, Summary, Status badge, and Updated Date.
   - Clicking a row opens the Requester Ticket Detail view.
 - **Quick Actions (Right Panel)**:
-  - "+ Create Ticket": Quick button navigating to ticket submission form.
+  - "Create Ticket": Quick button navigating to ticket submission form.
   - "View All My Tickets": Direct link to complete tickets list.
 
 ---
