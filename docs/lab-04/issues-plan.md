@@ -90,7 +90,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - Reject any transition attempt on a terminal `CANCELLED` ticket with HTTP 400 (`TICKET_CANCELLED`, `API-14b`, `AC-23`).
   - **Ticket Reassignment Active Staff Enforcement (`PATCH /api/staff/tickets/:id/assign`):**
     - Require target assignee (`newOwnerId`) to be an active IT Staff user (`isActive === true` and `role === 'IT_STAFF'`).
-    - Reject attempts to assign tickets to inactive users or non-IT Staff users with HTTP 400 (`INVALID_OWNER`, `API-15`, `AC-25`, `BR-18`).
+    - Reject attempts to assign tickets to non-existent users, inactive users, or non-IT Staff users with HTTP 400 (`INVALID_OWNER`, `API-15`, `AC-25`, `BR-18`), verifying existing ticket owner remains unchanged.
     - Reject reassignments on `CLOSED` tickets with HTTP 400 (`INVALID_STATE`, `API-15`, `AC-25`, `BR-18`), verifying ticket remains unchanged.
     - Reject reassignments on `CANCELLED` tickets with HTTP 400 (`INVALID_STATE`, `API-15`, `AC-25`, `BR-11`, `BR-18`), verifying ticket remains unchanged.
   - **Concurrency & Stale-Update Protection:**
@@ -100,14 +100,14 @@ This document provides the definitive planning specification for GitHub Issues (
     - Stale timestamp mismatch returns HTTP 409 (`STALE_UPDATE_CONFLICT`, `API-08`, `AC-11`) with `currentUpdatedAt`.
   - **Automated Backend Tests:**
     - Author and execute `server/tests/lab-04/unit/follow-up-validation.unit.test.ts` (`UNIT-01`), `status-transition-matrix.unit.test.ts` (`UNIT-02`), and `concurrency-check.unit.test.ts` (`UNIT-03`).
-    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions (`WF-03`), resolution gate security (`WF-01`), advisory resolution (`WF-02`), missing/malformed timestamp rejection (`API-07`), stale conflict handling (`API-08`), cancelled ticket rejection (`API-14b`), ticket reassignment validation rejecting inactive/non-staff assignees and closed/cancelled tickets (`API-15`), and Administrator supervisory ticket queue retrieval and status transition execution (`API-10b`).
+    - Author and execute `server/tests/lab-04/ticket-workflow.api.test.ts` verifying permitted/forbidden transitions (`WF-03`), resolution gate security (`WF-01`), advisory resolution (`WF-02`), missing/malformed timestamp rejection (`API-07`), stale conflict handling (`API-08`), cancelled ticket rejection (`API-14b`), ticket reassignment validation rejecting non-existent, inactive, or non-staff assignees (verifying ticket owner unchanged) and closed/cancelled tickets (`API-15`), and Administrator supervisory ticket queue retrieval and status transition execution (`API-10b`).
 * **Out-of-Scope & Deferred Dependencies:**
   - Frontend status dropdown adjustments (deferred to Issue 23 (#54)).
   - Dashboard metric calculations (deferred to Issue 24 (#55)).
 * **Acceptance Criteria:**
   - [ ] Direct API attempts by Requesters to set status to `RESOLVED` or `CLOSED` are strictly blocked (HTTP 403); IT Staff and Administrators are permitted (`AC-07`, `WF-01`).
   - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400 (`AC-09`, `UNIT-02`, `WF-03`).
-  - [ ] Ticket reassignment validations strictly enforced (`API-15`, `AC-25`, `BR-18`): (1) assigning to inactive or non-IT Staff targets returns HTTP 400 Bad Request (`INVALID_OWNER`); (2) attempting reassignment on a `CLOSED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged; (3) attempting reassignment on a `CANCELLED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged.
+  - [ ] Ticket reassignment validations strictly enforced (`API-15`, `AC-25`, `BR-18`): (1) assigning to non-existent, inactive, or non-IT Staff targets returns HTTP 400 Bad Request (`INVALID_OWNER`), verifying existing ticket owner remains unchanged; (2) attempting reassignment on a `CLOSED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged; (3) attempting reassignment on a `CANCELLED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged.
   - [ ] Administrator possesses authorized supervisory access to retrieve the Staff Ticket Queue (`GET /api/staff/tickets`) and execute ticket status transitions (`PATCH /api/staff/tickets/:id/status`) (`API-10b`).
   - [ ] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`, `AC-10`, `API-07`).
   - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes (`AC-11`, `API-08`).
