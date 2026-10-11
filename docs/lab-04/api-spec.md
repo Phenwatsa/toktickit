@@ -401,8 +401,9 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   ```
 - **Validation & Business Rules**:
   - `newOwnerId`: Integer, strictly required.
-  - **Active IT Staff Invariant**: Target user must exist, must have `role === 'IT_STAFF'`, and must have `isActive === true`. Attempting to assign a ticket to an inactive user or a user of any role other than `IT_STAFF` is rejected with `400 Bad Request` (`INVALID_OWNER`) (BR-18, AC-25, API-15).
-  - **Lifecycle Gate**: Cannot reassign a ticket whose `currentStatus` is `CLOSED` or `CANCELLED` (`400 Bad Request`, `INVALID_STATE`) (BR-11, BR-18, AC-25, API-15).
+  - **Active IT Staff Invariant**: Target user must exist, must have `role === 'IT_STAFF'`, and must have `isActive === true`. Attempting to assign a ticket to an inactive user or a user of any role other than `IT_STAFF` is rejected with `400 Bad Request` (`INVALID_OWNER`), leaving the existing ticket owner unchanged (BR-18, AC-25, API-15).
+  - **Closed Ticket Lifecycle Gate**: Cannot reassign a ticket whose `currentStatus` is `CLOSED`. Returns `400 Bad Request` (`INVALID_STATE`), verifying ticket owner and attributes remain unchanged in the database (BR-18, AC-25, API-15).
+  - **Cancelled Ticket Lifecycle Gate**: Cannot reassign a ticket whose `currentStatus` is `CANCELLED`. Returns `400 Bad Request` (`INVALID_STATE`), verifying ticket owner and attributes remain unchanged in the database (BR-11, BR-18, AC-25, API-15).
 - **Response**: `200 OK`
   ```json
   {
