@@ -19,7 +19,7 @@ This document provides the definitive planning specification for GitHub Issues (
     - `docs/lab-04/specification.md`: Sprint Goal, Stakeholder Request, In/Out Scope, numbered Functional Requirements (FR-01 to FR-17), Business Rules (BR-01 to BR-17 covering Actions Taken, ticket resolution gate, and dashboard calculations), Central Authorization Matrix, Concurrency/stale-update strategy, Database migration rationale, and Definition of Done.
     - `docs/lab-04/api-spec.md`: Formal REST contracts for Actions Taken endpoints, Requester Dashboard API, IT Staff Dashboard API, and Administrator Dashboard API (endpoints, methods, payload schemas, HTTP status codes 200, 201, 400, 401, 403, 404, 409, and safe error schemas).
     - `docs/lab-04/ui-spec.md`: Zen Green design token alignments, screen structure for Requester, Staff, and Admin Dashboards, Actions Taken section on Ticket Detail, responsive breakpoints (Desktop 1280px, Tablet 768px, Mobile 375px), state resilience (loading, empty, forbidden, conflict), and accessibility standards.
-    - `docs/lab-04/tests.md`: Planned test matrix covering Unit, API/Integration, Database/Migration, UI Component, Workflow, Regression, Performance, and E2E Playwright tests across 53 planned tests with 100% Acceptance Criteria (AC-01 to AC-28) traceability.
+    - `docs/lab-04/tests.md`: Planned test matrix covering Unit, API/Integration, Database/Migration, UI Component, Workflow, Regression, Performance, and E2E Playwright tests across 53 planned tests with 100% Acceptance Criteria (28 parent criteria, 30 distinct criteria identifiers: AC-01 to AC-28) traceability.
     - `docs/lab-04/ai-use.md` & `docs/lab-04/reviewer.md`: Living documents initialized with core schemas and metadata; progressively maintained throughout the sprint.
 * **Out-of-Scope & Deferred Dependencies:**
   - Writing or modifying runtime production code (`client/src/`, `server/src/`) (deferred to Issues 21–25 (#52–#56)).
@@ -108,7 +108,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - [ ] Direct API attempts by Requesters to set status to `RESOLVED` or `CLOSED` are strictly blocked (HTTP 403); IT Staff and Administrators are permitted (`AC-07`, `WF-01`).
   - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400 (`AC-09`, `UNIT-02`, `WF-03`).
   - [ ] Ticket reassignment validations strictly enforced (`API-15`, `AC-25`, `BR-18`): (1) assigning to non-existent, inactive, or non-IT Staff targets returns HTTP 400 Bad Request (`INVALID_OWNER`), verifying existing ticket owner remains unchanged; (2) attempting reassignment on a `CLOSED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged; (3) attempting reassignment on a `CANCELLED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged.
-  - [ ] Administrator possesses authorized supervisory access to retrieve the Staff Ticket Queue (`GET /api/staff/tickets`) and execute ticket status transitions (`PATCH /api/staff/tickets/:id/status`) (`API-10b`).
+  - [ ] Administrator possesses authorized supervisory access to retrieve the Staff Ticket Queue (`GET /api/staff/tickets`) and execute ticket status transitions (`PATCH /api/staff/tickets/:id/status`) (`AC-07`, `AC-09`, `API-10b`).
   - [ ] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`, `AC-10`, `API-07`).
   - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes (`AC-11`, `API-08`).
   - [ ] Attempting to transition status or indicate resolution on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`, `API-14b`).
@@ -135,7 +135,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Ticket Workflow UI Polish & Concurrency Resilience:**
     - Reflect permitted status transitions in the IT Staff & Administrator action dropdown.
     - Display safe conflict alerts if a 409 status is returned (`UI-04`, `AC-11`).
-    - **Form State Preservation (`UI-04b`, `AC-28`)**: Preserve uncommitted form inputs in modals/forms upon 409 conflict, enabling the user to review server updates without losing uncommitted text.
+    - **Form State Preservation (`UI-04b`, `AC-28`)**: Preserve uncommitted inputs in status transition controls upon 409 conflict, enabling the user to review server updates without losing uncommitted transition text.
   - **Loading & Zero-States (`UI-EMPTY-01`, `AC-24`):**
     - Render pulsing skeleton loaders during fetch and friendly empty states when 0 actions exist.
   - **Automated UI Tests:**
@@ -149,7 +149,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - [ ] IT Staff and Administrators can create and edit Actions Taken on `#/ticket/:id` with immediate list refresh (`AC-01`, `AC-06`).
   - [ ] Requesters can view Actions Taken on owned tickets with zero edit controls available (`AC-04`, `UI-03`).
   - [ ] Form prevents submission if Follow-Up is checked without note text (< 3 non-whitespace chars) (`AC-02`, `UI-02`).
-  - [ ] 409 Conflict alert preserves uncommitted form input and provides state refresh button (`AC-28`, `UI-04b`).
+  - [ ] 409 Conflict alert preserves uncommitted status transition input and provides state refresh button (`AC-28`, `UI-04b`).
   - [ ] Layout conforms to Zen Green design standards with zero horizontal overflow on mobile viewports.
   - [ ] 100% of Vitest tests in `ActionsTaken.test.tsx`, `TicketWorkflow.test.tsx`, and `UIStates.test.tsx` pass.
 * **AI Verification Note:**

@@ -6,7 +6,7 @@ This document provides the authoritative test plan, architecture breakdown, and 
 
 ## 1. Test Strategy & Architectural Breakdown (7 Testing Tiers)
 
-The test plan enforces comprehensive multi-tier quality assurance covering all specified test dimensions across 53 planned tests:
+The test plan enforces comprehensive multi-tier quality assurance covering all specified test dimensions across 53 planned tests, achieving 100% bidirectional coverage across all 28 parent Acceptance Criteria (30 distinct criteria identifiers: AC-01–AC-28, with sub-criteria AC-15a/b and AC-19a/b):
 
 1. **Unit Tests (`server/tests/lab-04/unit/`)**:
    Isolated validation and calculation logic testing business rules without network overhead (4 planned tests):
@@ -57,6 +57,8 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 
 ## 2. Full Requirements Traceability Matrix (FR $\to$ BR $\to$ AC $\to$ Test ID)
 
+This matrix links Functional Requirements (FR) and Business Rules (BR) to all 28 parent Acceptance Criteria (30 distinct criteria identifiers: AC-01–AC-28, including sub-criteria AC-15a/b and AC-19a/b) and planned automated test cases across all seven testing tiers.
+
 | FR ID | Governing BR | AC ID | Test ID | Type | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
 | **FR-01** | BR-05, BR-06 | **AC-04, AC-27** | `API-04` | API | List Actions Taken on owned ticket with deterministic ordering | Returns 200 with chronological actions list sorted deterministically by `actionDateTime ASC, id ASC` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
@@ -78,7 +80,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-11** | BR-12, BR-13 | **AC-12**| `UNIT-04`| Unit | Requester metrics calculator logic | Computes all 5 distinct metric formulas | `server/tests/lab-04/unit/dashboard-calculator.unit.test.ts` | Planned |
 | **FR-11** | BR-13 | **AC-12** | `API-09` | API | Requester dashboard metrics isolation | Returns 200 with 5 metrics for owned tickets (`resolvedTickets` without date filtering) | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
 | **FR-12** | BR-14 | **AC-13** | `API-10` | API | Staff dashboard queue metrics for IT Staff | Returns 200 with 5 primary cards (`myAssignedTickets` scoped to staff user), `unassignedTickets`, 8 statuses `byStatus`, 4 priorities `byPriority`, and `recentTickets` for `IT_STAFF` role | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| **FR-12** | Handout Pt.6, Matrix | **AC-13** | `API-10b` | API | Administrator supervisory queue access & status transition authority | Returns 200 on `GET /api/staff/tickets` retrieving active queue, and returns 200 on `PATCH /api/staff/tickets/:id/status` executing authorized status transition | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| **FR-07, FR-09** | Central Matrix, BR-07, BR-08 | **AC-07, AC-09** | `API-10b` | API | Administrator supervisory queue access & status transition authority | Returns 200 on `GET /api/staff/tickets` retrieving active queue, and returns 200 on `PATCH /api/staff/tickets/:id/status` executing authorized status transition | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | **FR-12** | Matrix | **AC-14** | `API-11` | API | Staff dashboard RBAC rejection (Requester & Admin blocked) | 403 Forbidden returned for non-IT Staff users (Requesters and Administrators) calling `GET /api/staff/dashboard` | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | **FR-02, FR-05** | BR-11 | **AC-23** | `API-14a` | API | Reject Actions Taken creation and update on CANCELLED ticket | Precondition: ticket is CANCELLED. Returns 400 Bad Request (`TICKET_CANCELLED`) on `POST /api/tickets/:id/actions` and `PATCH /api/tickets/:id/actions/:actionId`; zero records created or modified; ticket remains `CANCELLED` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
 | **FR-08, FR-09** | BR-07, BR-11 | **AC-23** | `API-14b` | API | Reject status transitions and resolution indications on CANCELLED ticket | Precondition: ticket is CANCELLED. Returns 400 Bad Request (`TICKET_CANCELLED`) on `PATCH /api/staff/tickets/:id/status` and `PATCH /api/requester/tickets/:id/resolve-indication`; ticket remains strictly `CANCELLED` with unchanged `updatedAt` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
@@ -91,7 +93,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
 | **FR-04** | BR-04 | **AC-02** | `UI-02`  | UI | Follow-up note UI inline validation (empty, whitespace, < 3 chars, $\ge 3$ chars) | Blocks submit and displays "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed" on blank/whitespace/< 3 chars; permits submit on $\ge 3$ chars | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
 | **FR-06** | BR-06 | **AC-04** | `UI-03`  | UI | Requester Actions read-only UI | Add/Edit buttons completely omitted | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
 | **FR-10** | BR-10 | **AC-11** | `UI-04`  | UI | 409 Conflict alert UI feedback | User-friendly conflict banner displayed | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
-| **FR-10** | BR-16 | **AC-28** | `UI-04b` | UI | Uncommitted form state preservation upon 409 conflict | Preserves unsaved modal input text and allows user to refresh state without losing data | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
+| **FR-10** | BR-16 | **AC-28** | `UI-04b` | UI | Uncommitted form state preservation upon 409 conflict | Preserves unsaved status transition inputs and notes upon 409 conflict, allowing user to refresh state and retry without losing data | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
 | **FR-11** | BR-13, BR-15 | **AC-15a**| `UI-05`  | UI | Requester dashboard rendering & drill-down | Clicking card navigates to filtered MyTickets | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | **FR-12** | BR-14, BR-15 | **AC-15b**| `UI-06`  | UI | Staff dashboard rendering & drill-down | Clicking card navigates to filtered Queue | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | **FR-14** | BR-13 | **AC-16** | `UI-07a` | UI | Requester Dashboard Quick Actions navigation | Clicking 'Create Ticket' and 'View All My Tickets' triggers correct route navigation | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |

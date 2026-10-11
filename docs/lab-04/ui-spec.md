@@ -205,10 +205,10 @@ To guarantee compliance with FR-17 and AC-17, testing is partitioned into two di
 - When a user navigates to an unauthorized view (e.g. Requester hitting `#/staff-dashboard` or Staff hitting `#/admin-dashboard`), the client displays an accessible 403 Forbidden banner with a single primary button: `"Return to My Dashboard"`, smoothly directing the user to their authorized home screen.
 
 ### 6.4 Concurrency Conflict State & Form State Preservation (409 Conflict, BR-16, AC-28)
-- **Visual Alert**: When a status transition or ticket update yields HTTP 409 Conflict (`STALE_UPDATE_CONFLICT`), a prominent red banner is displayed at the top of the detail screen:
+- **Visual Alert**: When a ticket status transition yields HTTP 409 Conflict (`STALE_UPDATE_CONFLICT`), a prominent red banner is displayed at the top of the detail screen:
   `"Conflict: This ticket was updated by another team member while you were viewing it. Please review the updated status."`
-- **Form State Preservation Contract**: The UI **strictly preserves all uncommitted user inputs** in open modals and forms (e.g. draft action description, draft result, draft follow-up notes). It does NOT wipe the form.
-- **Resolution Action**: The banner provides a `"Refresh Ticket State"` button that re-fetches the current ticket state and updates the internal `updatedAt` / `expectedUpdatedAt` token, enabling the user to review the changes and submit without retyping.
+- **Form State Preservation Contract**: The UI **strictly preserves all uncommitted user inputs** in active status transition controls and dialogs (e.g. selected target status, transition notes, or resolution remarks). It does NOT wipe or reset entered form inputs. (Note: Per `api-spec.md` §3.2, optimistic concurrency control is scoped strictly to ticket status transitions; Actions Taken logging is append-only and does not trigger 409 conflicts).
+- **Resolution Action**: The banner provides a `"Refresh Ticket State"` button that re-fetches the current ticket state and synchronizes the client's internal `updatedAt` / `expectedUpdatedAt` token, enabling the staff member or administrator to review the updated status and retry the status transition without losing entered notes.
 
 ---
 
