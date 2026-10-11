@@ -390,7 +390,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 
 ### 3.3 Ticket Owner Assignment
 - **Endpoint**: `PATCH /api/staff/tickets/:id/assign`
-- **Authorized Roles**: `IT_STAFF`, `ADMINISTRATOR`
+- **Authorized Roles**: `IT_STAFF`
 - **Path Parameters**:
   - `id`: Ticket ID (integer)
 - **Request Body**:
@@ -401,8 +401,8 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   ```
 - **Validation & Business Rules**:
   - `newOwnerId`: Integer, strictly required.
-  - **Active IT Staff Invariant**: Target user must exist, must have `role === 'IT_STAFF'`, and must have `isActive === true`. Attempting to assign a ticket to an inactive user or a user of any role other than `IT_STAFF` is rejected with `400 Bad Request` (`INVALID_OWNER`).
-  - **Lifecycle Gate**: Cannot reassign a ticket whose `currentStatus` is `CLOSED` or `CANCELLED` (`400 Bad Request`, `INVALID_STATE`).
+  - **Active IT Staff Invariant**: Target user must exist, must have `role === 'IT_STAFF'`, and must have `isActive === true`. Attempting to assign a ticket to an inactive user or a user of any role other than `IT_STAFF` is rejected with `400 Bad Request` (`INVALID_OWNER`) (BR-18, AC-25, API-15).
+  - **Lifecycle Gate**: Cannot reassign a ticket whose `currentStatus` is `CLOSED` or `CANCELLED` (`400 Bad Request`, `INVALID_STATE`) (BR-11, BR-18, AC-25, API-15).
 - **Response**: `200 OK`
   ```json
   {
@@ -431,9 +431,9 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```json
     { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
     ```
-  - `403 Forbidden` (Requester attempts assignment):
+  - `403 Forbidden` (Requester or Administrator attempts assignment):
     ```json
-    { "error": "Access denied", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Insufficient permissions.", "code": "FORBIDDEN", "details": [] }
     ```
   - `404 Not Found`:
     ```json
