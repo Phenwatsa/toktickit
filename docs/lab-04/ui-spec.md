@@ -94,17 +94,17 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   1. `My Open Tickets` (`openTickets`): Count of active open tickets (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`).
   2. `In Progress` (`inProgressTickets`): Count of tickets actively being worked on by IT.
   3. `Waiting for Requester` (`waitingForRequesterTickets`): Count of tickets awaiting user confirmation/action.
-  4. `Recently Resolved` (`resolvedTickets`): Count of resolved tickets awaiting closure.
+  4. `Resolved Tickets` (`resolvedTickets`): Count of all resolved tickets awaiting requester closure.
   5. `Closed` (`closedTickets`): Count of finalized tickets.
 - **Card Interactive Drill-Down**:
   - `My Open Tickets` $\to$ `#/my-tickets?status=OPEN_GROUP` (preset filter displaying active non-final tickets: `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`)
   - `In Progress` $\to$ `#/my-tickets?status=IN_PROGRESS`
   - `Waiting for Requester` $\to$ `#/my-tickets?status=WAITING_FOR_REQUESTER`
-  - `Recently Resolved` $\to$ `#/my-tickets?status=RESOLVED`
+  - `Resolved Tickets` $\to$ `#/my-tickets?status=RESOLVED`
   - `Closed` $\to$ `#/my-tickets?status=CLOSED`
 - **My Recent Tickets (Left Panel)**:
   - Table showing Ticket Number, Summary, Status badge, and Updated Date.
-  - Clicking a row opens the Requester Ticket Detail view.
+  - Clicking a row opens the Requester Ticket Detail view (`#/ticket/:id`).
 - **Quick Actions (Right Panel)**:
   - "Create Ticket": Quick button navigating to ticket submission form.
   - "View All My Tickets": Direct link to complete tickets list.
@@ -133,6 +133,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   - Any status badge in breakdown $\to$ `#/staff-queue?status=[STATUS]`
 - **Recent Queue Tickets (Left Panel)**:
   - Table displaying Ticket Number, Summary, IT Priority badge, Status badge, Requester, and Updated Date.
+  - Clicking a row navigates to IT Staff Ticket Detail (`#/ticket/:id`).
 - **Quick Actions (Right Panel)**:
   - "Create Ticket", "Search Tickets", "My Assigned Queue".
 
@@ -151,7 +152,7 @@ Positioned directly underneath the Ticket Summary/Metadata section and directly 
   - "User Management": Navigates directly to User Management (`#/admin-users`).
   - "Ticket Queue": Navigates to operational ticket queue (`#/staff-queue`).
   - "Create Ticket": Quick link to ticket creation form (`#/create-ticket`).
-- **Recent Queue Overview (Left Panel)**: Table displaying recent system tickets with priority, status, and assigned staff.
+- **Recent Queue Overview (Left Panel)**: Table displaying recent system tickets with priority, status, and assigned staff. Clicking a row navigates to Ticket Detail (`#/ticket/:id`).
 - **Interactive Drill-Down**:
   - Clicking `Total Active Tickets` navigates to `#/staff-queue`.
   - Clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`.
@@ -170,7 +171,7 @@ The interface adapts smoothly across three standard test viewports:
 | **Mobile** | $375\text{px} \times 667\text{px}$ | 1 column stacked metric cards; full-width action buttons ($44\text{px}+$ touch targets); tables transform into vertical card stacks; zero horizontal overflow ($scrollWidth === clientWidth$). |
 
 ### 5.1 Responsive, Overlap & Token Verification Protocol
-To guarantee compliance with FR-17 and AC-17, the automated responsive test suite (`E2E-04`) executes browser-level viewport audits across all four core screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/tickets/:id`) across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) viewports (while UI component tests verify isolated component mounting and internal layout structures), asserting the following programmatic checks:
+To guarantee compliance with FR-17 and AC-17, the automated responsive test suite (`E2E-04`) executes browser-level viewport audits across all four core screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/ticket/:id`) across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) viewports (while UI component tests verify isolated component mounting and internal layout structures), asserting the following programmatic checks:
 1. **Zero Horizontal Overflow**: Assert `document.body.scrollWidth === document.body.clientWidth` and `window.scrollX === 0` across all three viewports.
 2. **No Overlapping Interactive Elements**: Programmatically verify that sticky headers, action buttons, Quick Action shortcut tiles, and modal dialogs do not collide (intersecting bounding boxes) across viewports.
 3. **No Clipped Text or Cutoff Labels**: Elements must retain complete visibility without truncation of critical identifiers (Ticket IDs, status badges, timestamps).
@@ -178,11 +179,57 @@ To guarantee compliance with FR-17 and AC-17, the automated responsive test suit
 
 ---
 
-## 6. Accessibility, Focus & Visual Polish Checklist (Pre-Implementation Acceptance Contract)
+## 6. State Management, Loading & UI Resilience (BR-16, AC-24, AC-28)
+
+### 6.1 Skeleton Loading States (`zg-skeleton`)
+- **Metric Tiles**: While dashboard metrics are in transit, display subtle pulsing skeleton boxes matching metric card dimensions (`120px` height) using `--zg-surface` background and `--zg-border` pulsing animation.
+- **Recent Tickets & Queue Tables**: Render 3 placeholder skeleton rows with simulated column widths (Ticket #, Title, Status badge) to eliminate layout shift (CLS).
+- **Actions Taken**: Display 2 pulsing action item cards during initial ticket detail loading.
+
+### 6.2 Zero-State / Empty Containers (`zg-empty-state`)
+- **Requester Dashboard (0 Tickets)**: Friendly Zen Green leaf/inbox icon with title "No support tickets yet", subtitle "Have an IT issue or question? Submit your first request", and primary "+ Create Ticket" button.
+- **IT Staff Dashboard (Queue Empty)**: Checkmark circle icon with message "Queue clear! No tickets currently requiring triage."
+- **Admin Dashboard (No Activity)**: Status icon indicating "All systems normal. No pending tickets."
+- **Actions Taken (0 Items)**: A clean slate container with message "No diagnostic actions recorded yet. IT Staff will log investigation and troubleshooting steps here."
+
+### 6.3 Forbidden & Unauthorized Route Guards (403 State)
+- When a user navigates to an unauthorized view (e.g. Requester hitting `#/staff-dashboard` or Staff hitting `#/admin-dashboard`), the client displays an accessible 403 Forbidden banner with a single primary button: `"Return to My Dashboard"`, smoothly directing the user to their authorized home screen.
+
+### 6.4 Concurrency Conflict State & Form State Preservation (409 Conflict, BR-16, AC-28)
+- **Visual Alert**: When a status transition or ticket update yields HTTP 409 Conflict (`STALE_UPDATE_CONFLICT`), a prominent red banner is displayed at the top of the detail screen:
+  `"Conflict: This ticket was updated by another team member while you were viewing it. Please review the updated status."`
+- **Form State Preservation Contract**: The UI **strictly preserves all uncommitted user inputs** in open modals and forms (e.g. draft action description, draft result, draft follow-up notes). It does NOT wipe the form.
+- **Resolution Action**: The banner provides a `"Refresh Ticket State"` button that re-fetches the current ticket state and updates the internal `updatedAt` / `expectedUpdatedAt` token, enabling the user to review the changes and submit without retyping.
+
+---
+
+## 7. Accessibility, Focus Trapping & Semantic Cues (Handout §10 & Part 6)
+
+### 7.1 Modal Focus Trapping (`ActionTakenModal.tsx`)
+- When the modal opens, programmatic focus is automatically placed on the first interactive form element (`actionDateTime` or `actionDescription`).
+- A focus trap listener intercepts `Tab` and `Shift+Tab` keys, cycling focus strictly between modal inputs, checkboxes, the Cancel button, and the Save button.
+- Pressing `Escape` or clicking the backdrop triggers cancellation and dismisses the modal.
+
+### 7.2 Focus Restoration
+- Upon closing the modal (either via Save or Cancel), focus is programmatically returned to the "+ Add Action Taken" button that opened it.
+
+### 7.3 Semantic ARIA & Live Regions
+- Modal container has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby="action-modal-title"`.
+- Form validation error messages and 409 Conflict banners are announced via `aria-live="polite"` or `role="alert"`.
+- Follow-up checkbox includes `aria-controls="followup-note-container"` and `aria-expanded` attributes.
+
+### 7.4 Private vs Shared Content Separation
+- Staff-only diagnostic content, Internal Notes, and operational triage controls use distinct visual framing: warm amber left borders (`border-left: 4px solid var(--zg-warning)`), light amber tint backgrounds, and clear "Staff Only" textual badges.
+- Requesters never see or receive internal edit controls, preserving strict confidentiality.
+
+---
+
+## 8. Visual Polish & Acceptance Checklist (Pre-Implementation Acceptance Contract)
 
 - [ ] **Visual Focus Indicators**: All interactive elements (buttons, inputs, links, metric cards) feature clear `--zg-primary` focus rings (`outline: 2px solid #006B3C; outline-offset: 2px`).
 - [ ] **Non-Color Status Cues**: Status badges include distinct textual labels and distinct background shapes/borders alongside color.
 - [ ] **Touch Targets**: All clickable targets meet Apple Human Interface Guidelines and WCAG 2.1 AAA Target Size (Enhanced) standards ($44\text{px} \times 44\text{px}$).
 - [ ] **Empty States**: If a user has zero tickets or no actions taken, display friendly Zen Green illustration/icon and helpful prompt rather than an empty blank container.
 - [ ] **Conflict Feedback (409)**: Clear, accessible alert banner prompting the user to reload the ticket without losing unsaved form text.
-- [ ] **No Clipping / Overlapping**: Cards, modals, and sticky action bars strictly avoid overlapping content or truncating critical IDs.
+- [ ] **Safe Loading States**: Skeleton placeholders prevent layout shift across all metric cards and data tables.
+- [ ] **No Clipping / Overlapping**: Cards, modals, and sticky action bars strictly avoid overlapping content or truncating critical IDs across 1280px, 768px, and 375px viewports.

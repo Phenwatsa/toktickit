@@ -77,7 +77,7 @@ This document establishes the collaboration agreement, core engineering rules, o
 * **Additive Engineering**: New issues must build upon existing code through additive, non-destructive extensions rather than restructuring working code.
 
 ### Rule 11: PR Readiness & Justification Handover Protocol
-* When the developer signals that an issue is complete and ready for commit/upload (e.g. *"Issue นี้เรียบร้อยไม่มีแก้"*), the AI must immediately deliver a complete Handover Package containing:
+* When the developer signals that an issue is complete and ready for commit/upload (e.g., *"This issue is complete, ready to proceed"*), the AI must immediately deliver a complete Handover Package containing:
   1. **Strict Git CLI Commands**: Exact terminal commands to stage files, execute a Conventional Commit, and push the branch.
   2. **PR Title & PR Description**: Ready-to-copy Markdown summary detailing the changes, linked issue (`Closes #XX`), in-scope accomplishments, and verification evidence.
   3. **Verification & Justification Notes**: Clear justification points explaining what was done, what was intentionally deferred to successor issues (with rationale), and why any automated checking or peer reviewer should consider this issue fully passed within its defined scope without blocking on future dependencies or pending merge states.

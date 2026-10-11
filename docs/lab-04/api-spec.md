@@ -112,9 +112,9 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 - **Validation Rules**:
   - `actionDescription`: String, 5–2000 characters (required).
   - `result`: String, 3–2000 characters (required).
-  - `actionDateTime`: Valid ISO-8601 UTC date string (`YYYY-MM-DDTHH:mm:ss.sssZ`) (optional, defaults to server current UTC timestamp).
+  - `actionDateTime`: Valid ISO-8601 UTC date string (`YYYY-MM-DDTHH:mm:ss.sssZ`) (optional, defaults to server current UTC timestamp; if provided, must be a valid ISO-8601 parseable date string).
   - `isFollowUpRequired`: Boolean (optional, default `false`).
-  - `followUpNote`: String, **strictly required** when `isFollowUpRequired === true` (minimum 3 non-whitespace characters; values that are empty, whitespace-only, or under 3 non-whitespace characters are rejected); optional or null when `false`.
+  - `followUpNote`: String, **strictly required** when `isFollowUpRequired === true` (minimum 3 non-whitespace characters, maximum 2000 characters; values that are empty, whitespace-only, or under 3 non-whitespace characters are rejected); optional or null when `false`.
   - `attachmentNotes`: String, max 500 characters (optional).
   - `performedById`: **Auto-populated** from authenticated session user ID (`req.user.id`). Any client-supplied performer ID is ignored.
 - **Response**: `201 Created`
@@ -243,6 +243,12 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```json
     { "error": "Action Taken record not found under this ticket", "code": "NOT_FOUND", "details": [] }
     ```
+
+---
+
+### 2.4 Append-Only Audit Invariant (No Delete Endpoint)
+- **Deletion Prohibited**: Deletion of Actions Taken records is strictly forbidden (`DELETE /api/tickets/:id/actions/:actionId` is deliberately not implemented).
+- **Audit Trail Integrity**: Any attempt to issue an HTTP `DELETE` request to an Actions Taken route will result in a 404 or unhandled route, guaranteeing an immutable, permanent historical audit trail of troubleshooting interventions across the ticket lifecycle.
 
 ---
 
@@ -382,6 +388,60 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 
 ---
 
+### 3.3 Ticket Owner Assignment
+- **Endpoint**: `PATCH /api/staff/tickets/:id/assign`
+- **Authorized Roles**: `IT_STAFF`, `ADMINISTRATOR`
+- **Path Parameters**:
+  - `id`: Ticket ID (integer)
+- **Request Body**:
+  ```json
+  {
+    "newOwnerId": 4
+  }
+  ```
+- **Validation & Business Rules**:
+  - `newOwnerId`: Integer, strictly required.
+  - **Active IT Staff Invariant**: Target user must exist, must have `role === 'IT_STAFF'`, and must have `isActive === true`. Attempting to assign a ticket to an inactive user or a user of any role other than `IT_STAFF` is rejected with `400 Bad Request` (`INVALID_OWNER`).
+  - **Lifecycle Gate**: Cannot reassign a ticket whose `currentStatus` is `CLOSED` or `CANCELLED` (`400 Bad Request`, `INVALID_STATE`).
+- **Response**: `200 OK`
+  ```json
+  {
+    "message": "Ticket reassigned successfully",
+    "ticketOwner": {
+      "id": 4,
+      "name": "Jordan Lee",
+      "email": "jordan.lee@toktickit.com"
+    }
+  }
+  ```
+- **Error Responses**:
+  - `400 Bad Request` (Missing or non-numeric newOwnerId):
+    ```json
+    { "error": "Valid newOwnerId is required", "code": "INVALID_OWNER" }
+    ```
+  - `400 Bad Request` (Target user is inactive or not IT Staff):
+    ```json
+    { "error": "Target user must be an active IT Staff member", "code": "INVALID_OWNER" }
+    ```
+  - `400 Bad Request` (Ticket closed or cancelled):
+    ```json
+    { "error": "Cannot reassign a closed or cancelled ticket", "code": "INVALID_STATE" }
+    ```
+  - `401 Unauthorized`:
+    ```json
+    { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
+    ```
+  - `403 Forbidden` (Requester attempts assignment):
+    ```json
+    { "error": "Access denied", "code": "FORBIDDEN", "details": [] }
+    ```
+  - `404 Not Found`:
+    ```json
+    { "error": "Ticket not found", "code": "NOT_FOUND" }
+    ```
+
+---
+
 ## 4. Role-Appropriate Dashboard Endpoints
 
 ### 4.1 Requester Dashboard Metrics
@@ -415,7 +475,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
   - `openTickets`: Count of owned tickets with status `IN ('NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED')`.
   - `inProgressTickets`: Count of owned tickets with status `= 'IN_PROGRESS'`.
   - `waitingForRequesterTickets`: Count of owned tickets with status `= 'WAITING_FOR_REQUESTER'`.
-  - `resolvedTickets`: Count of owned tickets with status `= 'RESOLVED'`.
+  - `resolvedTickets`: Count of all owned tickets with status `= 'RESOLVED'` (without date boundary filtering).
   - `closedTickets`: Count of owned tickets with status `= 'CLOSED'`.
   - `recentTickets`: Array of up to 5 most recently updated owned tickets ordered by `updatedAt DESC`.
 - **Error Responses**:
@@ -432,8 +492,8 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 
 ### 4.2 IT Staff Dashboard Metrics
 - **Endpoint**: `GET /api/staff/dashboard`
-- **Authorized Roles**: `IT_STAFF`, `ADMINISTRATOR`
-- **Description**: Computes authoritative system-wide queue metrics and current user queue assignments for IT Staff and Administrators.
+- **Authorized Roles**: `IT_STAFF`
+- **Description**: Computes authoritative system-wide queue metrics and current user queue assignments strictly for IT Staff. Administrators access operational metrics and recent tickets via their dedicated Administrator Dashboard (`GET /api/admin/dashboard`).
 - **Response**: `200 OK`
   ```json
   {
@@ -492,9 +552,9 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
     ```json
     { "error": "Authentication required", "code": "UNAUTHORIZED", "details": [] }
     ```
-  - `403 Forbidden` (Requester attempts staff dashboard):
+  - `403 Forbidden` (Non-IT Staff user: Requesters and Administrators):
     ```json
-    { "error": "Access denied. Only IT Staff and Administrators can access the Staff Dashboard", "code": "FORBIDDEN", "details": [] }
+    { "error": "Access denied. Only IT Staff can access the Staff Dashboard", "code": "FORBIDDEN", "details": [] }
     ```
 
 ---
@@ -502,7 +562,7 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
 ### 4.3 Administrator Dashboard Metrics
 - **Endpoint**: `GET /api/admin/dashboard`
 - **Authorized Roles**: `ADMINISTRATOR`
-- **Description**: Extends operational queue metrics with user account distribution statistics.
+- **Description**: Extends operational queue metrics with user account distribution statistics and the recent system ticket queue for supervisory oversight.
 - **Response**: `200 OK`
   ```json
   {
@@ -519,9 +579,27 @@ All error responses across all endpoints adhere strictly to a uniform JSON envel
         "itStaff": 5,
         "administrator": 2
       }
-    }
+    },
+    "recentTickets": [
+      {
+        "id": 20,
+        "ticketNumber": "TKT-2026-001240",
+        "summary": "VPN disconnects randomly",
+        "currentStatus": "NEW",
+        "requestedPriority": "HIGH",
+        "itPriority": "HIGH",
+        "ticketOwner": null,
+        "requester": { "id": 3, "name": "Bob Martin" },
+        "updatedAt": "2026-10-10T14:15:00.000Z"
+      }
+    ]
   }
   ```
+- **Metric Definitions**:
+  - `operational.unassignedTickets`: Active tickets unassigned (`ticketOwnerId IS NULL` and status not closed/cancelled).
+  - `operational.totalActiveTickets`: Total count of active tickets across the system (status not closed or cancelled).
+  - `users`: Total registered user counts broken down by active status and role (`requester`, `itStaff`, `administrator`).
+  - `recentTickets`: Up to 5 most recently updated active tickets across the system (powering the Admin Dashboard recent queue UI).
 - **Error Responses**:
   - `401 Unauthorized`:
     ```json

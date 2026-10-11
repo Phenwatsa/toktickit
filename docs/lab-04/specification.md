@@ -31,7 +31,7 @@ The stakeholder requires:
   - Requester "Problem Appears Resolved" flag remains purely advisory without mutating `currentStatus`.
   - Optimistic concurrency / stale-update detection via `updatedAt` validation returning `HTTP 409 Conflict`.
 - **Role-Appropriate Dashboards**:
-  - Requester Dashboard API & UI: My Open Tickets, Waiting for Requester, Recently Resolved, Recent Tickets list, Quick Actions, and drill-down navigation to pre-filtered `MyTickets`.
+  - Requester Dashboard API & UI: My Open Tickets, Waiting for Requester, Resolved Tickets, Recent Tickets list, Quick Actions, and drill-down navigation to pre-filtered `MyTickets`.
   - IT Staff Dashboard API & UI: Unassigned Tickets, My Assigned Tickets, Status breakdown, IT Priority breakdown, Recent Queue Tickets, Quick Actions, and drill-down navigation to pre-filtered `StaffTicketQueue`.
   - Administrator Dashboard: Operational queue reuse plus concise user account distribution metrics.
 - **Database Evolution & Seed Data**:
@@ -57,11 +57,11 @@ The stakeholder requires:
 ## 4. Functional Requirements
 
 ### Actions Taken
-- **FR-01 (Actions Taken Listing)**: The system shall provide an endpoint (`GET /api/tickets/:id/actions`) allowing permitted users to retrieve all Actions Taken for a ticket, ordered chronologically.
-- **FR-02 (Actions Taken Creation)**: IT Staff and Administrators shall be able to record a new Action Taken under an active ticket (`POST /api/tickets/:id/actions`), specifying description, result, follow-up requirement, follow-up note, and attachment notes. (An "active ticket" denotes any non-cancelled ticket; recording on terminal `CANCELLED` tickets is rejected per BR-11, whereas actions may be added across all other lifecycle statuses including `CLOSED` for post-resolution audit trail).
+- **FR-01 (Actions Taken Listing)**: The system shall provide an endpoint (`GET /api/tickets/:id/actions`) allowing permitted users to retrieve all Actions Taken for a ticket, ordered deterministically by `actionDateTime ASC, id ASC`.
+- **FR-02 (Actions Taken Creation)**: IT Staff and Administrators shall be able to record a new Action Taken under a non-cancelled ticket (`currentStatus != 'CANCELLED'`) via `POST /api/tickets/:id/actions`, specifying description, result, follow-up requirement, follow-up note, and attachment notes. Recording on terminal `CANCELLED` tickets is rejected per BR-11, whereas actions may be added across all other lifecycle statuses including `CLOSED` for post-resolution audit trail.
 - **FR-03 (Automated Performer Attribution)**: The system shall automatically record the authenticated user as the performer (`performedById`) upon Action Taken creation; manual override of the performer identity by client payload is prohibited.
 - **FR-04 (Follow-Up Conditional Validation)**: The system shall reject any Action Taken creation or update where `isFollowUpRequired` is true but `followUpNote` is empty, contains only whitespace, or has fewer than 3 non-whitespace characters (enforcing a minimum of 3 non-whitespace characters per BR-04).
-- **FR-05 (Actions Taken Modification)**: IT Staff and Administrators shall be able to update an existing Action Taken (`PATCH /api/tickets/:id/actions/:actionId`) under an accessible ticket.
+- **FR-05 (Actions Taken Modification)**: IT Staff and Administrators shall be able to update an existing Action Taken (`PATCH /api/tickets/:id/actions/:actionId`) under an accessible ticket. Deletion of Actions Taken is strictly prohibited to preserve an append-only audit log.
 - **FR-06 (Requester Read-Only Access)**: Requesters shall be able to view all Actions Taken on tickets they own, but shall be strictly blocked from creating or modifying Actions Taken.
 
 ### Ticket Lifecycle & Workflow
@@ -71,13 +71,13 @@ The stakeholder requires:
 - **FR-10 (Mandatory Concurrency Control & Stale-Update Protection)**: The system shall enforce `expectedUpdatedAt` as a strictly mandatory parameter on all status transitions (`PATCH /api/staff/tickets/:id/status`), verifying it against the current database `updatedAt` timestamp and rejecting missing timestamps with `HTTP 400 Bad Request` and stale/outdated submissions with `HTTP 409 Conflict`.
 
 ### Operational Dashboards
-- **FR-11 (Requester Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/requester/dashboard`) returning authoritative metrics strictly isolated to the authenticated Requester: `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and up to 5 recent tickets (`recentTickets`).
+- **FR-11 (Requester Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/requester/dashboard`) returning authoritative metrics strictly isolated to the authenticated Requester: `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets` ("Resolved Tickets"), `closedTickets`, and up to 5 recent tickets (`recentTickets`).
 - **FR-12 (IT Staff Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/staff/dashboard`) returning authoritative operational metrics for IT Staff: primary card counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets`), workload indicators (`unassignedTickets`), full 8-status breakdown (`byStatus`), 4-level priority breakdown (`byPriority`), and recent queue tickets (`recentTickets`).
-- **FR-13 (Dashboard Drill-Down Navigation)**: The frontend shall support interactive drill-down navigation from dashboard metric cards directly to pre-filtered ticket list and queue views.
+- **FR-13 (Dashboard Drill-Down Navigation & Empty States)**: The frontend shall support interactive drill-down navigation from dashboard metric cards directly to pre-filtered ticket list and queue views, alongside graceful loading indicators and empty states for zero-count metrics.
 - **FR-14 (Dashboard Quick Actions)**: Dashboards shall provide contextual shortcut buttons for routine actions (Requester: "Create Ticket", "View All My Tickets"; IT Staff: "Create Ticket", "Search Tickets", "My Assigned Queue"; Administrator: "User Management", "Ticket Queue", "Create Ticket").
-- **FR-15 (Administrator Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/admin/dashboard`) returning authoritative operational ticket summaries (`totalActiveTickets`, `unassignedTickets`) alongside concise user account statistics (`totalUsers`, `activeUsers`, `inactiveUsers`, and breakdown `byRole`) strictly accessible to Administrators.
-- **FR-16 (Regression Continuity)**: All endpoints, views, and behaviors from Labs 1, 2, and 3 (Categories, Tickets, Attachments, Auth, Comments, Internal Notes, Admin User Management) shall function without regression.
-- **FR-17 (Zen Green UI Consistency & Responsive Polish for Core Screens)**: All four core application screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail with Actions Taken `#/tickets/:id`) shall conform strictly to the Zen Green design system across Desktop (1280px), Tablet (768px), and Mobile (375px) viewports with zero horizontal scrolling ($scrollWidth === clientWidth$), no clipped text, and no colliding interactive controls.
+- **FR-15 (Administrator Dashboard Metrics)**: The system shall provide an endpoint (`GET /api/admin/dashboard`) returning authoritative operational ticket summaries (`totalActiveTickets`, `unassignedTickets`), recent queue tickets (`recentTickets`), and concise user account statistics (`totalUsers`, `activeUsers`, `inactiveUsers`, and breakdown `byRole`) strictly accessible to Administrators.
+- **FR-16 (Regression Continuity & Assignee Protection)**: All endpoints, views, and behaviors from Labs 1, 2, and 3 (Categories, Tickets, Attachments, Auth, Comments, Internal Notes, Admin User Management, and rejection of inactive or non-IT Staff ticket assignees with `INVALID_OWNER`) shall function without regression.
+- **FR-17 (Zen Green UI Consistency & Responsive Polish for Core Screens)**: All four core application screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail with Actions Taken `#/ticket/:id`) shall conform strictly to the Zen Green design system across Desktop (1280px), Tablet (768px), and Mobile (375px) viewports with zero horizontal scrolling ($scrollWidth === clientWidth$), no clipped text, and no colliding interactive controls.
 
 ---
 
@@ -90,12 +90,15 @@ The table below defines the authoritative role-based access permissions for Spri
 | **View Actions Taken** | ✅ (Owned tickets) | ✅ (All tickets) | ✅ (All tickets) | Backend ownership check; non-owner Requester receives `403 Forbidden` |
 | **Create Action Taken** | ❌ (403) | ✅ | ✅ | `requireRole(["IT_STAFF", "ADMINISTRATOR"])` returns `403 Forbidden` |
 | **Update Action Taken** | ❌ (403) | ✅ | ✅ | `requireRole(["IT_STAFF", "ADMINISTRATOR"])` returns `403 Forbidden` |
+| **Delete Action Taken** | ❌ (405/404) | ❌ (405/404) | ❌ (405/404) | Append-only audit policy: no delete route exists across all roles |
 | **Transition Ticket to Resolved/Closed** | ❌ (403) | ✅ | ✅ | Resolution gate in status transition route; returns `403 Forbidden` for Requester |
 | **Transition Ticket (Other Valid States)** | ❌ (403) | ✅ | ✅ | Transition matrix route; returns `403 Forbidden` for Requester |
 | **Mark Problem Appears Resolved** | ✅ (Owned tickets) | ❌ (403) | ❌ (403) | Advisory endpoint; preserves `currentStatus` |
-| **View Requester Dashboard** | ✅ (Own data only)| ❌ (403) | ❌ (403) | `requireRole("REQUESTER")`; isolated strictly to `req.user.id` |
-| **View IT Staff Dashboard** | ❌ (403) | ✅ | ✅ | `requireRole(["IT_STAFF", "ADMINISTRATOR"])`; returns `403 Forbidden` for Requester |
-| **View Administrator Dashboard** | ❌ (403) | ❌ (403) | ✅ | `requireRole("ADMINISTRATOR")`; returns `403 Forbidden` for non-administrators |
+| **Access Staff Ticket Queue (`#/staff-queue`)** | ❌ (403) | ✅ | ✅ | Accessible to IT Staff and Administrator for triage and operational oversight |
+| **Reassign Ticket Owner (`PATCH .../assign`)** | ❌ (403) | ✅ | ❌ (403) | Reassignment target must be active `IT_STAFF` member (`INVALID_OWNER` on inactive/non-staff) |
+| **View Requester Dashboard (`GET .../requester/dashboard`)** | ✅ (Own data only)| ❌ (403) | ❌ (403) | `requireRole("REQUESTER")`; isolated strictly to `req.user.id` |
+| **View IT Staff Dashboard (`GET .../staff/dashboard`)** | ❌ (403) | ✅ | ❌ (403) | `requireRole("IT_STAFF")`; returns `403 Forbidden` for Requester and Administrator |
+| **View Administrator Dashboard (`GET .../admin/dashboard`)** | ❌ (403) | ❌ (403) | ✅ | `requireRole("ADMINISTRATOR")`; returns `403 Forbidden` for non-administrators |
 | **Manage User Accounts** | ❌ (403) | ❌ (403) | ✅ | Restricted strictly to `ADMINISTRATOR` (carried forward from Lab 3) |
 
 ---
@@ -107,11 +110,11 @@ The table below defines the authoritative role-based access permissions for Spri
 - **BR-02 (Separation of Ticket Owner and Action Performer)**: The `Ticket.ticketOwnerId` coordinates the overall ticket, but an `ActionTaken` may be performed and recorded by any active IT Staff member or Administrator.
 - **BR-03 (Automated Performer Assignment)**: The `performedById` field is automatically set to the authenticated user's ID at creation time. Clients cannot specify an alternate performer ID.
 - **BR-04 (Mandatory Follow-Up Validation)**: If `isFollowUpRequired === true`, the `followUpNote` field is mandatory and must contain at least 3 non-whitespace characters. If `isFollowUpRequired === false`, `followUpNote` is optional or null. On partial updates (`PATCH`), validation is evaluated against the effective state: if the resulting `isFollowUpRequired` is `true`, any updated `followUpNote` (or existing note if unchanged) must satisfy the minimum 3 non-whitespace character requirement; if `isFollowUpRequired` is updated to `false`, `followUpNote` may be set to null or cleared.
-- **BR-05 (Action Chronology & Stability)**: Actions Taken records are ordered chronologically by `actionDateTime` ascending. Creation timestamps are immutable.
+- **BR-05 (Deterministic Ordering, Append-Only & Deletion Invariant)**: Actions Taken records are strictly append-only and ordered deterministically by `actionDateTime ASC, id ASC` (using auto-increment `id` as tie-breaker for concurrent or identical timestamps). Creation timestamps are immutable. Modifications (`PATCH`) are permitted for error corrections, but deletion (`DELETE`) is strictly prohibited across all roles to preserve a complete operational audit log.
 - **BR-06 (Read-Only Transparency)**: Requesters have read-only visibility into all Actions Taken on tickets they own to promote service transparency. Internal notes remain hidden in the separate `InternalNote` model.
 
 ### Ticket Status & Workflow Rules
-- **BR-07 (8-Status Lifecycle Matrix)**: Tickets strictly follow permitted state transitions across the 8 statuses:
+- **BR-07 (8-Status Lifecycle Matrix & Transition Delta from Lab 3)**: Tickets strictly follow permitted state transitions across the 8 statuses:
   - `NEW` $\to$ `OPEN`, `CANCELLED`
   - `OPEN` $\to$ `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `CANCELLED`
   - `IN_PROGRESS` $\to$ `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED`
@@ -120,6 +123,13 @@ The table below defines the authoritative role-based access permissions for Spri
   - `CLOSED` $\to$ `REOPENED`
   - `REOPENED` $\to$ `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CANCELLED`
   - `CANCELLED` $\to$ (Terminal state; no transitions permitted)
+  
+  *Transition Matrix Refinements from Lab 3 Baseline (Approved Sprint 4 Workflow)*:
+  1. `NEW` $\to$ `IN_PROGRESS` removed: Tickets must first transition to `OPEN` during initial triage before active remediation begins.
+  2. `OPEN` $\to$ `RESOLVED` removed: Tickets must enter `IN_PROGRESS` before resolution to ensure documented diagnostic or remediation work.
+  3. `CLOSED` $\to$ `REOPENED` added: Permitted to allow reopening prematurely closed tickets or reoccurring issues without forcing requesters to recreate tickets.
+  4. `REOPENED` $\to$ `WAITING_FOR_REQUESTER` added: Reopened tickets frequently require updated diagnostic information from the requester.
+  These four refinements represent the authoritative Sprint 4 lifecycle contract approved over Lab 3 baseline rules.
 - **BR-08 (Resolution Authority Gate)**: Only authenticated users with role `IT_STAFF` or `ADMINISTRATOR` are permitted to transition a ticket into `RESOLVED` or `CLOSED`.
 - **BR-09 (Advisory Requester Indication)**: Setting `problemAppearsResolved = true` indicates user confirmation that their issue seems resolved, but does not alter `currentStatus`. IT Staff or Administrator must formally inspect the ticket and execute the status transition to `RESOLVED`.
 - **BR-10 (Mandatory Optimistic Concurrency Protection)**: When transitioning ticket status (`PATCH /api/staff/tickets/:id/status`), the client MUST provide the ticket's known `expectedUpdatedAt` ISO timestamp. The backend evaluates three distinct failure scenarios:
@@ -138,7 +148,7 @@ The table below defines the authoritative role-based access permissions for Spri
   - `openTickets` (`My Open Tickets`): Count of tickets where `requesterId = req.user.id` and `currentStatus IN ('NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED')`.
   - `inProgressTickets` (`In Progress`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'IN_PROGRESS'`.
   - `waitingForRequesterTickets` (`Waiting for Requester`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'WAITING_FOR_REQUESTER'`.
-  - `resolvedTickets` (`Recently Resolved`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'RESOLVED'`.
+  - `resolvedTickets` (`Resolved Tickets`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'RESOLVED'` (represents all resolved tickets awaiting requester confirmation or closure, without time-interval filtering).
   - `closedTickets` (`Closed`): Count of tickets where `requesterId = req.user.id` and `currentStatus = 'CLOSED'`.
   - `recentTickets` (`My Recent Tickets`): Top 5 tickets owned by requester ordered by `updatedAt DESC`.
 - **BR-14 (IT Staff Metric Definitions)**:
@@ -147,7 +157,7 @@ The table below defines the authoritative role-based access permissions for Spri
     - `openTickets` (`Open`): Count of active tickets where `currentStatus = 'OPEN'`.
     - `inProgressTickets` (`In Progress`): Count of active tickets where `currentStatus = 'IN_PROGRESS'`.
     - `waitingForRequesterTickets` (`Waiting for Requester`): Count of active tickets where `currentStatus = 'WAITING_FOR_REQUESTER'`.
-    - `myAssignedTickets` (`My Assigned`): Count of active tickets where `ticketOwnerId = req.user.id` and `currentStatus NOT IN ('CLOSED', 'CANCELLED')`.
+    - `myAssignedTickets` (`My Assigned`): Count of active tickets where `ticketOwnerId = req.user.id` and `currentStatus NOT IN ('CLOSED', 'CANCELLED')` (strictly scoped to the authenticated IT Staff user; ticket reassignment requires active `IT_STAFF` role).
   - Operational Queue Aggregations:
     - `unassignedTickets` (`Unassigned Queue`): Count of active tickets where `ticketOwnerId IS NULL` and `currentStatus NOT IN ('CLOSED', 'CANCELLED')`.
     - `byStatus`: Complete counts across all 8 lifecycle statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`).
@@ -158,7 +168,7 @@ The table below defines the authoritative role-based access permissions for Spri
     - `My Open Tickets` $\to$ `#/my-tickets?status=OPEN_GROUP` (filter preset mapping to all active non-final statuses: `NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `REOPENED`, matching the server-computed `openTickets` metric count)
     - `In Progress` $\to$ `#/my-tickets?status=IN_PROGRESS`
     - `Waiting for Requester` $\to$ `#/my-tickets?status=WAITING_FOR_REQUESTER`
-    - `Recently Resolved` $\to$ `#/my-tickets?status=RESOLVED`
+    - `Resolved Tickets` $\to$ `#/my-tickets?status=RESOLVED`
     - `Closed` $\to$ `#/my-tickets?status=CLOSED`
   - IT Staff Dashboard Drill-Downs:
     - `New` $\to$ `#/staff-queue?status=NEW`
@@ -173,9 +183,10 @@ The table below defines the authoritative role-based access permissions for Spri
     - `Total Users` $\to$ `#/admin-users` (all user management accounts)
     - `Active Users` $\to$ `#/admin-users` (user management accounts)
     - `Inactive Users` $\to$ `#/admin-users` (user management accounts)
-- **BR-16 (Safe Empty & Loading States)**: When metric counts are zero or lists are empty, dashboards display descriptive, friendly empty states with appropriate guidance rather than blank areas or raw zeros.
+- **BR-16 (Safe Empty & Loading States)**: When metric counts are zero or lists/queues are empty, dashboards display descriptive, friendly empty states with appropriate guidance rather than blank areas or raw zeros; asynchronous operations display accessible skeleton or spinner loading indicators without layout shift.
 - **BR-17 (Administrator Dashboard Calculation Rules & Access)**:
   - `operational`: Summarizes non-final system tickets (`totalActiveTickets = count(currentStatus NOT IN ('CLOSED', 'CANCELLED'))`, `unassignedTickets = count(ticketOwnerId IS NULL AND currentStatus NOT IN ('CLOSED', 'CANCELLED'))`).
+  - `recentTickets`: Top 5 active tickets across the system ordered by `updatedAt DESC` (enabling administrative queue oversight directly from the dashboard).
   - `users`: Computes authoritative account counts from `User` records (`totalUsers`, `activeUsers = count(isActive = true)`, `inactiveUsers = count(isActive = false)`), alongside distribution counts by role (`requester`, `itStaff`, `administrator`).
   - Access is restricted exclusively to authenticated users with role `ADMINISTRATOR`. Requester or IT Staff requests receive `HTTP 403 Forbidden`.
 
@@ -192,18 +203,18 @@ The table below defines the authoritative role-based access permissions for Spri
   - Default view upon login routes directly to the user's role-appropriate `Dashboard`.
 
 ### Actions Taken Section (`ActionsTakenSection.tsx`)
-- Located on the Ticket Detail screen directly below Ticket Metadata and above Comments/Notes.
+- Located on the Ticket Detail screen directly below Ticket Metadata and above Comments/Notes (`#/ticket/:id`).
 - Displays chronological list of action entries:
   - Header: Action Date/Time formatted cleanly, Performed by badge, Follow-Up indicator badge.
   - Body: Action Description and Result summary.
   - Footer: Follow-up Note (rendered with amber accent if required), Attachment Notes reference.
-- **IT Staff & Administrator Mode**: Includes "+ Add Action Taken" button opening an inline modal/card. Form includes Date/Time picker (defaults to now), Description textarea, Result textarea, Follow-Up checkbox, dynamic Follow-Up Note input (mandatory when checked), and Attachment Notes input. Includes edit action for recorded items.
+- **IT Staff & Administrator Mode**: Includes "+ Add Action Taken" button opening an inline modal/card. Form includes Date/Time picker (defaults to now), Description textarea, Result textarea, Follow-Up checkbox, dynamic Follow-Up Note input (mandatory when checked), and Attachment Notes input. Includes edit action for recorded items. Deletion is prohibited.
 - **Requester Mode**: Purely read-only; Add/Edit buttons and forms are completely omitted.
 
 ### Dashboards
 - **Requester Dashboard (`RequesterDashboard.tsx`)**:
   - Greeting banner with user's name.
-  - Row of 5 primary metric cards: My Open Tickets (`openTickets`), In Progress (`inProgressTickets`), Waiting for Requester (`waitingForRequesterTickets`), Recently Resolved (`resolvedTickets`), and Closed (`closedTickets`), with interactive drill-down navigation.
+  - Row of 5 primary metric cards: My Open Tickets (`openTickets`), In Progress (`inProgressTickets`), Waiting for Requester (`waitingForRequesterTickets`), Resolved Tickets (`resolvedTickets`), and Closed (`closedTickets`), with interactive drill-down navigation.
   - 2-column lower section: "My Recent Tickets" table/card list on the left, "Quick Actions" panel on the right (Create Ticket, View All My Tickets).
 - **IT Staff Dashboard (`StaffDashboard.tsx`)**:
   - Operational summary banner with refresh button.
@@ -214,7 +225,7 @@ The table below defines the authoritative role-based access permissions for Spri
   - Operational & administrative overview banner with system health and refresh controls.
   - Upper Metric Cards Grid: Operational Queue (`Total Active Tickets`, `Unassigned Queue`) alongside User Statistics (`Total Users`, `Active Users`, `Inactive Users`).
   - User Role Distribution Badges: Live count badges for `Requesters`, `IT Staff`, and `Administrators`.
-  - 2-column lower section: "Recent System Queue" list on the left, "Administrative Quick Actions" on the right ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "Create Ticket" linking to `#/create-ticket`).
+  - 2-column lower section: "Recent System Queue" list (`recentTickets`) on the left, "Administrative Quick Actions" on the right ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "Create Ticket" linking to `#/create-ticket`).
   - Drill-down: Clicking `Total Active Tickets` navigates to `#/staff-queue`; clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`; clicking User summary cards (`Total Users`, `Active Users`, `Inactive Users`) navigates to `#/admin-users`.
 
 ### Responsive Breakpoints
@@ -251,7 +262,8 @@ model ActionTaken {
 
 ### 7.2 Database Design Decisions & Justifications (Required by Handout §5.1)
 1. **Decision 1: Relational Child Model with Cascading Deletion vs. JSON Column**
-   - *Rationale*: Modeling `ActionTaken` as a discrete relational entity (`ActionTaken`) rather than a JSON array inside `Ticket` preserves third normal form (3NF), allows foreign key integrity to the `User` table for performer attribution, enables indexed queries on `actionDateTime` and `performedById` for staff workload reporting, and supports Prisma relational validation. Cascading deletion ensures ticket cleanup during tests without orphan action records.
+   - *Rationale*: Modeling `ActionTaken` as a discrete relational entity (`ActionTaken`) rather than a JSON array inside `Ticket` preserves third normal form (3NF), allows foreign key integrity to the `User` table for performer attribution, enables indexed queries on `actionDateTime` and `performedById` for staff workload reporting, and supports Prisma relational validation.
+   - *Deletion Invariant & Cascading Policy*: Actions Taken records are strictly append-only in operational workflows; the API exposes no delete endpoint. The Prisma schema configuration `onDelete: Cascade` on the `ticket` relation exists strictly as an infrastructure-level safety mechanism for automated test database cleanup and administrative ticket purges during development. In standard application operation, tickets are never hard-deleted (only transitioned to `CLOSED` or `CANCELLED`), guaranteeing complete preservation of the audit trail.
 2. **Decision 2: Optimistic Concurrency Control via Timestamp Validation (`updatedAt`)**
    - *Rationale*: Service desk environments frequently involve multiple staff members reviewing the same ticket queue simultaneously. Using Prisma's automatic `@updatedAt` timestamp as an optimistic concurrency barrier ensures that if Staff Member A modifies a ticket while Staff Member B has the screen open, Staff Member B's stale status transition is rejected with `409 Conflict`, preventing accidental state overwrites without requiring heavy pessimistic database locks.
    - *Concurrency Protection Scope Clarification*: Optimistic concurrency verification (`expectedUpdatedAt`) is strictly mandated for **Ticket Status Transitions** (`PATCH /api/staff/tickets/:id/status`) to guard against state collision during triage and resolution. Actions Taken (`ActionTaken`) are modeled as append-friendly chronological activity logs ($1:N$); edits to existing actions (`PATCH /api/tickets/:id/actions/:actionId`) are audited and tracked via Prisma's model-level `@updatedAt` timestamp and do not trigger concurrency locks on the parent ticket.
@@ -261,9 +273,9 @@ model ActionTaken {
 - **Legacy Ticket Handling**: Dashboard calculations and ticket views treat legacy tickets with zero Actions Taken seamlessly using standard SQL outer joins or Prisma relation counts.
 - **Migration Recovery and Test Database Isolation**:
   Migration recovery must distinguish between failed migrations and migrations that have already been applied successfully:
-  - **Failed migrations**: Inspect the database schema and migration state before recovery. Use `npx prisma migrate resolve --rolled-back <migration_name>` only when the migration is genuinely recorded as failed (`finished_at IS NULL`) and the database schema has been restored (e.g. dropping partially created tables/indexes via `DROP TABLE IF EXISTS "ActionTaken" CASCADE;`) to a state suitable for safely retrying it via `npx prisma migrate deploy`.
+  - **Failed migrations**: Inspect the database schema and migration state before recovery. Use `npx prisma migrate resolve --rolled-back <migration_name>` only when the migration is genuinely recorded as failed (`finished_at IS NULL`) and the database schema has been restored (e.g. dropping partially created tables/indexes via `DROP TABLE IF EXISTS "ActionTaken" CASCADE;`) to a state suitable for safely retrying it via `npx prisma migrate deploy`. Verified by automated test suite `MIG-02`.
   - **Successfully applied migrations**: Do not delete or reset records in Prisma's internal `_prisma_migrations` table to force an already-applied migration to run again. Apply a new corrective or compensating migration when a schema change is required in production or staging environments.
-  - **Migration testing & verification**: Use an isolated disposable test database with an explicitly prepared baseline schema where all preceding baseline migrations (Labs 1–3) are applied and recorded as successful in `_prisma_migrations`. Verify that `npx prisma migrate deploy` applies the pending migration successfully and preserves existing legacy data. Do not manipulate migration history to simulate a fresh migration run.
+  - **Migration testing & verification**: Use an isolated disposable test database with an explicitly prepared baseline schema where all preceding baseline migrations (Labs 1–3) are applied and recorded as successful in `_prisma_migrations`. Verify that `npx prisma migrate deploy` applies the pending migration successfully and preserves existing legacy data (`MIG-01`). Do not manipulate migration history to simulate a fresh migration run.
 
 ### 7.4 Required Seed Scenarios Mapping (Required by Handout §5.3)
 The idempotent seed script (`prisma/seed.ts`) populates realistic test data covering all five required scenario dimensions (Handout §5.3) plus repeated-run idempotency verification (6 verification categories total). Suite `SEED-01` (`server/tests/lab-04/seed-data.test.ts`) verifies these scenarios directly across repeated runs:
@@ -272,7 +284,7 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 | :--- | :--- | :--- |
 | **1. Lifecycle Statuses** | Seed tickets across all 8 statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`) | `SEED-01` queries and verifies tickets in each of the 8 distinct statuses; further verified by `WF-03` & `API-10` |
 | **2. IT Priorities** | Seed tickets across all 4 priorities (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) | `SEED-01` queries and verifies tickets in each of the 4 priority levels; further verified by `API-10` |
-| **3. Ownership Distribution** | Seed tickets with assigned owner (`ticketOwnerId = staff.id`) and unassigned queue (`ticketOwnerId = null`) | `SEED-01` queries and verifies presence of both assigned and unassigned tickets; further verified by `API-10` |
+| **3. Ownership Distribution** | Seed tickets with assigned owner (`ticketOwnerId = staff.id`) and unassigned queue (`ticketOwnerId = null`) | `SEED-01` queries and verifies presence of both assigned and unassigned tickets; further verified by `API-10`, `API-15` |
 | **4. Actions Taken Multiplicity** | Seed tickets with exactly 0, 1, and multiple ($\ge 2$) Actions Taken lines with varied staff performers | `SEED-01` asserts tickets with count = 0, count = 1, and count $\ge 2$; further verified by `API-04`, `UI-01a`, `E2E-01` |
 | **5. Dashboard Metrics Sets** | Seed active users with non-zero metrics and clean/fresh user accounts with zero metrics | `SEED-01` verifies non-zero counts for active users and zero-count baselines for fresh users; further verified by `API-09`, `API-10`, `UI-05`, `UI-06` empty states |
 | **6. Repeated Run Idempotency** | Seed script executed multiple times sequentially (`seed.ts` run 1 $\to$ run 2) | `SEED-01` asserts zero unique constraint/foreign key collisions, and confirms that total record counts remain identical after run 2 |
@@ -287,9 +299,10 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 | `POST` | `/api/tickets/:id/actions` | IT Staff, Administrator | Create new Action Taken; performer auto-set from session | 201, 400, 401, 403, 404 |
 | `PATCH` | `/api/tickets/:id/actions/:actionId` | IT Staff, Administrator | Update details of an existing Action Taken | 200, 400, 401, 403, 404 |
 | `PATCH` | `/api/staff/tickets/:id/status` | IT Staff, Administrator | Execute status transition with mandatory concurrency check | 200, 400, 401, 403, 404, 409 |
+| `PATCH` | `/api/staff/tickets/:id/assign` | IT Staff | Reassign ticket owner (target user must be active IT Staff) | 200, 400 (`INVALID_OWNER`), 401, 403, 404 |
 | `GET` | `/api/requester/dashboard` | Requester | Retrieve authenticated Requester's 5 summary metrics | 200, 401, 403 |
-| `GET` | `/api/staff/dashboard` | IT Staff, Administrator | Retrieve system queue operational metrics & 8-status breakdown | 200, 401, 403 |
-| `GET` | `/api/admin/dashboard` | Administrator | Retrieve operational queue summary & user account metrics | 200, 401, 403 |
+| `GET` | `/api/staff/dashboard` | IT Staff | Retrieve IT Staff operational queue metrics & breakdowns | 200, 401, 403 |
+| `GET` | `/api/admin/dashboard` | Administrator | Retrieve operational queue summary, recent tickets & user counts | 200, 401, 403 |
 
 ---
 
@@ -306,21 +319,25 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 - **AC-09**: Given an authenticated IT Staff or Administrator user, when attempting an invalid status transition (e.g. `NEW` $\to$ `RESOLVED`), the backend rejects the request with `HTTP 400 Bad Request` and descriptive transition error (FR-09, BR-07).
 - **AC-10**: Given an authenticated IT Staff or Administrator user, when submitting a status transition with missing or malformed ISO-8601 `expectedUpdatedAt`, the backend rejects the request with `HTTP 400 Bad Request` (`VALIDATION_ERROR`) (FR-10, BR-10).
 - **AC-11**: Given an authenticated IT Staff or Administrator user, when submitting a status transition with an outdated or mismatched `expectedUpdatedAt` timestamp, the backend rejects the request with `HTTP 409 Conflict` returning `currentUpdatedAt` (FR-10, BR-10).
-- **AC-12**: Given an authenticated Requester user, when calling `GET /api/requester/dashboard`, the response returns authoritative counts for `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets`, `closedTickets`, and `recentTickets` strictly isolated to the user (FR-11, BR-12, BR-13).
-- **AC-13a**: Given an authenticated IT Staff user, when calling `GET /api/staff/dashboard`, the backend returns `HTTP 200 OK` with accurate queue metrics: primary counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets` reflecting the authenticated staff member's assignments), `unassignedTickets`, full 8-status `byStatus`, 4-level `byPriority`, and up to 5 recent queue tickets (`recentTickets`) strictly adhering to the API contract (FR-12, BR-12, BR-14).
-- **AC-13b**: Given an authenticated Administrator user, when calling `GET /api/staff/dashboard`, the backend returns `HTTP 200 OK` with accurate queue metrics: primary counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets` reflecting the authenticated administrator's assignments), `unassignedTickets`, full 8-status `byStatus`, 4-level `byPriority`, and up to 5 recent queue tickets (`recentTickets`), confirming distinct positive operational verification for administrators (FR-12, BR-12, BR-14).
-- **AC-14**: Given an authenticated Requester user, when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden` (FR-12).
-- **AC-15a**: Given an authenticated Requester on the Dashboard UI, clicking any summary metric card navigates to the My Tickets view with the corresponding status filter preset (drill-down) (FR-13, BR-15).
+- **AC-12**: Given an authenticated Requester user, when calling `GET /api/requester/dashboard`, the response returns authoritative counts for `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `resolvedTickets` ("Resolved Tickets"), `closedTickets`, and `recentTickets` strictly isolated to the user (FR-11, BR-12, BR-13).
+- **AC-13**: Given an authenticated IT Staff user, when calling `GET /api/staff/dashboard`, the backend returns `HTTP 200 OK` with accurate queue metrics: primary counts (`newTickets`, `openTickets`, `inProgressTickets`, `waitingForRequesterTickets`, `myAssignedTickets` reflecting the authenticated staff member's assignments), `unassignedTickets`, full 8-status `byStatus`, 4-level `byPriority`, and up to 5 recent queue tickets (`recentTickets`) strictly adhering to the API contract (FR-12, BR-12, BR-14).
+- **AC-14**: Given an authenticated non-IT Staff user (Requester or Administrator), when attempting to call `GET /api/staff/dashboard`, the backend returns `HTTP 403 Forbidden` (FR-12).
+- **AC-15a**: Given an authenticated Requester on the Dashboard UI, clicking any summary metric card navigates to the My Tickets view with the corresponding status filter preset (drill-down), including `Resolved Tickets` $\to$ `#/my-tickets?status=RESOLVED` (FR-13, BR-15).
 - **AC-15b**: Given an authenticated IT Staff user on the Dashboard UI, clicking any primary metric card or unassigned queue indicator navigates to the Staff Ticket Queue with the corresponding filter preset (drill-down) (FR-13, BR-15).
 - **AC-16**: Given an authenticated user on Requester, IT Staff, or Administrator Dashboard UI, the Quick Actions panel renders operational shortcut links (Requester: "Create Ticket", "View All My Tickets"; IT Staff: "Create Ticket", "Search Tickets", "My Assigned Queue"; Administrator: "User Management", "Ticket Queue", "Create Ticket") that navigate directly to target functional views upon click (FR-14, BR-13, BR-14, BR-17).
-- **AC-17**: Given the four core responsive screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail with Actions Taken `#/tickets/:id`) across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$), all interactive controls, cards, and status badges adhere to Zen Green design tokens (`--zg-primary`, `--zg-bg-page`, `--zg-surface`, `--zg-border`), and components render without text clipping or overlapping modal/action controls (FR-17).
+- **AC-17**: Given the four core responsive screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail with Actions Taken `#/ticket/:id`) across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$), zero horizontal scrolling occurs ($scrollWidth === clientWidth$), all interactive controls, cards, and status badges adhere to Zen Green design tokens (`--zg-primary`, `--zg-bg-page`, `--zg-surface`, `--zg-border`), and components render without text clipping or overlapping modal/action controls (FR-17).
 - **AC-18**: All regression tests for authentication, ticket creation, ticket queue, attachments, public comments, internal notes, and user management pass 100% without failure (FR-16).
-- **AC-19a**: Given an authenticated Administrator user, when calling `GET /api/admin/dashboard`, the response returns `HTTP 200 OK` with authoritative operational summaries (`totalActiveTickets`, `unassignedTickets`) and user account distribution metrics (`totalUsers`, `activeUsers`, `inactiveUsers`, `byRole`) (FR-15, BR-17).
+- **AC-19a**: Given an authenticated Administrator user, when calling `GET /api/admin/dashboard`, the response returns `HTTP 200 OK` with authoritative operational summaries (`totalActiveTickets`, `unassignedTickets`), `recentTickets` (top 5 active tickets in the system ordered by `updatedAt DESC`), and user account distribution metrics (`totalUsers`, `activeUsers`, `inactiveUsers`, `byRole`) (FR-15, BR-17).
 - **AC-19b**: Given an authenticated non-administrator user (Requester or IT Staff), when attempting to call `GET /api/admin/dashboard`, the backend rejects the request with `HTTP 403 Forbidden` (FR-15, BR-17).
-- **AC-20**: Given an authenticated Administrator on the Dashboard UI, the view renders operational queue indicators (`totalActiveTickets`, `unassignedTickets`), user account statistics (`totalUsers`, `activeUsers`, `inactiveUsers`), role distribution badges (`byRole`), recent system queue list, administrative Quick Actions ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "Create Ticket" linking to `#/create-ticket`), and interactive drill-downs (clicking `Total Active Tickets` navigates to `#/staff-queue`, clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`, clicking user statistics navigates to `#/admin-users`), conforming to Zen Green styling without text clipping or overlapping controls (FR-13, FR-14, FR-15, FR-17, BR-15, BR-17).
-- **AC-21**: Given an isolated test database prepared with the required legacy schema, representative legacy data, and preceding baseline migrations (Labs 1–3) recorded as applied in `_prisma_migrations`, when the pending migration is deployed using `npx prisma migrate deploy`, then the migration must complete successfully, the expected schema changes (`ActionTaken` table, foreign keys, indexes) must be present, and all required legacy data (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) must remain intact. Migration recovery tests must use a database state appropriate to the scenario: failed migrations may be resolved using Prisma's supported recovery workflow (`npx prisma migrate resolve --rolled-back <migration_name>`) after verifying database state, whereas successfully applied migrations must not be rerun by manually deleting or resetting records in `_prisma_migrations` (Handout §5.2).
+- **AC-20**: Given an authenticated Administrator on the Dashboard UI, the view renders operational queue indicators (`totalActiveTickets`, `unassignedTickets`), user account statistics (`totalUsers`, `activeUsers`, `inactiveUsers`), role distribution badges (`byRole`), recent system queue list (`recentTickets`), administrative Quick Actions ("User Management" linking to `#/admin-users`, "Ticket Queue" linking to `#/staff-queue`, "Create Ticket" linking to `#/create-ticket`), and interactive drill-downs (clicking `Total Active Tickets` navigates to `#/staff-queue`, clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`, clicking user statistics navigates to `#/admin-users`), conforming to Zen Green styling without text clipping or overlapping controls (FR-13, FR-14, FR-15, FR-17, BR-15, BR-17).
+- **AC-21**: Given an isolated test database prepared with the required legacy schema, representative legacy data, and preceding baseline migrations (Labs 1–3) recorded as applied in `_prisma_migrations`, when the pending migration is deployed using `npx prisma migrate deploy`, then the migration must complete successfully, the expected schema changes (`ActionTaken` table, foreign keys, indexes) must be present, and all required legacy data (`User`, `Ticket`, `Attachment`, `Comment`, `InternalNote`) must remain intact. When testing migration recovery, simulating a failed migration state (`finished_at IS NULL`) is safely resolved using `npx prisma migrate resolve --rolled-back <migration_name>` followed by clean re-deployment, without manual deletion or resetting of records in `_prisma_migrations` (Handout §5.2).
 - **AC-22**: Given the execution of the seed script (`prisma/seed.ts`), when run initially and repeatedly (idempotency verification), no duplicate key violations occur, record counts remain consistent, and realistic test data covering all five required scenario dimensions (8 statuses, 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, zero/non-zero dashboard metrics) plus repeated-run idempotency is populated and verified directly by `SEED-01` (Handout §5.3).
 - **AC-23**: Given a ticket in `CANCELLED` terminal status, when attempting to create an Action Taken (`POST /api/tickets/:id/actions`), update an Action Taken (`PATCH /api/tickets/:id/actions/:actionId`), transition ticket status (`PATCH /api/staff/tickets/:id/status`), or submit advisory resolution indication (`PATCH /api/requester/tickets/:id/resolve-indication`), the backend rejects the request with `HTTP 400 Bad Request` (`TICKET_CANCELLED`) and prevents any modifications (FR-02, FR-05, FR-08, FR-09, BR-11).
+- **AC-24**: Given any dashboard (Requester, Staff, Admin) or Ticket Detail with Actions Taken, when metric counts are zero or lists/queues contain no matching records, user-friendly empty state banners with clear instructional messaging are rendered; while network operations are loading, accessible loading state indicators (spinners or skeleton cards) are displayed without layout shifting (FR-13, BR-16).
+- **AC-25**: Given an authenticated IT Staff user, when attempting to reassign ticket ownership (`PATCH /api/staff/tickets/:id/assign`) to an inactive user or a user without role `IT_STAFF`, the backend rejects the request with `HTTP 400 Bad Request` (`INVALID_OWNER`), preserving the Lab 3 contract and fulfilling Handout §14 Part 6 (FR-16).
+- **AC-26**: Given an Action Taken creation or update request, the backend rigorously validates all provided fields: `actionDescription` (5–2000 chars), `result` (3–2000 chars), `actionDateTime` (valid ISO-8601 UTC date string), and `attachmentNotes` ($\le 500$ chars), returning `HTTP 400 Bad Request` (`VALIDATION_ERROR`) with specific field details on out-of-boundary values (FR-02, FR-04).
+- **AC-27**: Given multiple Actions Taken on a ticket, they are strictly immutable with respect to deletion (no `DELETE` route exists), and are returned sorted deterministically by `actionDateTime ASC, id ASC`, ensuring identical stable ordering across repeat queries (FR-01, BR-05).
+- **AC-28**: Given a ticket status update form in the frontend UI, when a concurrent update causes the backend to return `HTTP 409 Conflict`, the UI renders a prominent, non-destructive conflict notification banner displaying the updated database timestamp, while strictly preserving the user's uncommitted form inputs so they can review changes and retry without retyping (FR-10, BR-10).
 
 ---
 
@@ -328,11 +345,13 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 
 ### Stage 1: Implementation & Local Verification
 - [ ] Prisma schema updated with `ActionTaken` model and migration generated cleanly without data loss.
-- [ ] Idempotent seed script populates realistic tickets with zero, one, and multiple Actions Taken.
+- [ ] Idempotent seed script populates realistic tickets with zero, one, and multiple Actions Taken across all 5 dimensions.
 - [ ] Backend endpoints for Actions Taken, workflow concurrency, and Dashboards implemented with strict validation and RBAC.
+- [ ] Inactive assignee rejection (`INVALID_OWNER`) verified and documented with evidence.
 - [ ] Frontend components for Actions Taken and Dashboards implemented according to Zen Green design tokens.
-- [ ] All unit, API, UI, and E2E tests authored and passing 100% locally.
-- [ ] Responsive audit confirms zero horizontal overflow across Desktop, Tablet, and Mobile.
+- [ ] All unit, API, UI component, UI style, performance-smoke, accessibility, and E2E tests authored and passing 100% locally.
+- [ ] Migration recovery test (`MIG-02`) verified using Prisma-supported rollback commands on an isolated disposable test database.
+- [ ] Responsive audit confirms zero horizontal overflow ($scrollWidth === clientWidth$) across Desktop, Tablet, and Mobile on `#/ticket/:id` and all dashboards.
 
 ### Stage 2: Peer Review & Release Integration
 - [ ] Feature branch opened and Pull Request submitted to `lab4-staging`.
@@ -351,3 +370,4 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 2. **Advisory Resolution Flag Behavior**: Marking a ticket as "Problem Appears Resolved" by a Requester does not prevent further communication or actions. When an IT Staff or Administrator user subsequently transitions the ticket to `RESOLVED`, the advisory flag remains `true` as an audit record.
 3. **Drill-Down Routing Architecture**: Drill-down interactions utilize URL hash parameters (e.g. `#/my-tickets?status=WAITING_FOR_REQUESTER` or `#/staff-queue?owner=unassigned`) to preserve browser history, allow shareable links, and enable predictable back-button navigation.
 4. **Dashboard Aggregation Scope**: Dashboard metrics compute against non-cancelled tickets for active workloads, with explicit cards for resolved and closed tickets to reflect operational throughput.
+5. **Administrator Operational Role Expansion**: In Lab 3, Administrator was restricted from ticket operations and queue access. In Lab 4, per stakeholder request and confirmed project policy, Administrator privileges are formally expanded to execute ticket status transitions, manage Actions Taken, and access the Ticket Queue (`#/staff-queue`) for operational oversight. However, ticket assignment (`ticketOwnerId`) remains exclusive to active `IT_STAFF` users, preserving the separation between assigned frontline workers and system administrators. Staff Dashboard (`GET /api/staff/dashboard`) is tailored to IT Staff personal workloads, while Administrator has a dedicated Admin Dashboard (`GET /api/admin/dashboard`) containing system-wide queue metrics, `recentTickets`, and user distribution statistics.
