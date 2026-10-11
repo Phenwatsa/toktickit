@@ -207,7 +207,7 @@ To guarantee compliance with FR-17 and AC-17, testing is partitioned into two di
 ### 6.4 Concurrency Conflict State & Form State Preservation (409 Conflict, BR-16, AC-28)
 - **Visual Alert**: When a ticket status transition yields HTTP 409 Conflict (`STALE_UPDATE_CONFLICT`), a prominent red banner is displayed at the top of the detail screen:
   `"Conflict: This ticket was updated by another team member while you were viewing it. Please review the updated status."`
-- **Form State Preservation Contract**: The UI **strictly preserves all uncommitted user inputs** in active status transition controls and dialogs (e.g. selected target status, transition notes, or resolution remarks). It does NOT wipe or reset entered form inputs. (Note: Per `api-spec.md` §3.2, optimistic concurrency control is scoped strictly to ticket status transitions; Actions Taken logging is append-only and does not trigger 409 conflicts).
+- **Form State Preservation Contract**: The UI **strictly preserves all uncommitted user inputs** in active status transition controls and dialogs (e.g. selected target status, transition notes, or resolution remarks). It does NOT wipe or reset entered form inputs. (Note: Per `api-spec.md` §3.2, optimistic concurrency control is scoped strictly to ticket status transitions; Actions Taken logging is a non-deletable operational history and does not trigger 409 conflicts).
 - **Resolution Action**: The banner provides a `"Refresh Ticket State"` button that re-fetches the current ticket state and synchronizes the client's internal `updatedAt` / `expectedUpdatedAt` token, enabling the staff member or administrator to review the updated status and retry the status transition without losing entered notes.
 
 ---
