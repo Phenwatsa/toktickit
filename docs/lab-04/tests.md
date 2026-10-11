@@ -1,10 +1,10 @@
 # TokTickIT Lab 4 — Test Plan & Traceability Matrix
 
-This document provides the authoritative test plan, architecture breakdown, and full Requirements Traceability Matrix (RTM) for TokTickIT Sprint 4 (Lab 4). It links Functional Requirements (FR) and Business Rules (BR) to testable Acceptance Criteria (AC) and planned automated test cases across all six testing levels.
+This document provides the authoritative test plan, architecture breakdown, and full Requirements Traceability Matrix (RTM) for TokTickIT Sprint 4 (Lab 4). It links Functional Requirements (FR) and Business Rules (BR) to testable Acceptance Criteria (AC) and planned automated test cases across all seven testing tiers.
 
 ---
 
-## 1. Test Strategy & Architectural Breakdown (6 Test Types)
+## 1. Test Strategy & Architectural Breakdown (7 Testing Tiers)
 
 The test plan enforces comprehensive multi-tier quality assurance covering all specified test dimensions across 53 planned tests:
 
@@ -14,23 +14,25 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    - `status-transition-matrix.unit.test.ts` (`UNIT-02`): Validates permitted vs forbidden transitions across all 8 statuses and role authority checks.
    - `concurrency-check.unit.test.ts` (`UNIT-03`): Validates optimistic concurrency timestamp comparison logic.
    - `dashboard-calculator.unit.test.ts` (`UNIT-04`): Validates aggregation logic for metric counts.
-2. **API & Database Integration Tests (`server/tests/lab-04/`)**:
-   Supertest suites and integration tests (24 planned tests: 20 API endpoint tests, 1 performance smoke test, 2 database migration tests, and 1 seed integrity test) asserting HTTP status codes, request validation, database interactions, RBAC isolation, schema rollback, performance thresholds, and seed integrity:
+2. **API & Performance Smoke Tests (`server/tests/lab-04/`)**:
+   Supertest suites and performance benchmarks (21 planned tests: 20 API endpoint tests across `API-01`–`API-17` and 1 performance smoke test `PERF-SMOKE-01`) asserting HTTP status codes, request validation, RBAC isolation, database interactions, error schema compliance, and response latency thresholds:
    - `actions-taken.api.test.ts`: Tests CRUD endpoints, auto-performer attribution, ticket scoping check (404 on cross-ticket patch), rejection of actions on CANCELLED tickets (`API-14a`), field boundary validations (`API-16`), append-only audit invariant asserting no delete endpoint exists (`API-17`), and cross-user isolation for both `IT_STAFF` and `ADMINISTRATOR` roles (`API-01`–`API-06`, `API-14a`, `API-16`, `API-17`).
    - `ticket-workflow.api.test.ts`: Tests status transitions, optimistic concurrency validation (missing/malformed ISO returns 400 `API-07`, stale timestamp returns 409 `API-08`), rejection of status transitions & advisory resolution on CANCELLED tickets (`API-14b`), rejection of inactive or non-IT Staff assignees on ticket reassignment (`API-15`), and Administrator supervisory ticket queue retrieval and status transition execution (`API-10b`).
    - `requester-dashboard.api.test.ts`: Tests Requester metrics calculation and strict tenant isolation (`API-09`).
    - `staff-dashboard.api.test.ts`: Tests Staff queue metrics, status breakdowns, priority breakdowns, and recent queue tickets for IT Staff (`API-10`), Admin operational & user metrics (`API-12`), and non-permitted 403 rejections for Requesters and Administrators (`API-11`, `API-13`).
    - `performance-smoke.test.ts` (`PERF-SMOKE-01`): Performance smoke benchmark asserting dashboard aggregation latency (< 300ms) and actions list retrieval latency (< 200ms) under standard seeded load.
+3. **Database Migration & Seed Tests (`server/tests/lab-04/`)**:
+   Database migration lifecycle and idempotent seed integrity tests (3 planned tests):
    - `migration-recovery.test.ts` (`MIG-01`, `MIG-02`): Tests migration deployment, legacy data preservation, and rollback recovery simulation on an isolated disposable test database (`AC-21`):
      - *MIG-01 (Deploy & Preserve)*: (1) Verify initial schema, migration history, and legacy records; (2) Run `npx prisma migrate deploy`; (3) Verify migration completes successfully; (4) Verify all expected schema changes (`ActionTaken` table, columns, indexes, foreign keys) are present; (5) Verify all legacy records and values remain 100% intact; (6) Verify final migration state in `_prisma_migrations` reflects the newly applied migration without manual history deletion or resetting.
      - *MIG-02 (Rollback Recovery Simulation)*: (1) Prepare disposable database with baseline schema and simulated partially failed migration in `_prisma_migrations` (`finished_at IS NULL`); (2) Inspect schema and execute compensatory cleanup to drop partial/dangling remnants (e.g. `DROP TABLE IF EXISTS "ActionTaken" CASCADE;`) restoring the database schema to clean pre-migration baseline state suitable for safe re-run; (3) Run `npx prisma migrate resolve --rolled-back <migration_name>` to reconcile Prisma migration history; (4) Re-apply `npx prisma migrate deploy`; (5) Verify migration completes successfully, schema matches target state, legacy data remains 100% intact, and `_prisma_migrations` records successful application without corruption.
    - `seed-data.test.ts` (`SEED-01`): Tests repeated seed execution (`prisma/seed.ts` run 1 and run 2 idempotency check), asserting zero constraint collisions, invariant record counts, and directly asserting all 8 lifecycle statuses, 4 priorities, assigned/unassigned ownership, 0/1/multiple Actions Taken, and zero/non-zero dashboard metric profiles (`AC-22`).
-3. **Workflow Tests (`server/tests/lab-04/ticket-workflow.api.test.ts`)**:
+4. **Workflow Tests (`server/tests/lab-04/ticket-workflow.api.test.ts`)**:
    Stateful multi-step lifecycle integration tests (3 planned tests):
    - Multi-step status progression (`NEW` $\to$ `OPEN` $\to$ `IN_PROGRESS` $\to$ `WAITING_FOR_REQUESTER` $\to$ `RESOLVED` $\to$ `CLOSED`).
    - Resolution gate verification (Requester advisory indication vs IT Staff/Admin formal resolution).
    - Stale-update conflict recovery (`409 Conflict` followed by reload and retry).
-4. **UI Component Tests (`client/tests/lab-04/`)**:
+5. **UI Component Tests (`client/tests/lab-04/`)**:
    Vitest & React Testing Library component tests (13 planned tests):
    - `ActionsTaken.test.tsx`: Tests list rendering, modal form state, validation error banners, and read-only Requester presentation (`UI-01a`, `UI-01b`, `UI-02`, `UI-03`).
    - `TicketWorkflow.test.tsx`: Tests status transition controls, resolution feedback, 409 conflict alert handling (`UI-04`), and uncommitted form state preservation on 409 conflict (`UI-04b`).
@@ -39,13 +41,13 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    - `AdminDashboard.test.tsx` (`UI-08`): Tests Admin dashboard operational & user metric cards rendering, role distribution badges, recent queue list, Quick Actions ("User Management", "Ticket Queue", "Create Ticket"), and interactive drill-downs across all 5 metric cards (Total Active Tickets $\to$ `#/staff-queue`, Unassigned Queue $\to$ `#/staff-queue?owner=unassigned`, Total Users / Active Users / Inactive Users $\to$ `#/admin-users`).
    - `UIStates.test.tsx` (`UI-EMPTY-01`): Tests skeleton loading placeholders and friendly empty zero-states across Requester Dashboard, Staff Dashboard, Admin Dashboard, and Ticket Detail (`AC-24`).
    - `DesignSystemTokens.test.tsx` (`UI-STYLE-01`): Automated DOM and CSS assertion verifying Zen Green design tokens (`--zg-primary`, `--zg-bg-page`, `--zg-surface`, `--zg-border`), status badge styling, focus rings, and private/shared content cues (`AC-17`).
-5. **End-to-End Playwright Tests (`e2e/lab-04/`)**:
-   Full browser workflows executed under real session cookies/tokens (6 planned tests):
+6. **End-to-End Playwright Tests (`e2e/lab-04/`)**:
+   Full browser workflows executed under real session tokens (6 planned tests):
    - `actions-taken-flow.spec.ts`: End-to-end recording of actions by staff and administrator, editing, and requester read-only audit (`E2E-01`).
    - `ticket-resolution.spec.ts`: Requester advisory resolution $\to$ IT Staff / Administrator formal review $\to$ official `RESOLVED` status transition (`E2E-02`).
    - `dashboards.spec.ts`: Live dashboard metric counts verification against database records, drill-down navigation, Quick Actions across Requester, Staff, and Admin, and responsive audits across the four core responsive screens (`E2E-03a`, `E2E-03b`, `E2E-04`).
    - `accessibility.spec.ts` (`A11Y-01`): Browser accessibility suite verifying modal focus trapping (`ActionTakenModal`), focus restoration to triggering button upon modal close, keyboard navigation cycling, and semantic ARIA announcements.
-6. **Regression Tests**:
+7. **Regression Tests**:
    Continuous test runs ensuring that legacy features from Labs 1–3 remain functional with zero regressions (3 planned test suites):
    - `REG-01` (Server Regression): All server API and unit test suites across Labs 1, 2, and 3 (`server/tests/lab-01/*`, `server/tests/lab-02/*`, `server/tests/lab-03/*`).
    - `REG-02` (Client Regression): All client UI component test suites across Labs 1, 2, and 3 (`client/tests/lab-01/*`, `client/tests/lab-02/*`, `client/tests/lab-03/*`).
