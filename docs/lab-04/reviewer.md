@@ -35,10 +35,10 @@
 
 * **Summary of Changes Applied:**
   - **Authentication Architecture**: Reconciled `api-spec.md` (§1.1) with Lab 3 JWT Bearer auth (`userId`, `role`, `tokenVersion`, `mustChangePassword`).
-  - **Traceability & Test Matrix**: Expanded `tests.md` to 53 planned tests across 7 testing tiers covering AC-01–AC-28, including inactive assignee rejection (`API-15`), field boundaries (`API-16`), append-only invariant (`API-17`), migration rollback simulation (`MIG-02`), token/style assertions (`UI-STYLE-01`), loading/empty states (`UI-EMPTY-01`), 409 uncommitted form preservation (`UI-04b`), performance smoke (`PERF-SMOKE-01`), and browser accessibility (`A11Y-01`).
-  - **Validation & Business Rules**: Enforced minimum 3 non-whitespace characters for `followUpNote` across API, UI, and tests; restricted optimistic concurrency (`expectedUpdatedAt`) to ticket status transitions; enforced terminal immutability for CANCELLED tickets (`AC-23`).
+  - **Traceability & Test Matrix**: Expanded `tests.md` to 53 planned tests across 7 testing tiers covering AC-01–AC-28, with bidirectional traceability linking `AC-18` across Server (`REG-01`), Client (`REG-02`), and End-to-End (`REG-03`) regression test suites.
+  - **Validation & Business Rules**: Enforced minimum 3 non-whitespace characters for `followUpNote` across API, UI, and tests; restricted optimistic concurrency (`expectedUpdatedAt`) to ticket status transitions; enforced terminal immutability for CANCELLED tickets (`AC-23`, `BR-11`), cleanly separating Actions Taken restrictions (`API-14a`) from status transition restrictions (`API-14b`).
   - **Migration & Seed Coverage**: Added migration deploy/recovery strategy (`MIG-01`, `MIG-02` with explicit compensatory schema rollback before resolving) and 5-dimension seed scenario matrix (`SEED-01`).
-  - **Role Separation & Specification Harmonization**: Corrected routes to singular `#/ticket/:id`, standardized "Resolved Tickets" (`resolvedTickets`), isolated `GET /api/staff/dashboard` strictly to IT Staff (`IT_STAFF`, 403 for Admins/Requesters via `API-11`), while verifying Administrator supervisory ticket queue & status transition authority via `API-10b`, and added `recentTickets` to Admin Dashboard.
+  - **Role Separation & Specification Harmonization**: Corrected routes to singular `#/ticket/:id`, standardized "Resolved Tickets" (`resolvedTickets`), isolated `GET /api/staff/dashboard` strictly to IT Staff (`IT_STAFF`, 403 for Admins/Requesters via `API-11`), verified Administrator supervisory ticket queue & status transition authority via `API-10b`, and decoupled component design system tokens (`UI-STYLE-01`) from multi-viewport responsive audits (`E2E-04`).
 
 * **Verdict:** **Revisions Applied (Awaiting Partner Approval)**
 

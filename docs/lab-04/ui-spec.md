@@ -170,12 +170,21 @@ The interface adapts smoothly across three standard test viewports:
 | **Tablet** | $768\text{px} \times 1024\text{px}$ | 2–3 column metric cards grid; stacked Recent Tickets and Quick Actions; responsive scrollable data tables. |
 | **Mobile** | $375\text{px} \times 667\text{px}$ | 1 column stacked metric cards; full-width action buttons ($44\text{px}+$ touch targets); tables transform into vertical card stacks; zero horizontal overflow ($scrollWidth === clientWidth$). |
 
-### 5.1 Responsive, Overlap & Token Verification Protocol
-To guarantee compliance with FR-17 and AC-17, the automated responsive test suite (`E2E-04`) executes browser-level viewport audits across all four core screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/ticket/:id`) across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) viewports (while UI component tests verify isolated component mounting and internal layout structures), asserting the following programmatic checks:
-1. **Zero Horizontal Overflow**: Assert `document.body.scrollWidth === document.body.clientWidth` and `window.scrollX === 0` across all three viewports.
-2. **No Overlapping Interactive Elements**: Programmatically verify that sticky headers, action buttons, Quick Action shortcut tiles, and modal dialogs do not collide (intersecting bounding boxes) across viewports.
-3. **No Clipped Text or Cutoff Labels**: Elements must retain complete visibility without truncation of critical identifiers (Ticket IDs, status badges, timestamps).
-4. **Zen Green Token Verification**: Automated assertion verifying computed CSS variables (`--zg-primary: #006B3C`, `--zg-bg-page: #F5F7F6`, `--zg-surface: #FFFFFF`, `--zg-border: #E2E8F0`) applied to primary interactive elements, card borders, and background containers.
+### 5.1 Responsive Audit & Design System Verification Protocol
+To guarantee compliance with FR-17 and AC-17, testing is partitioned into two distinct, non-overlapping automated suites:
+
+1. **Design System & Styling Tokens (`UI-STYLE-01`)**: Component-level test suite in `client/tests/lab-04/DesignSystemTokens.test.tsx` asserting design token implementation and CSS styling rules:
+   - **Zen Green Design Tokens**: Automated assertion verifying computed CSS variables (`--zg-primary: #006B3C`, `--zg-bg-page: #F5F7F6`, `--zg-surface: #FFFFFF`, `--zg-border: #E2E8F0`) on cards, background containers, and interactive elements.
+   - **Status Badges & Colors**: Consistent background and text styling across all 8 ticket statuses.
+   - **Focus Rings**: Accessible focus indicators (`:focus-visible`) on all interactive controls.
+   - **Role Styling Cues**: Distinct visual treatment for internal staff actions versus shared content.
+
+2. **Multi-Viewport Responsive Audit (`E2E-04`)**: Browser-level viewport suite in `e2e/lab-04/dashboards.spec.ts` executing across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) on all four core screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/ticket/:id`), asserting:
+   - **Zero Horizontal Overflow**: Assert `document.body.scrollWidth === document.body.clientWidth` and `window.scrollX === 0` across all three viewports.
+   - **Responsive Grid & Stacking**: Assert grid rearrangement (3-column on Desktop, 2–3 column on Tablet, 1-column vertical stack on Mobile).
+   - **No Overlapping Interactive Elements**: Programmatically verify that sticky headers, action buttons, Quick Action shortcut tiles, and modal dialogs do not collide (intersecting bounding boxes).
+   - **No Clipped Text or Cutoff Labels**: Elements retain complete visibility without truncation of critical identifiers (Ticket IDs, status badges, timestamps).
+   - **Accessible Controls**: Interactive elements remain visible, reachable, and tappable ($44\text{px}+$ touch targets on mobile) in all viewports.
 
 ---
 
