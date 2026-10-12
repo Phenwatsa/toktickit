@@ -10,7 +10,7 @@
 | PR | Branch | Scope / Feature | Verdict | Target Branch |
 |:---|:---|:---|:---|:---|
 | [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Approved** | `lab4-staging` |
-| [PR #52](https://github.com/Phenwatsa/toktickit/pull/52) | `feature/lab4-1-actions-taken-foundation` | Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API | **Planned** | `lab4-staging` |
+| [PR #60](https://github.com/Phenwatsa/toktickit/pull/60) | `feature/lab4-1-actions-taken-foundation` | Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API | **Approved** | `lab4-staging` |
 | [PR #53](https://github.com/Phenwatsa/toktickit/pull/53) | `feature/lab4-2-ticket-workflow-enforcement` | Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement) | **Planned** | `lab4-staging` |
 | [PR #54](https://github.com/Phenwatsa/toktickit/pull/54) | `feature/lab4-3-actions-taken-ui` | Issue 23 (#54): Actions Taken UI & Ticket Detail Integration (Frontend) | **Planned** | `lab4-staging` |
 | [PR #55](https://github.com/Phenwatsa/toktickit/pull/55) | `feature/lab4-4-dashboard-apis` | Issue 24 (#55): Role-Appropriate Dashboard Metrics APIs (Backend) | **Planned** | `lab4-staging` |
@@ -45,6 +45,31 @@
 
 * **Author Response to @lephirada:**
   > "Thank you for the review and approval! I have updated the documentation in `specification.md` §9 to replace the phrase '1:1' with 'complete traceability' to accurately reflect our multi-tier test coverage across the acceptance criteria. With all feedback addressed and specifications finalized, PR #59 is ready to merge into `lab4-staging`."
+
+* **Verdict:** **Approved**
+
+---
+
+### [PR #60](https://github.com/Phenwatsa/toktickit/pull/60) — Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API
+* **Branch:** `feature/lab4-1-actions-taken-foundation`
+* **Target branch:** `lab4-staging`
+* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/60](https://github.com/Phenwatsa/toktickit/pull/60)
+* **Review Cycle 1 (Approval) — Feedback received from @lephirada:**
+  > "The PR appears to satisfy the specified backend acceptance criteria.
+  > The ActionTaken Prisma model and additive migration establish the required relationships while preserving compatibility with existing tickets.
+  > The seed script covers zero, one, and multiple Actions Taken records, including actions performed by ticket owners and other IT Staff members.
+  > The REST handlers enforce IT_STAFF-only access for POST and PATCH, derive performedById from the authenticated session, and validate follow-up requirements.
+  > Tests cover the main API behavior, role authorization, listing, and validation scenarios.
+  > Minor suggestion: Add PATCH-specific tests for invalid isFollowUpRequired types, such as "false" and 1, to verify that invalid values consistently return 400 VALIDATION_ERROR without modifying existing records.
+  > No blocking issue was identified in the reviewed scope."
+
+* **Summary of Changes Applied:**
+  - **PATCH Validation & Immutability Coverage**: Added dedicated negative tests in `server/tests/lab-04/actions-taken.api.test.ts` for PATCH requests receiving non-boolean `isFollowUpRequired` values (`"false"` and `1`), verifying `400 VALIDATION_ERROR` responses and confirming database record immutability.
+  - **Mutator Role Guard**: Restricted `POST /api/tickets/:id/actions` and `PATCH /api/tickets/:id/actions/:actionId` strictly to `IT_STAFF` (`403 FORBIDDEN` for Requester and Administrator), while keeping `GET /api/tickets/:id/actions` accessible to Administrator and IT Staff for auditing.
+  - **Strict Type Validation**: Enforced explicit `typeof isFollowUpRequired === "boolean"` checks on both POST and PATCH routes, preventing improper boolean coercion.
+
+* **Author Response to @lephirada:**
+  > "Thank you for the review and approval! I have addressed the minor suggestion by adding PATCH-specific negative tests in `actions-taken.api.test.ts` for both string `'false'` and numeric `1` payloads, asserting that they reject with `400 VALIDATION_ERROR` and verifying that database records remain unmodified. All 27 Actions Taken API tests and 35 total Lab 4 tests pass cleanly."
 
 * **Verdict:** **Approved**
 

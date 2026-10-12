@@ -566,7 +566,7 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
       expect(res.body.followUpNote).toBeNull();
     });
 
-    it("rejects with 400 VALIDATION_ERROR when PATCH receives non-boolean isFollowUpRequired (e.g. string 'false')", async () => {
+    it("rejects with 400 VALIDATION_ERROR when PATCH receives string isFollowUpRequired (e.g. 'false') without modifying the record", async () => {
       const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
 
       const res = await request(app)
@@ -586,6 +586,40 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
           }),
         ])
       );
+
+      // Invariant check: verify database record was not mutated
+      const freshAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+      expect(freshAction.isFollowUpRequired).toBe(action.isFollowUpRequired);
+      expect(freshAction.followUpNote).toBe(action.followUpNote);
+      expect(freshAction.actionDescription).toBe(action.actionDescription);
+    });
+
+    it("rejects with 400 VALIDATION_ERROR when PATCH receives numeric isFollowUpRequired (e.g. 1) without modifying the record", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          isFollowUpRequired: 1,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "isFollowUpRequired",
+            message: "isFollowUpRequired must be a boolean",
+          }),
+        ])
+      );
+
+      // Invariant check: verify database record was not mutated
+      const freshAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+      expect(freshAction.isFollowUpRequired).toBe(action.isFollowUpRequired);
+      expect(freshAction.followUpNote).toBe(action.followUpNote);
+      expect(freshAction.actionDescription).toBe(action.actionDescription);
     });
   });
 
