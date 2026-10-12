@@ -1,15 +1,20 @@
 import { getPrisma } from "../src/prisma.js";
 
 // ---------------------------------------------------------------------------
-// Lab 3 — Idempotent Seed Script
+// Lab 4 — Idempotent Seed Script (Spec DD)
 // Populates:
 // 1. Categories (4 active)
 // 2. Related Systems (7 active)
 // 3. Users:
-//    - Requesters (4 active, 1 inactive, 1 active with mustChangePassword: true)
-//    - IT Staff (3 active, 1 inactive)
+//    - Requesters (4 active, 1 inactive, 1 first-login, 1 fresh with 0 tickets)
+//    - IT Staff (3 active, 1 inactive, 1 fresh with 0 tickets)
 //    - Administrator (1 active)
-// 4. Sample Tickets across statuses with itPriority, public comments, and internal notes
+// 4. Sample Tickets covering all 5 dimensions:
+//    - All 8 lifecycle statuses (NEW, OPEN, IN_PROGRESS, WAITING_FOR_REQUESTER, RESOLVED, CLOSED, REOPENED, CANCELLED)
+//    - All 4 IT priorities (LOW, MEDIUM, HIGH, URGENT)
+//    - Ownership (Assigned and Unassigned)
+//    - Actions Taken multiplicity (0, 1, and multiple >= 2) with varied staff performers
+//    - Dashboard profiles (Non-zero and zero metrics baselines)
 // ---------------------------------------------------------------------------
 
 // Precomputed bcrypt hash of 'Password123!' (cost factor 10)
@@ -57,7 +62,7 @@ async function main() {
 
   // 3. Seed Users (Requesters, IT Staff, Administrator)
   const users = [
-    // Requesters (>= 4 active, 1 inactive)
+    // Requesters (active, inactive, first-login, fresh)
     {
       name: "Jennifer Anderson",
       email: "jennifer.a@toktickit.local",
@@ -106,8 +111,16 @@ async function main() {
       isActive: true,
       mustChangePassword: true, // Requires password change
     },
+    {
+      name: "Fresh Requester",
+      email: "fresh.requester@toktickit.local",
+      department: "Operations",
+      role: "REQUESTER" as const,
+      isActive: true,
+      mustChangePassword: false, // Zero tickets baseline for empty-state verification
+    },
 
-    // IT Staff (>= 3 active, 1 inactive)
+    // IT Staff (active, inactive, fresh)
     {
       name: "Alice Smith",
       email: "alice.staff@toktickit.local",
@@ -140,8 +153,16 @@ async function main() {
       isActive: false, // Inactive staff
       mustChangePassword: false,
     },
+    {
+      name: "Fresh Staff",
+      email: "fresh.staff@toktickit.local",
+      department: "IT Support",
+      role: "IT_STAFF" as const,
+      isActive: true,
+      mustChangePassword: false, // Zero assigned tickets baseline
+    },
 
-    // Administrator (>= 1 active)
+    // Administrator (active)
     {
       name: "System Administrator",
       email: "admin@toktickit.local",
@@ -194,7 +215,7 @@ async function main() {
     throw new Error("Categories or systems missing for ticket seeding");
   }
 
-  // 5. Seed Realistic Tickets
+  // 5. Seed Realistic Tickets Covering All 5 Dimensions
   const sampleTickets = [
     {
       ticketNumber: "TKT-2026-000101",
@@ -207,7 +228,7 @@ async function main() {
       requesterId: seededUsers["jennifer.a@toktickit.local"].id,
       categoryId: catAccount.id,
       relatedSystemId: sysEmail.id,
-      ticketOwnerId: null,
+      ticketOwnerId: null, // Unassigned
     },
     {
       ticketNumber: "TKT-2026-000102",
@@ -220,7 +241,7 @@ async function main() {
       requesterId: seededUsers["david.l@toktickit.local"].id,
       categoryId: catHardware.id,
       relatedSystemId: sysLaptop.id,
-      ticketOwnerId: seededUsers["alice.staff@toktickit.local"].id,
+      ticketOwnerId: seededUsers["alice.staff@toktickit.local"].id, // Assigned
       comments: [
         {
           authorId: seededUsers["alice.staff@toktickit.local"].id,
@@ -231,6 +252,24 @@ async function main() {
         {
           authorId: seededUsers["alice.staff@toktickit.local"].id,
           content: "Suspected hardware display ribbon fault or RAM slot 2 instability.",
+        },
+      ],
+      actions: [
+        {
+          performedById: seededUsers["alice.staff@toktickit.local"].id, // Performed by owner
+          actionDateTime: new Date("2026-10-10T09:30:00.000Z"),
+          actionDescription: "Ran hardware diagnostics on display ribbon and memory.",
+          result: "No GPU artifacts detected under benchmark test.",
+          isFollowUpRequired: true,
+          followUpNote: "Monitor display connection stability after driver update.",
+          attachmentNotes: "diag-log-01.txt",
+        },
+        {
+          performedById: seededUsers["bob.staff@toktickit.local"].id, // Performed by other staff member
+          actionDateTime: new Date("2026-10-10T11:15:00.000Z"),
+          actionDescription: "Replaced HDMI external dongle and updated Intel UHD display drivers.",
+          result: "External display output restored to 60Hz 1080p.",
+          isFollowUpRequired: false,
         },
       ],
     },
@@ -250,6 +289,16 @@ async function main() {
         {
           authorId: seededUsers["bob.staff@toktickit.local"].id,
           content: "We verified the gateway is reachable. Could you check if your home router blocks UDP 1194?",
+        },
+      ],
+      actions: [
+        {
+          performedById: seededUsers["bob.staff@toktickit.local"].id,
+          actionDateTime: new Date("2026-10-10T10:00:00.000Z"),
+          actionDescription: "Verified OpenVPN gateway handshake and firewall routes.",
+          result: "Gateway responds on port 1194; requested user verification.",
+          isFollowUpRequired: true,
+          followUpNote: "Wait for requester confirmation on home Wi-Fi test.",
         },
       ],
     },
@@ -275,6 +324,15 @@ async function main() {
         {
           authorId: seededUsers["charlie.staff@toktickit.local"].id,
           content: "Root cause was proxy buffer limit truncation on multipart payload.",
+        },
+      ],
+      actions: [
+        {
+          performedById: seededUsers["charlie.staff@toktickit.local"].id,
+          actionDateTime: new Date("2026-10-10T14:00:00.000Z"),
+          actionDescription: "Applied hotfix to multipart form parser on production proxy.",
+          result: "Grade upload succeeds for files up to 25MB.",
+          isFollowUpRequired: false,
         },
       ],
     },
@@ -303,6 +361,15 @@ async function main() {
       categoryId: catNetwork.id,
       relatedSystemId: sysVPN.id,
       ticketOwnerId: seededUsers["alice.staff@toktickit.local"].id,
+      actions: [
+        {
+          performedById: seededUsers["alice.staff@toktickit.local"].id,
+          actionDateTime: new Date("2026-10-10T13:20:00.000Z"),
+          actionDescription: "Renewed 802.1x RADIUS client certificate profile on device.",
+          result: "Campus Wi-Fi authentication successful with valid cert chain.",
+          isFollowUpRequired: false,
+        },
+      ],
     },
     {
       ticketNumber: "TKT-2026-000107",
@@ -368,6 +435,15 @@ async function main() {
       categoryId: catSoftware.id,
       relatedSystemId: sysGrade.id,
       ticketOwnerId: seededUsers["charlie.staff@toktickit.local"].id,
+      actions: [
+        {
+          performedById: seededUsers["alice.staff@toktickit.local"].id, // Performed by other staff member
+          actionDateTime: new Date("2026-10-10T15:00:00.000Z"),
+          actionDescription: "Cleared redis worker cache and restarted queue worker service.",
+          result: "Queue lag dropped from 14s to 200ms.",
+          isFollowUpRequired: false,
+        },
+      ],
     },
     {
       ticketNumber: "TKT-2026-000112",
@@ -394,6 +470,15 @@ async function main() {
       categoryId: catNetwork.id,
       relatedSystemId: sysVPN.id,
       ticketOwnerId: seededUsers["alice.staff@toktickit.local"].id,
+      actions: [
+        {
+          performedById: seededUsers["alice.staff@toktickit.local"].id,
+          actionDateTime: new Date("2026-10-10T16:00:00.000Z"),
+          actionDescription: "Generated visitor Wi-Fi credentials for 10 guest researchers.",
+          result: "Vouchers delivered to requester email.",
+          isFollowUpRequired: false,
+        },
+      ],
     },
     {
       ticketNumber: "TKT-2026-000114",
@@ -407,6 +492,15 @@ async function main() {
       categoryId: catAccount.id,
       relatedSystemId: sysEmail.id,
       ticketOwnerId: seededUsers["bob.staff@toktickit.local"].id,
+      actions: [
+        {
+          performedById: seededUsers["bob.staff@toktickit.local"].id,
+          actionDateTime: new Date("2026-10-10T11:00:00.000Z"),
+          actionDescription: "Assigned Microsoft 365 E5 license addon for 50MB attachments.",
+          result: "User mailbox quota upgraded.",
+          isFollowUpRequired: false,
+        },
+      ],
     },
     {
       ticketNumber: "TKT-2026-000115",
@@ -414,17 +508,73 @@ async function main() {
       description: "RFID badge reader beeps red for authorized staff.",
       requestedPriority: "URGENT" as const,
       itPriority: "URGENT" as const,
-      currentStatus: "NEW" as const,
+      currentStatus: "OPEN" as const,
       problemAppearsResolved: false,
       requesterId: seededUsers["sarah.j@toktickit.local"].id,
       categoryId: catHardware.id,
       relatedSystemId: sysLaptop.id,
+      ticketOwnerId: seededUsers["alice.staff@toktickit.local"].id,
+    },
+    {
+      ticketNumber: "TKT-2026-000116",
+      summary: "Intermittent packet loss on Core Switch 3 trunk link",
+      description: "Ping tests show 8% packet loss during peak university hours.",
+      requestedPriority: "HIGH" as const,
+      itPriority: "HIGH" as const,
+      currentStatus: "REOPENED" as const,
+      problemAppearsResolved: false,
+      requesterId: seededUsers["jennifer.a@toktickit.local"].id,
+      categoryId: catNetwork.id,
+      relatedSystemId: sysVPN.id,
+      ticketOwnerId: seededUsers["bob.staff@toktickit.local"].id,
+      actions: [
+        {
+          performedById: seededUsers["bob.staff@toktickit.local"].id, // Owner
+          actionDateTime: new Date("2026-10-10T08:00:00.000Z"),
+          actionDescription: "Inspected trunk port statistics and replaced SFP+ optical transceiver.",
+          result: "Optical receive power normalized to -3.2 dBm.",
+          isFollowUpRequired: true,
+          followUpNote: "Monitor CRC error counters over the next 48 hours.",
+        },
+        {
+          performedById: seededUsers["charlie.staff@toktickit.local"].id, // Other staff
+          actionDateTime: new Date("2026-10-10T16:30:00.000Z"),
+          actionDescription: "Applied firmware patch to core switch backplane ASIC.",
+          result: "Packet drop rate eliminated completely under load.",
+          isFollowUpRequired: false,
+        },
+      ],
+    },
+    {
+      ticketNumber: "TKT-2026-000117",
+      summary: "Duplicate request for monitor stand replacement",
+      description: "Submitted in error; user already received replacement stand from facilities.",
+      requestedPriority: "LOW" as const,
+      itPriority: "LOW" as const,
+      currentStatus: "CANCELLED" as const,
+      problemAppearsResolved: false,
+      requesterId: seededUsers["david.l@toktickit.local"].id,
+      categoryId: catHardware.id,
+      relatedSystemId: sysLaptop.id,
       ticketOwnerId: null,
+    },
+    {
+      ticketNumber: "TKT-2026-000118",
+      summary: "New employee onboarding: Software bundle installation",
+      description: "Install development toolchains and Slack on new laptop.",
+      requestedPriority: "MEDIUM" as const,
+      itPriority: "MEDIUM" as const,
+      currentStatus: "OPEN" as const,
+      problemAppearsResolved: false,
+      requesterId: seededUsers["michael.b@toktickit.local"].id,
+      categoryId: catSoftware.id,
+      relatedSystemId: sysLaptop.id,
+      ticketOwnerId: seededUsers["charlie.staff@toktickit.local"].id,
     },
   ];
 
   for (const t of sampleTickets) {
-    const { comments, notes, ...ticketData } = t;
+    const { comments, notes, actions, ...ticketData } = t as any;
     const ticket = await prisma.ticket.upsert({
       where: { ticketNumber: ticketData.ticketNumber },
       update: {
@@ -475,9 +625,31 @@ async function main() {
         }
       }
     }
+
+    if (actions && actions.length > 0) {
+      for (const a of actions) {
+        const existingAction = await prisma.actionTaken.findFirst({
+          where: { ticketId: ticket.id, actionDescription: a.actionDescription },
+        });
+        if (!existingAction) {
+          await prisma.actionTaken.create({
+            data: {
+              ticketId: ticket.id,
+              actionDateTime: a.actionDateTime,
+              actionDescription: a.actionDescription,
+              result: a.result,
+              performedById: a.performedById,
+              isFollowUpRequired: a.isFollowUpRequired,
+              followUpNote: a.followUpNote ?? null,
+              attachmentNotes: a.attachmentNotes ?? null,
+            },
+          });
+        }
+      }
+    }
   }
 
-  console.log(`Seeded ${sampleTickets.length} sample tickets with comments and notes.`);
+  console.log(`Seeded ${sampleTickets.length} sample tickets with comments, notes, and actions taken.`);
 }
 
 main()
