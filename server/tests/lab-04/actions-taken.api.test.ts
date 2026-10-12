@@ -621,6 +621,107 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
       expect(freshAction.followUpNote).toBe(action.followUpNote);
       expect(freshAction.actionDescription).toBe(action.actionDescription);
     });
+
+    it("rejects with 400 VALIDATION_ERROR when PATCH receives numeric followUpNote (e.g. 123) without modifying the record", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          followUpNote: 123,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "followUpNote",
+          }),
+        ])
+      );
+
+      // Invariant check: verify database record was not mutated
+      const freshAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+      expect(freshAction.followUpNote).toBe(action.followUpNote);
+    });
+
+    it("rejects with 400 VALIDATION_ERROR when PATCH receives followUpNote exceeding 2000 characters without modifying the record", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          followUpNote: "a".repeat(2005),
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "followUpNote",
+            message: "Follow-up note cannot exceed 2000 characters",
+          }),
+        ])
+      );
+
+      // Invariant check: verify database record was not mutated
+      const freshAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+      expect(freshAction.followUpNote).toBe(action.followUpNote);
+    });
+
+    it("rejects with 400 VALIDATION_ERROR when PATCH receives non-string actionDateTime (e.g. number 1234567890) without modifying the record", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDateTime: 1234567890,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "actionDateTime",
+            message: "Action date/time must be a valid ISO-8601 date string",
+          }),
+        ])
+      );
+
+      const freshAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+      expect(freshAction.actionDateTime.toISOString()).toBe(action.actionDateTime.toISOString());
+    });
+
+    it("rejects with 400 VALIDATION_ERROR when PATCH receives non-UTC or date-only actionDateTime (e.g. '2026-10-10') without modifying the record", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDateTime: "2026-10-10",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "actionDateTime",
+            message: "Action date/time must be a valid ISO-8601 date string",
+          }),
+        ])
+      );
+
+      const freshAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: action.id } });
+      expect(freshAction.actionDateTime.toISOString()).toBe(action.actionDateTime.toISOString());
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -732,6 +833,95 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
       expect(res.body.code).toBe("VALIDATION_ERROR");
       expect(res.body.details).toEqual(
         expect.arrayContaining([expect.objectContaining({ field: "actionDateTime" })])
+      );
+    });
+
+    it("rejects numeric actionDateTime on POST with 400 VALIDATION_ERROR", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket1Id}/actions`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDescription: "Valid action description.",
+          result: "Valid result text.",
+          actionDateTime: 1234567890,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "actionDateTime",
+            message: "Action date/time must be a valid ISO-8601 date string",
+          }),
+        ])
+      );
+    });
+
+    it("rejects non-UTC or date-only actionDateTime on POST with 400 VALIDATION_ERROR", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket1Id}/actions`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDescription: "Valid action description.",
+          result: "Valid result text.",
+          actionDateTime: "2026-10-10",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "actionDateTime",
+            message: "Action date/time must be a valid ISO-8601 date string",
+          }),
+        ])
+      );
+    });
+
+    it("rejects numeric followUpNote on POST with 400 VALIDATION_ERROR", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket1Id}/actions`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDescription: "Valid action description.",
+          result: "Valid result text.",
+          isFollowUpRequired: true,
+          followUpNote: 123,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "followUpNote",
+          }),
+        ])
+      );
+    });
+
+    it("rejects followUpNote exceeding 2000 characters on POST with 400 VALIDATION_ERROR", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket1Id}/actions`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDescription: "Valid action description.",
+          result: "Valid result text.",
+          isFollowUpRequired: true,
+          followUpNote: "a".repeat(2005),
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "followUpNote",
+            message: "Follow-up note cannot exceed 2000 characters",
+          }),
+        ])
       );
     });
   });

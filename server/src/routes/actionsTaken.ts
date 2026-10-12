@@ -20,6 +20,18 @@ export const actionsTakenRouter = Router({ mergeParams: true });
 actionsTakenRouter.use(requireAuth, requireActive, requirePasswordChanged);
 
 /**
+ * Helper to validate ISO-8601 UTC date string format and parseability.
+ * Matches YYYY-MM-DDTHH:mm:ss(.sss)?Z per RFC 3339 / ISO 8601 UTC contract.
+ */
+function isValidIsoUtcDateString(val: unknown): boolean {
+  if (typeof val !== "string") return false;
+  const isoUtcPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+  if (!isoUtcPattern.test(val)) return false;
+  const d = new Date(val);
+  return !isNaN(d.getTime());
+}
+
+/**
  * GET /api/tickets/:id/actions
  * Retrieve chronological list of Actions Taken for a ticket.
  * Permitted: Ticket Requester Owner, IT Staff, Administrator.
@@ -154,30 +166,40 @@ actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
     }
 
     let parsedDateTime = new Date();
-    if (actionDateTime !== undefined && actionDateTime !== null) {
-      const d = new Date(actionDateTime);
-      if (isNaN(d.getTime())) {
+    if (actionDateTime !== undefined) {
+      if (actionDateTime === null || !isValidIsoUtcDateString(actionDateTime)) {
         details.push({
           field: "actionDateTime",
           message: "Action date/time must be a valid ISO-8601 date string",
         });
       } else {
-        parsedDateTime = d;
+        parsedDateTime = new Date(actionDateTime);
       }
     }
 
-    const followUpRequiredBool = isFollowUpRequired === true;
-    if (followUpRequiredBool) {
-      if (typeof followUpNote !== "string" || followUpNote.trim().length < 3) {
+    if (followUpNote !== undefined && followUpNote !== null) {
+      if (typeof followUpNote !== "string") {
         details.push({
           field: "followUpNote",
-          message: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed",
+          message: "Follow-up note must be a string or null",
         });
       } else if (followUpNote.trim().length > 2000) {
         details.push({
           field: "followUpNote",
           message: "Follow-up note cannot exceed 2000 characters",
         });
+      }
+    }
+
+    const followUpRequiredBool = isFollowUpRequired === true;
+    if (followUpRequiredBool) {
+      if (typeof followUpNote !== "string" || followUpNote.trim().length < 3) {
+        if (!details.some((d) => d.field === "followUpNote")) {
+          details.push({
+            field: "followUpNote",
+            message: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed",
+          });
+        }
       }
     }
 
@@ -329,15 +351,28 @@ actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Res
       }
     }
 
-    if (actionDateTime !== undefined && actionDateTime !== null) {
-      const d = new Date(actionDateTime);
-      if (isNaN(d.getTime())) {
+    if (actionDateTime !== undefined) {
+      if (actionDateTime === null || !isValidIsoUtcDateString(actionDateTime)) {
         details.push({
           field: "actionDateTime",
           message: "Action date/time must be a valid ISO-8601 date string",
         });
       } else {
-        updateData.actionDateTime = d;
+        updateData.actionDateTime = new Date(actionDateTime);
+      }
+    }
+
+    if (followUpNote !== undefined && followUpNote !== null) {
+      if (typeof followUpNote !== "string") {
+        details.push({
+          field: "followUpNote",
+          message: "Follow-up note must be a string or null",
+        });
+      } else if (followUpNote.trim().length > 2000) {
+        details.push({
+          field: "followUpNote",
+          message: "Follow-up note cannot exceed 2000 characters",
+        });
       }
     }
 
@@ -350,15 +385,19 @@ actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Res
 
     if (effectiveFollowUpRequired) {
       if (typeof effectiveFollowUpNote !== "string" || effectiveFollowUpNote.trim().length < 3) {
-        details.push({
-          field: "followUpNote",
-          message: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed",
-        });
+        if (!details.some((d) => d.field === "followUpNote")) {
+          details.push({
+            field: "followUpNote",
+            message: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed",
+          });
+        }
       } else if (effectiveFollowUpNote.trim().length > 2000) {
-        details.push({
-          field: "followUpNote",
-          message: "Follow-up note cannot exceed 2000 characters",
-        });
+        if (!details.some((d) => d.field === "followUpNote")) {
+          details.push({
+            field: "followUpNote",
+            message: "Follow-up note cannot exceed 2000 characters",
+          });
+        }
       } else {
         updateData.isFollowUpRequired = true;
         updateData.followUpNote = effectiveFollowUpNote.trim();
@@ -368,7 +407,11 @@ actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Res
         updateData.isFollowUpRequired = false;
         updateData.followUpNote = null;
       } else if (followUpNote !== undefined) {
-        updateData.followUpNote = followUpNote;
+        if (followUpNote === null) {
+          updateData.followUpNote = null;
+        } else if (typeof followUpNote === "string") {
+          updateData.followUpNote = followUpNote.trim();
+        }
       }
     }
 
