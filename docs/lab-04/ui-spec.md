@@ -166,8 +166,8 @@ The interface adapts smoothly across three standard test viewports:
 
 | Viewport | Screen Width | Layout Transformations |
 | :--- | :--- | :--- |
-| **Desktop** | $1280\text{px} \times 800\text{px}$ | 4–5 column metric cards row; side-by-side Recent Tickets and Quick Actions; full multi-column data tables. |
-| **Tablet** | $768\text{px} \times 1024\text{px}$ | 2–3 column metric cards grid; stacked Recent Tickets and Quick Actions; responsive scrollable data tables. |
+| **Desktop** | $1280\text{px} \times 800\text{px}$ | 5-column metric cards grid (arranging all 5 primary cards side-by-side in a single row); side-by-side Recent Tickets and Quick Actions (2-column lower section); full multi-column data tables. |
+| **Tablet** | $768\text{px} \times 1024\text{px}$ | 2–3 column wrapping metric cards grid; stacked Recent Tickets and Quick Actions; responsive scrollable data tables. |
 | **Mobile** | $375\text{px} \times 667\text{px}$ | 1 column stacked metric cards; full-width action buttons ($44\text{px}+$ touch targets); tables transform into vertical card stacks; zero horizontal overflow ($scrollWidth === clientWidth$). |
 
 ### 5.1 Responsive Audit & Design System Verification Protocol
@@ -181,7 +181,7 @@ To guarantee compliance with FR-17 and AC-17, testing is partitioned into two di
 
 2. **Multi-Viewport Responsive Audit (`E2E-04`)**: Browser-level viewport suite in `e2e/lab-04/dashboards.spec.ts` executing across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) on all four core screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, and Ticket Detail `#/ticket/:id`), asserting:
    - **Zero Horizontal Overflow**: Assert `document.body.scrollWidth === document.body.clientWidth` and `window.scrollX === 0` across all three viewports.
-   - **Responsive Grid & Stacking**: Assert grid rearrangement (3-column on Desktop, 2–3 column on Tablet, 1-column vertical stack on Mobile).
+   - **Responsive Grid & Stacking**: Assert grid rearrangement (5-column metric cards row on Desktop, 2–3 column wrapping grid on Tablet, 1-column vertical stack on Mobile).
    - **No Overlapping Interactive Elements**: Programmatically verify that sticky headers, action buttons, Quick Action shortcut tiles, and modal dialogs do not collide (intersecting bounding boxes).
    - **No Clipped Text or Cutoff Labels**: Elements retain complete visibility without truncation of critical identifiers (Ticket IDs, status badges, timestamps).
    - **Accessible Controls**: Interactive elements remain visible, reachable, and tappable ($44\text{px}+$ touch targets on mobile) in all viewports.

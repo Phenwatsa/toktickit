@@ -235,8 +235,8 @@ The table below defines the authoritative role-based access permissions for Spri
   - Drill-down: Clicking `Total Active Tickets` navigates to `#/staff-queue`; clicking `Unassigned Queue` navigates to `#/staff-queue?owner=unassigned`; clicking User summary cards (`Total Users`, `Active Users`, `Inactive Users`) navigates to `#/admin-users`.
 
 ### Responsive Breakpoints
-- **Desktop ($1280\text{px}+$ )**: Full multi-column grid layouts, data tables with complete column visibility.
-- **Tablet ($768\text{px} - 1024\text{px}$)**: 2-column metric cards, responsive wrapping tables, persistent action buttons.
+- **Desktop ($1280\text{px}+$ )**: 5-column metric cards grid (arranging all 5 primary cards side-by-side in a single row), 2-column lower section (side-by-side Recent Tickets overview and Quick Actions panel), full multi-column data tables with complete column visibility.
+- **Tablet ($768\text{px} - 1024\text{px}$)**: 2–3 column wrapping metric cards grid, stacked Recent Tickets and Quick Actions, responsive scrollable tables, persistent action buttons.
 - **Mobile ($375\text{px} - 767\text{px}$)**: 1-column stacked cards, table-to-card transformation for ticket lists, full-width touch targets ($44\text{px}+$ min height), strict zero horizontal scroll ($scrollWidth === clientWidth$).
 
 ---
@@ -314,7 +314,7 @@ The idempotent seed script (`prisma/seed.ts`) populates realistic test data cove
 
 ## 9. Acceptance Criteria
 
-Sprint 4 establishes 28 parent Acceptance Criteria (`AC-01` through `AC-28`), comprising 30 distinct testable criteria identifiers due to explicit sub-criteria partitioning for role-specific dashboard drill-downs (`AC-15a`, `AC-15b`) and administrator dashboard authorization (`AC-19a`, `AC-19b`). All 30 criteria identifiers are fully testable and mapped 1:1 with planned test suites in the Requirements Traceability Matrix (`tests.md`):
+Sprint 4 establishes 28 parent Acceptance Criteria (`AC-01` through `AC-28`), comprising 30 distinct testable criteria identifiers due to explicit sub-criteria partitioning for role-specific dashboard drill-downs (`AC-15a`, `AC-15b`) and administrator dashboard authorization (`AC-19a`, `AC-19b`). All 30 criteria identifiers are fully testable and mapped with complete traceability to planned test suites in the Requirements Traceability Matrix (`tests.md`):
 
 - **AC-01**: Given an authenticated IT Staff or Administrator user, when a valid Action Taken is submitted with description and result, it is successfully created with `performedById` automatically set to the authenticated user ID and linked to the correct ticket (FR-02, FR-03, BR-01, BR-02, BR-03).
 - **AC-02**: Given an authenticated IT Staff or Administrator user, when an Action Taken is submitted with `isFollowUpRequired = true` but `followUpNote` is empty, contains only whitespace, or has fewer than 3 non-whitespace characters, the backend rejects the request with `HTTP 400 Bad Request` (`VALIDATION_ERROR`) and descriptive validation details: "Follow-up note is required (minimum 3 non-whitespace characters) when follow-up is needed" (FR-04, BR-04).

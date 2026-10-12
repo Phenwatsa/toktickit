@@ -249,7 +249,7 @@ This document provides the definitive planning specification for GitHub Issues (
   - **Regression Testing:**
     - Execute existing Lab 1, 2, and 3 E2E test suites to guarantee zero regression on Auth, Attachments, Comments, Notes, and Admin User Management (`REG-01`, `REG-02`, `REG-03`).
   - **Responsive Layout Audit (`dashboards.spec.ts` `E2E-04`):**
-    - Automated viewport audit across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) across all four core responsive screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, Ticket Detail `#/ticket/:id`), asserting zero horizontal overflow (`scrollWidth === clientWidth`), zero interactive control collisions, no clipped text, and conformance to Zen Green design tokens (`--zg-primary`, `--zg-bg-page`, `--zg-surface`, `--zg-border`) per FR-17 and AC-17.
+    - Automated viewport audit across Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) across all four core responsive screens (Requester Dashboard `#/dashboard`, IT Staff Dashboard `#/staff-dashboard`, Administrator Dashboard `#/admin-dashboard`, Ticket Detail `#/ticket/:id`), asserting zero horizontal overflow (`scrollWidth === clientWidth`), grid restructuring (5-column Desktop metric cards row, 2–3 column Tablet grid, 1-column Mobile stack), zero interactive control collisions, no clipped text, and conformance to Zen Green design tokens (`--zg-primary`, `--zg-bg-page`, `--zg-surface`, `--zg-border`) per FR-17 and AC-17.
   - **Screenshot Artifacts Generation:**
     - Capture and save structured screenshots into `artifacts/lab-04/screenshots/`:
       - `staff-dashboard/`
