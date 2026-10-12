@@ -77,8 +77,8 @@ actionsTakenRouter.get("/:id/actions", async (req: Request, res: Response) => {
 /**
  * POST /api/tickets/:id/actions
  * Create an Action Taken record.
- * Permitted: IT Staff, Administrator.
- * Forbidden: Requester (403 FORBIDDEN).
+ * Permitted: IT Staff only.
+ * Forbidden: Requester, Administrator (403 FORBIDDEN).
  */
 actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
   try {
@@ -86,10 +86,10 @@ actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
     const user = req.user!;
     const ticketId = Number(req.params.id);
 
-    // Role verification
-    if (user.role !== "IT_STAFF" && user.role !== "ADMINISTRATOR") {
+    // Role verification: strictly IT_STAFF only
+    if (user.role !== "IT_STAFF") {
       return res.status(403).json({
-        error: "Access denied. Only IT Staff and Administrators may record Actions Taken",
+        error: "Access denied. Only IT Staff may record Actions Taken",
         code: "FORBIDDEN",
         details: [],
       });
@@ -121,12 +121,19 @@ actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
       actionDescription,
       result,
       actionDateTime,
-      isFollowUpRequired = false,
+      isFollowUpRequired,
       followUpNote,
       attachmentNotes,
     } = req.body;
 
     const details: { field: string; message: string }[] = [];
+
+    if (isFollowUpRequired !== undefined && typeof isFollowUpRequired !== "boolean") {
+      details.push({
+        field: "isFollowUpRequired",
+        message: "isFollowUpRequired must be a boolean",
+      });
+    }
 
     if (
       typeof actionDescription !== "string" ||
@@ -159,7 +166,7 @@ actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
       }
     }
 
-    const followUpRequiredBool = Boolean(isFollowUpRequired);
+    const followUpRequiredBool = isFollowUpRequired === true;
     if (followUpRequiredBool) {
       if (typeof followUpNote !== "string" || followUpNote.trim().length < 3) {
         details.push({
@@ -223,8 +230,8 @@ actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
 /**
  * PATCH /api/tickets/:id/actions/:actionId
  * Update details of an existing Action Taken record.
- * Permitted: IT Staff, Administrator.
- * Forbidden: Requester (403 FORBIDDEN).
+ * Permitted: IT Staff only.
+ * Forbidden: Requester, Administrator (403 FORBIDDEN).
  */
 actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Response) => {
   try {
@@ -233,10 +240,10 @@ actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Res
     const ticketId = Number(req.params.id);
     const actionId = Number(req.params.actionId);
 
-    // Role verification
-    if (user.role !== "IT_STAFF" && user.role !== "ADMINISTRATOR") {
+    // Role verification: strictly IT_STAFF only
+    if (user.role !== "IT_STAFF") {
       return res.status(403).json({
-        error: "Access denied. Only IT Staff and Administrators may modify Actions Taken",
+        error: "Access denied. Only IT Staff may modify Actions Taken",
         code: "FORBIDDEN",
         details: [],
       });
@@ -289,6 +296,13 @@ actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Res
     const details: { field: string; message: string }[] = [];
     const updateData: any = {};
 
+    if (isFollowUpRequired !== undefined && typeof isFollowUpRequired !== "boolean") {
+      details.push({
+        field: "isFollowUpRequired",
+        message: "isFollowUpRequired must be a boolean",
+      });
+    }
+
     if (actionDescription !== undefined) {
       if (
         typeof actionDescription !== "string" ||
@@ -329,7 +343,7 @@ actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Res
 
     // Evaluate effective follow-up state
     const effectiveFollowUpRequired =
-      isFollowUpRequired !== undefined ? Boolean(isFollowUpRequired) : existingAction.isFollowUpRequired;
+      typeof isFollowUpRequired === "boolean" ? isFollowUpRequired : existingAction.isFollowUpRequired;
 
     const effectiveFollowUpNote =
       followUpNote !== undefined ? followUpNote : existingAction.followUpNote;

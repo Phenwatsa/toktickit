@@ -234,22 +234,22 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
       expect(res.body.performedBy.role).toBe("IT_STAFF");
     });
 
-    it("creates an Action Taken when submitted by Administrator", async () => {
+    it("creates an Action Taken when submitted by another active IT Staff member", async () => {
       const payload = {
-        actionDescription: "Administrator executed supervisory node failover to secondary datacenter.",
-        result: "Cluster heartbeat restored and all services reported healthy.",
+        actionDescription: "Secondary IT Staff investigated switch transceiver performance.",
+        result: "Verified fiber attenuation within optimal thresholds.",
         isFollowUpRequired: false,
       };
 
       const res = await request(app)
         .post(`/api/tickets/${ticket1Id}/actions`)
-        .set("Authorization", `Bearer ${tokenAdmin}`)
+        .set("Authorization", `Bearer ${tokenStaff2}`)
         .send(payload);
 
       expect(res.status).toBe(201);
       expect(res.body.ticketId).toBe(ticket1Id);
-      expect(res.body.performedBy.id).toBe(adminId);
-      expect(res.body.performedBy.role).toBe("ADMINISTRATOR");
+      expect(res.body.performedBy.id).toBe(staff2Id);
+      expect(res.body.performedBy.role).toBe("IT_STAFF");
       expect(res.body.isFollowUpRequired).toBe(false);
       expect(res.body.followUpNote).toBeNull();
     });
@@ -259,6 +259,50 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
   // API-02 / AC-02: Follow-up note validation (< 3 non-whitespace chars rejected)
   // -------------------------------------------------------------------------
   describe("API-02 / AC-02: Follow-up note validation enforcement", () => {
+    it("rejects with 400 VALIDATION_ERROR when isFollowUpRequired is not a boolean (e.g. string 'false')", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket1Id}/actions`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDescription: "Performed network adapter reset.",
+          result: "Interface initialized successfully.",
+          isFollowUpRequired: "false",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "isFollowUpRequired",
+            message: "isFollowUpRequired must be a boolean",
+          }),
+        ])
+      );
+    });
+
+    it("rejects with 400 VALIDATION_ERROR when isFollowUpRequired is a number", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket1Id}/actions`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDescription: "Performed network adapter reset.",
+          result: "Interface initialized successfully.",
+          isFollowUpRequired: 1,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "isFollowUpRequired",
+            message: "isFollowUpRequired must be a boolean",
+          }),
+        ])
+      );
+    });
+
     it("rejects with 400 VALIDATION_ERROR when isFollowUpRequired is true and followUpNote is omitted", async () => {
       const res = await request(app)
         .post(`/api/tickets/${ticket1Id}/actions`)
@@ -332,9 +376,9 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
   });
 
   // -------------------------------------------------------------------------
-  // API-03a, API-03b / AC-03: Requester blocked from create and edit (403)
+  // API-03a, API-03b / AC-03: Requester & Administrator blocked from create/edit (403)
   // -------------------------------------------------------------------------
-  describe("API-03a & API-03b / AC-03: Requester role authorization guard", () => {
+  describe("API-03a & API-03b / AC-03: Requester and Administrator role authorization guards", () => {
     it("API-03a: rejects with 403 Forbidden when Requester attempts to create Action Taken", async () => {
       const res = await request(app)
         .post(`/api/tickets/${ticket1Id}/actions`)
@@ -346,11 +390,24 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe("FORBIDDEN");
-      expect(res.body.error).toContain("Only IT Staff and Administrators may record Actions Taken");
+      expect(res.body.error).toContain("Only IT Staff may record Actions Taken");
+    });
+
+    it("API-03a: rejects with 403 Forbidden when Administrator attempts to create Action Taken", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${ticket1Id}/actions`)
+        .set("Authorization", `Bearer ${tokenAdmin}`)
+        .send({
+          actionDescription: "Administrator trying to submit an action.",
+          result: "Should be forbidden.",
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe("FORBIDDEN");
+      expect(res.body.error).toContain("Only IT Staff may record Actions Taken");
     });
 
     it("API-03b: rejects with 403 Forbidden when Requester attempts to edit an existing Action Taken", async () => {
-      // Fetch an existing action on ticket1
       const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
 
       const res = await request(app)
@@ -362,7 +419,22 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe("FORBIDDEN");
-      expect(res.body.error).toContain("Only IT Staff and Administrators may modify Actions Taken");
+      expect(res.body.error).toContain("Only IT Staff may modify Actions Taken");
+    });
+
+    it("API-03b: rejects with 403 Forbidden when Administrator attempts to edit an existing Action Taken", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenAdmin}`)
+        .send({
+          actionDescription: "Administrator trying to modify an action.",
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe("FORBIDDEN");
+      expect(res.body.error).toContain("Only IT Staff may modify Actions Taken");
     });
   });
 
@@ -492,6 +564,28 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
       expect(res.body.result).toBe("Verified system stability post-modification.");
       expect(res.body.isFollowUpRequired).toBe(false);
       expect(res.body.followUpNote).toBeNull();
+    });
+
+    it("rejects with 400 VALIDATION_ERROR when PATCH receives non-boolean isFollowUpRequired (e.g. string 'false')", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          isFollowUpRequired: "false",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "isFollowUpRequired",
+            message: "isFollowUpRequired must be a boolean",
+          }),
+        ])
+      );
     });
   });
 
