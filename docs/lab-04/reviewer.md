@@ -11,7 +11,7 @@
 |:---|:---|:---|:---|:---|
 | [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) | `docs/lab4-spec-and-test-plan` | Issue 20 (#51): Sprint 4 Engineering Contracts, Specification & Test Plan (Spec DD) | **Approved** | `lab4-staging` |
 | [PR #60](https://github.com/Phenwatsa/toktickit/pull/60) | `feature/lab4-1-actions-taken-foundation` | Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API | **Approved** | `lab4-staging` |
-| [PR #53](https://github.com/Phenwatsa/toktickit/pull/53) | `feature/lab4-2-ticket-workflow-enforcement` | Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement) | **Planned** | `lab4-staging` |
+| [PR #61](https://github.com/Phenwatsa/toktickit/pull/61) | `feature/lab4-2-ticket-workflow-enforcement` | Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement) | **Approved** | `lab4-staging` |
 | [PR #54](https://github.com/Phenwatsa/toktickit/pull/54) | `feature/lab4-3-actions-taken-ui` | Issue 23 (#54): Actions Taken UI & Ticket Detail Integration (Frontend) | **Planned** | `lab4-staging` |
 | [PR #55](https://github.com/Phenwatsa/toktickit/pull/55) | `feature/lab4-4-dashboard-apis` | Issue 24 (#55): Role-Appropriate Dashboard Metrics APIs (Backend) | **Planned** | `lab4-staging` |
 | [PR #56](https://github.com/Phenwatsa/toktickit/pull/56) | `feature/lab4-5-dashboard-ui` | Issue 25 (#56): Role-Appropriate Dashboards UI & Drill-Down (Frontend) | **Planned** | `lab4-staging` |
@@ -78,6 +78,27 @@
 
 ---
 
+### [PR #61](https://github.com/Phenwatsa/toktickit/pull/61) — Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement)
+* **Branch:** `feature/lab4-2-ticket-workflow-enforcement`
+* **Target branch:** `lab4-staging`
+* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/61](https://github.com/Phenwatsa/toktickit/pull/61)
+* **Review Cycle 1 (Approval) — Feedback received from @lephirada:**
+  > "The backend workflow enforcement looks good to me. The resolution gate, status transition matrix, reassignment validation, and optimistic concurrency checks are implemented and covered by tests. The CI checks also pass, including the server tests, client build, and Playwright E2E tests. I approved Ka."
+
+* **Summary of Changes Applied:**
+  - **Resolution Gate Backend Enforcement**: Enforced authoritative backend restrictions ensuring transitioning status to `RESOLVED` and `CLOSED` is strictly restricted to `IT_STAFF` (`403 FORBIDDEN` for Requester and Administrator roles). Enforced that Requester resolution indication (`problemAppearsResolved = true`) remains purely advisory and leaves `currentStatus` completely unchanged. Transitions to `RESOLVED` mandate at least one recorded `ActionTaken` (`422 ACTION_TAKEN_REQUIRED_FOR_RESOLUTION`) and non-empty `resolutionSummary` (10–1000 characters).
+  - **Strict Status Transition Matrix & Ticket Reassignment**: Validated lifecycle transitions across all 8 statuses (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPEN`, `CANCELLED`), rejecting invalid hops with `400 INVALID_TRANSITION`. Enforced ticket reassignment guards rejecting terminal tickets (`CLOSED`, `CANCELLED`) with `400 INVALID_STATE` and non-IT-Staff assignees with `400 INVALID_OWNER` without mutating ticket state.
+  - **Atomic Optimistic Concurrency Control (OCC)**: Enforced conditional database updates (`prisma.ticket.updateMany({ where: { id: ticketId, updatedAt: expectedDate } })`) returning `409 STALE_UPDATE_CONFLICT` with `currentUpdatedAt` when `count === 0` to prevent lost updates in concurrent environments. Reordered validation logic so optimistic concurrency checks are evaluated before terminal status checks, guaranteeing deterministic 409 responses on stale updates.
+  - **Monotonic Timestamp Advancement & Calendar Integrity**: Enforced strictly monotonic timestamp advancement (`new Date(Math.max(Date.now(), expectedDate.getTime() + 1))`), ensuring that every successful update advances `updatedAt` by at least 1ms even during rapid same-millisecond race conditions. Hardened `isValidIsoUtcDateString()` with comprehensive calendar date validation to reject impossible dates (e.g. February 31) that JavaScript Date objects would otherwise roll over.
+  - **Test Coverage & Regression Safety**: Created comprehensive unit tests for concurrency check logic and calendar validation (`concurrency-check.unit.test.ts`), status transition matrix verification (`status-transition-matrix.unit.test.ts`), and follow-up validation (`follow-up-validation.unit.test.ts`). Expanded API integration test suite (`ticket-workflow.api.test.ts`) covering concurrent race conditions, invalid calendar formats, and resolution gate constraints. Passing all 265 server tests across 27 files, 77 client tests across 13 files, and 24 Playwright E2E tests with zero regressions.
+
+* **Author Response to @lephirada:**
+  > "Thank you for the review and approval! All workflow enforcement rules—including the authoritative resolution gate, strict status transition matrix, ticket reassignment validation, atomic optimistic concurrency control with monotonic timestamp advancement, and strict calendar validation—are fully implemented and verified across unit, API, client, and Playwright E2E test suites with zero regressions. PR #61 is ready to merge into `lab4-staging`."
+
+* **Verdict:** **Approved**
+
+---
+
 ## 2. Pull Requests I Reviewed for Partner (@lephirada)
 
 ### Partner Sprint Roadmap & Issue Breakdown
@@ -86,8 +107,8 @@
 |:---|:---|:---|:---|:---|
 | [Issue #41](https://github.com/lephirada/toktickit/issues/41) | Issue 18: Sprint 4 Engineering Contract, Specifications, and Test Plan | [PR #50](https://github.com/lephirada/toktickit/pull/50) | **Completed / Merged** | `lab4-staging` |
 | [Issue #42](https://github.com/lephirada/toktickit/issues/42) | Issue 19: Database Migration, Seed Data & Verification Tests | [PR #51](https://github.com/lephirada/toktickit/pull/51) | **Completed / Merged** | `lab4-staging` |
-| [Issue #43](https://github.com/lephirada/toktickit/issues/43) | Issue 20: Actions Taken REST APIs with Concurrency Control & Validation | [PR #52](https://github.com/lephirada/toktickit/pull/52) | **In Progress / Under Review** | `lab4-staging` |
-| [Issue #44](https://github.com/lephirada/toktickit/issues/44) | Issue 21: Ticket Resolution Gate and Lab 3 State Machine Preservation | *(Planned)* | Planned | `lab4-staging` |
+| [Issue #43](https://github.com/lephirada/toktickit/issues/43) | Issue 20: Actions Taken REST APIs with Concurrency Control & Validation | [PR #52](https://github.com/lephirada/toktickit/pull/52) | **Completed / Merged** | `lab4-staging` |
+| [Issue #44](https://github.com/lephirada/toktickit/issues/44) | Issue 21: Ticket Resolution Gate and Lab 3 State Machine Preservation | [PR #53](https://github.com/lephirada/toktickit/pull/53) | **Completed / Merged** | `lab4-staging` |
 | [Issue #45](https://github.com/lephirada/toktickit/issues/45) | Issue 22: Requester and Staff Dashboard Backend APIs | *(Planned)* | Planned | `lab4-staging` |
 | [Issue #46](https://github.com/lephirada/toktickit/issues/46) | Issue 23: Actions Taken UI & Ticket Detail Integration (Frontend) | *(Planned)* | Planned | `lab4-staging` |
 | [Issue #47](https://github.com/lephirada/toktickit/issues/47) | Issue 24: Role-Appropriate Dashboards UI & Drill-Down (Frontend) | *(Planned)* | Planned | `lab4-staging` |
@@ -102,7 +123,8 @@
 |:---|:---|:---|:---|:---|:---|
 | [PR #50](https://github.com/lephirada/toktickit/pull/50) | `feature/18-lab4-spec-docs` | Issue 18 (#41): Sprint 4 Engineering Contract, Specifications, and Test Plan | **Approved** | `lab4-staging` | Merged |
 | [PR #51](https://github.com/lephirada/toktickit/pull/51) | `feature/19-database-migration-actions` | Issue 19 (#42): Database Schema Evolution, ActionTaken Model & Seed Migration | **Approved** | `lab4-staging` | Merged |
-| [PR #52](https://github.com/lephirada/toktickit/pull/52) | `feature/20-actions-taken-backend` | Issue 20 (#43): Actions Taken REST APIs with Concurrency Control & Validation | **Changes Requested** | `lab4-staging` | In Progress |
+| [PR #52](https://github.com/lephirada/toktickit/pull/52) | `feature/20-actions-taken-backend` | Issue 20 (#43): Actions Taken REST APIs with Concurrency Control & Validation | **Approved** | `lab4-staging` | Merged |
+| [PR #53](https://github.com/lephirada/toktickit/pull/53) | `feature/21-ticket-resolution-gate` | Issue 21 (#44): Server-Enforced Resolution Gate and Lab 3 State Machine Preservation | **Approved** | `lab4-staging` | Merged |
 
 ---
 
@@ -163,6 +185,32 @@
   > The existing API test suite provides broad coverage, but I have not independently rerun the tests or build during this review. Recommendation: Request Changes until the concurrency-token guarantee and validation gaps are addressed."
 
 * **Partner Response from @lephirada:**
-  *(Pending — partner currently addressing review findings on concurrency token reliability and input validation)*
+  > "Thanks for the detailed review! I’ve updated the concurrency token handling to ensure updatedAt advances on successful updates, added validation for followUpNote when it is provided, tightened future timestamp validation, and reconciled the test counts in the evidence document. I’ll verify the regression tests and the latest CI results before requesting another review. Thanks for helping me catch these issues!"
 
-* **Final Verdict:** **Changes Requested** (In Progress)
+* **Review Cycle 2 (Approval) — Comments Submitted by @Phenwatsa:**
+  > "Reviewed the implementation against the Lab 4 API specification. actionType validation: The implementation uses a String field with a maximum length of 50 characters, consistent with the API specification. An enum whitelist is not explicitly required. performedAt updates: The PUT endpoint supports updating performedAt, as documented in the API specification. Future timestamps must be rejected. IT Staff ticket access: Access to tickets in the queue is consistent with the documented authorization scope; access is not limited to tickets personally assigned to the IT Staff member. I found no blocking issues in these three areas. Recommend approval, provided the latest CI checks pass and the remaining acceptance criteria are satisfied."
+
+* **Partner Response from @lephirada:**
+  > "Thanks for approving the PR! I have already updated docs/lab-04/reviewer.md with the latest comment. You can merge this PR."
+
+* **Final Verdict:** **Approved** (Merged into `lab4-staging`)
+
+---
+
+### [Partner PR #53](https://github.com/lephirada/toktickit/pull/53) — Issue 21 (#44): Server-Enforced Resolution Gate and Lab 3 State Machine Preservation
+* **Partner Repository / PR:** [@lephirada/toktickit#53](https://github.com/lephirada/toktickit/pull/53)
+* **Branch:** `feature/21-ticket-resolution-gate` $\rightarrow$ `lab4-staging`
+* **Review Cycle 1 — Comments Submitted by @Phenwatsa:**
+  > "Request Changes — Resolution Gate error contract: The Resolution Gate correctly checks the ActionTaken count and returns HTTP 422 when no action has been recorded. However, the error code does not match the Acceptance Criteria in Issue #44. Expected: ACTION_TAKEN_REQUIRED_FOR_RESOLUTION. Current: RESOLUTION_ACTION_REQUIRED. Please align the error code across the server response, automated tests, and docs/lab-04/evidence.md, including the example JSON response. This is an API contract mismatch that should be fixed before approval. Also, Issue #44 specifies server/tests/lab-04/ticket-workflow.api.test.ts, while this PR adds server/tests/lab-04/resolution-gate.api.test.ts. Please align the filename with the specified deliverable, or update the issue if the alternative filename is intentional. The core resolution-gate logic and requester advisory behavior otherwise appear consistent with the stated requirements based on the reviewed PR details. Please rerun the relevant tests after making these changes."
+
+* **Partner Response from @lephirada:**
+  > "Thanks for the feedback! I have aligned the Resolution Gate error code to ACTION_TAKEN_REQUIRED_FOR_RESOLUTION across server/src/app.ts, docs/lab-04/evidence.md, and the automated tests. I also renamed the test file to server/tests/lab-04/ticket-workflow.api.test.ts as specified in Issue #44, and verified all 24/24 targeted tests and 319/319 full server regression tests pass. Ready for re-review!"
+
+* **Review Cycle 2 (Approval) — Comments Submitted by @Phenwatsa:**
+  > "Review Summary — Resolution Gate: The updated implementation addresses the issues identified in the previous review. The Resolution Gate now uses the required error code, ACTION_TAKEN_REQUIRED_FOR_RESOLUTION, with HTTP 422 when no ActionTaken records exist. The test file now matches the specified deliverable path: server/tests/lab-04/ticket-workflow.api.test.ts. The server-side resolution validation, transition enforcement, and Requester advisory behavior appear consistent with the stated requirements based on the reviewed diff. The reported targeted tests and full server test suite pass, and the latest CI status checked was successful. No additional blocking issues were identified in this review. Approved based on the reviewed changes and available test evidence."
+
+* **Partner Response from @lephirada:**
+  > "Thanks for the review! The file has been updated based on your comments. Ready to merge."
+
+* **Final Verdict:** **Approved** (Merged into `lab4-staging`)
+

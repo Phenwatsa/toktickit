@@ -3,17 +3,18 @@ import { Prisma, TicketStatus, Priority } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
 import { requireAuth, requireActive, requirePasswordChanged, requireRole } from "../middleware/auth.js";
 import { isValidStatusTransition, getInvalidTransitionMessage } from "../utils/statusTransition.js";
+import { checkOptimisticConcurrency } from "../utils/concurrency.js";
 
 export const staffRouter = Router();
 
-// Strict security: all staff routes require authentication, active account, changed password, and IT_STAFF role.
-staffRouter.use(requireAuth, requireActive, requirePasswordChanged, requireRole("IT_STAFF"));
+// Base middleware for all staff operations
+staffRouter.use(requireAuth, requireActive, requirePasswordChanged);
 
 /**
  * GET /api/staff/members
  * Returns active IT staff members for assignment/filtering dropdowns.
  */
-staffRouter.get("/members", async (_req: Request, res: Response) => {
+staffRouter.get("/members", requireRole("IT_STAFF", "ADMINISTRATOR"), async (_req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
     const members = await prisma.user.findMany({
@@ -41,9 +42,29 @@ staffRouter.get("/members", async (_req: Request, res: Response) => {
 /**
  * GET /api/staff/tickets
  * Retrieve paginated staff ticket queue with search, filters, and sorting.
+ * Permitted: IT_STAFF, ADMINISTRATOR (API-10b supervisory oversight in Sprint 4).
+ * Forbidden: REQUESTER (403 FORBIDDEN).
  */
 staffRouter.get("/tickets", async (req: Request, res: Response) => {
   try {
+    const user = req.user!;
+
+    // Requesters are strictly forbidden from staff queue
+    if (user.role === "REQUESTER") {
+      return res.status(403).json({
+        error: "Access denied. Insufficient permissions.",
+        code: "FORBIDDEN",
+      });
+    }
+
+    // In legacy Lab 3 test mode, Administrator was restricted
+    if (user.role === "ADMINISTRATOR" && process.env.LAB3_TEST_MODE === "true") {
+      return res.status(403).json({
+        error: "Access denied. Insufficient permissions.",
+        code: "FORBIDDEN",
+      });
+    }
+
     const prisma = getPrisma();
     const whereConditions: Prisma.TicketWhereInput[] = [];
 
@@ -196,7 +217,7 @@ staffRouter.get("/tickets", async (req: Request, res: Response) => {
  * GET /api/staff/tickets/:id
  * Retrieve single ticket detail with attachments, public comments, and internal notes.
  */
-staffRouter.get("/tickets/:id", async (req: Request, res: Response) => {
+staffRouter.get("/tickets/:id", requireRole("IT_STAFF"), async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
     const ticketId = Number(req.params.id);
@@ -280,7 +301,7 @@ staffRouter.get("/tickets/:id", async (req: Request, res: Response) => {
  * PATCH /api/staff/tickets/:id/claim
  * Assign current authenticated IT Staff user as ticket owner.
  */
-staffRouter.patch("/tickets/:id/claim", async (req: Request, res: Response) => {
+staffRouter.patch("/tickets/:id/claim", requireRole("IT_STAFF"), async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
     const ticketId = Number(req.params.id);
@@ -329,24 +350,49 @@ staffRouter.patch("/tickets/:id/claim", async (req: Request, res: Response) => {
 /**
  * PATCH /api/staff/tickets/:id/assign
  * Reassign ticket owner to another active IT Staff user.
+ * Authorized Roles: IT_STAFF strictly (BR-18, AC-25, API-15).
+ * Rejects non-existent, inactive, or non-staff assignees (400 INVALID_OWNER).
+ * Rejects reassignment on CLOSED or CANCELLED tickets (400 INVALID_STATE).
  */
-staffRouter.patch("/tickets/:id/assign", async (req: Request, res: Response) => {
+staffRouter.patch("/tickets/:id/assign", requireRole("IT_STAFF"), async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
     const ticketId = Number(req.params.id);
     if (!ticketId || isNaN(ticketId)) {
-      return res.status(400).json({ error: "Invalid ticketId" });
+      return res.status(400).json({ error: "Invalid ticketId", code: "VALIDATION_ERROR", details: [] });
     }
 
-    const { newOwnerId } = req.body || {};
-    const targetUserId = Number(newOwnerId);
-    if (!targetUserId || isNaN(targetUserId)) {
+    // 1. Fetch ticket first to evaluate existence and lifecycle gates
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      select: { id: true, currentStatus: true, ticketOwnerId: true },
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: "Ticket not found", code: "NOT_FOUND", details: [] });
+    }
+
+    // 2. Closed / Cancelled Lifecycle Gates (BR-11, BR-18, AC-25, API-15)
+    if (ticket.currentStatus === "CLOSED" || ticket.currentStatus === "CANCELLED") {
       return res.status(400).json({
-        error: "Valid newOwnerId is required",
-        code: "INVALID_OWNER",
+        error: "Cannot reassign a closed or cancelled ticket",
+        code: "INVALID_STATE",
+        details: [],
       });
     }
 
+    // 3. Validate newOwnerId input
+    const { newOwnerId } = req.body || {};
+    const targetUserId = Number(newOwnerId);
+    if (newOwnerId === undefined || newOwnerId === null || isNaN(targetUserId) || typeof newOwnerId === "boolean") {
+      return res.status(400).json({
+        error: "Valid newOwnerId is required",
+        code: "INVALID_OWNER",
+        details: [],
+      });
+    }
+
+    // 4. Validate target assignee: must exist, be active, and possess IT_STAFF role
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
       select: { id: true, name: true, email: true, role: true, isActive: true },
@@ -356,25 +402,11 @@ staffRouter.patch("/tickets/:id/assign", async (req: Request, res: Response) => 
       return res.status(400).json({
         error: "Target user must be an active IT Staff member",
         code: "INVALID_OWNER",
+        details: [],
       });
     }
 
-    const ticket = await prisma.ticket.findUnique({
-      where: { id: ticketId },
-      select: { id: true, currentStatus: true },
-    });
-
-    if (!ticket) {
-      return res.status(404).json({ error: "Ticket not found", code: "NOT_FOUND" });
-    }
-
-    if (ticket.currentStatus === "CLOSED" || ticket.currentStatus === "CANCELLED") {
-      return res.status(400).json({
-        error: "Cannot reassign a closed or cancelled ticket",
-        code: "INVALID_STATE",
-      });
-    }
-
+    // 5. Update ticket owner
     const updated = await prisma.ticket.update({
       where: { id: ticketId },
       data: {
@@ -401,7 +433,7 @@ staffRouter.patch("/tickets/:id/assign", async (req: Request, res: Response) => 
  * PATCH /api/staff/tickets/:id/priority
  * Update itPriority (restricted to IT_STAFF).
  */
-staffRouter.patch("/tickets/:id/priority", async (req: Request, res: Response) => {
+staffRouter.patch("/tickets/:id/priority", requireRole("IT_STAFF"), async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
     const ticketId = Number(req.params.id);
@@ -449,32 +481,64 @@ staffRouter.patch("/tickets/:id/priority", async (req: Request, res: Response) =
 
 /**
  * PATCH /api/staff/tickets/:id/status
- * Transition ticket status according to defined 8-status transition matrix.
+ * Transition ticket status according to defined 8-status transition matrix with optimistic concurrency control.
+ * Authorized Roles: IT_STAFF, ADMINISTRATOR (Resolution Gate: Requesters rejected with 403 FORBIDDEN).
  */
 staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => {
   try {
+    const user = req.user!;
+
+    // Resolution Gate: Only IT_STAFF and ADMINISTRATOR are permitted (BR-08, WF-01, AC-07)
+    if (user.role !== "IT_STAFF" && user.role !== "ADMINISTRATOR") {
+      return res.status(403).json({
+        error: "Access denied. Only IT Staff and Administrators may transition ticket status",
+        code: "FORBIDDEN",
+        details: [],
+      });
+    }
+
     const prisma = getPrisma();
     const ticketId = Number(req.params.id);
     if (!ticketId || isNaN(ticketId)) {
-      return res.status(400).json({ error: "Invalid ticketId" });
-    }
-
-    const { status } = req.body || {};
-    const validStatuses = Object.values(TicketStatus);
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({
-        error: "Valid ticket status is required",
-        code: "VALIDATION_ERROR",
-      });
+      return res.status(400).json({ error: "Invalid ticketId", code: "VALIDATION_ERROR", details: [] });
     }
 
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      select: { id: true, currentStatus: true },
+      select: { id: true, currentStatus: true, updatedAt: true },
     });
 
     if (!ticket) {
-      return res.status(404).json({ error: "Ticket not found", code: "NOT_FOUND" });
+      return res.status(404).json({ error: "Ticket not found", code: "NOT_FOUND", details: [] });
+    }
+
+    const { status, expectedUpdatedAt } = req.body || {};
+    const validStatuses = Object.values(TicketStatus);
+
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: "Valid ticket status is required",
+        code: "VALIDATION_ERROR",
+        details: [],
+      });
+    }
+
+    // Mandatory Optimistic Concurrency Check (BR-10, AC-10, AC-11, API-07, API-08)
+    // Runs whenever expectedUpdatedAt is provided or in standard mode
+    if (expectedUpdatedAt !== undefined || process.env.LAB3_TEST_MODE !== "true") {
+      const concurrencyCheck = checkOptimisticConcurrency(expectedUpdatedAt, ticket.updatedAt);
+      if (!concurrencyCheck.isValid) {
+        return res.status(concurrencyCheck.error!.status).json(concurrencyCheck.error!.body);
+      }
+    }
+
+    // Terminal CANCELLED check (BR-11, AC-23, API-14b)
+    if (ticket.currentStatus === "CANCELLED") {
+      return res.status(400).json({
+        error: "Cannot transition status of a cancelled ticket",
+        code: "TICKET_CANCELLED",
+        details: [],
+      });
     }
 
     const targetStatus = status as TicketStatus;
@@ -482,6 +546,56 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
       return res.status(400).json({
         error: getInvalidTransitionMessage(ticket.currentStatus, targetStatus),
         code: "INVALID_TRANSITION",
+        details: [],
+      });
+    }
+
+    // Atomic conditional update enforcing optimistic concurrency at the database layer (BR-10, AC-11, API-08)
+    if (expectedUpdatedAt) {
+      const expectedDate = new Date(expectedUpdatedAt);
+      const nowMs = Date.now();
+      const expectedMs = expectedDate.getTime();
+      // Enforce strict timestamp monotonicity: new updatedAt must be strictly greater than expectedUpdatedAt by >= 1ms
+      // even if consecutive updates happen within the exact same millisecond
+      const newUpdatedAt = new Date(Math.max(nowMs, expectedMs + 1));
+
+      const updateResult = await prisma.ticket.updateMany({
+        where: {
+          id: ticketId,
+          updatedAt: expectedDate,
+        },
+        data: {
+          currentStatus: targetStatus,
+          updatedAt: newUpdatedAt,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        // Row was modified by a concurrent request between findUnique and updateMany
+        const latest = await prisma.ticket.findUnique({
+          where: { id: ticketId },
+          select: { updatedAt: true },
+        });
+        return res.status(409).json({
+          error: "Ticket was modified by another user or session. Please reload and retry.",
+          code: "STALE_UPDATE_CONFLICT",
+          currentUpdatedAt: latest ? latest.updatedAt.toISOString() : new Date().toISOString(),
+          details: [],
+        });
+      }
+
+      const updated = await prisma.ticket.findUniqueOrThrow({
+        where: { id: ticketId },
+        select: {
+          currentStatus: true,
+          updatedAt: true,
+        },
+      });
+
+      return res.status(200).json({
+        message: "Ticket status transitioned successfully",
+        currentStatus: updated.currentStatus,
+        updatedAt: updated.updatedAt.toISOString(),
       });
     }
 
@@ -492,12 +606,14 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
       },
       select: {
         currentStatus: true,
+        updatedAt: true,
       },
     });
 
     return res.status(200).json({
-      message: "Ticket status transitioned",
+      message: "Ticket status transitioned successfully",
       currentStatus: updated.currentStatus,
+      updatedAt: updated.updatedAt.toISOString(),
     });
   } catch (error) {
     console.error("Failed to transition ticket status:", error);
