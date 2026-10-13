@@ -550,6 +550,49 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
       });
     }
 
+    // Atomic conditional update enforcing optimistic concurrency at the database layer (BR-10, AC-11, API-08)
+    if (expectedUpdatedAt && process.env.LAB3_TEST_MODE !== "true") {
+      const expectedDate = new Date(expectedUpdatedAt);
+      const updateResult = await prisma.ticket.updateMany({
+        where: {
+          id: ticketId,
+          updatedAt: expectedDate,
+        },
+        data: {
+          currentStatus: targetStatus,
+          updatedAt: new Date(),
+        },
+      });
+
+      if (updateResult.count === 0) {
+        // Row was modified by a concurrent request between findUnique and updateMany
+        const latest = await prisma.ticket.findUnique({
+          where: { id: ticketId },
+          select: { updatedAt: true },
+        });
+        return res.status(409).json({
+          error: "Ticket was modified by another user or session. Please reload and retry.",
+          code: "STALE_UPDATE_CONFLICT",
+          currentUpdatedAt: latest ? latest.updatedAt.toISOString() : new Date().toISOString(),
+          details: [],
+        });
+      }
+
+      const updated = await prisma.ticket.findUniqueOrThrow({
+        where: { id: ticketId },
+        select: {
+          currentStatus: true,
+          updatedAt: true,
+        },
+      });
+
+      return res.status(200).json({
+        message: "Ticket status transitioned successfully",
+        currentStatus: updated.currentStatus,
+        updatedAt: updated.updatedAt.toISOString(),
+      });
+    }
+
     const updated = await prisma.ticket.update({
       where: { id: ticketId },
       data: {

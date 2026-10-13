@@ -129,5 +129,29 @@ describe("UNIT-03: Optimistic Concurrency Comparator Logic (BR-10 / AC-10 / AC-1
       expect(isValidIsoUtcDateString("2026-10-10T12:00:00+02:00")).toBe(false);
       expect(isValidIsoUtcDateString("not-a-date")).toBe(false);
     });
+
+    it("rejects non-existent calendar dates (e.g. Feb 31, non-leap Feb 29, April 31)", () => {
+      // Non-existent February dates
+      expect(isValidIsoUtcDateString("2026-02-31T12:00:00Z")).toBe(false);
+      expect(isValidIsoUtcDateString("2026-02-30T12:00:00Z")).toBe(false);
+      expect(isValidIsoUtcDateString("2025-02-29T12:00:00Z")).toBe(false); // 2025 is not a leap year
+
+      // Valid leap year February 29
+      expect(isValidIsoUtcDateString("2024-02-29T12:00:00Z")).toBe(true);  // 2024 is a leap year
+
+      // Months with only 30 days
+      expect(isValidIsoUtcDateString("2026-04-31T12:00:00Z")).toBe(false); // April
+      expect(isValidIsoUtcDateString("2026-06-31T12:00:00Z")).toBe(false); // June
+      expect(isValidIsoUtcDateString("2026-09-31T12:00:00Z")).toBe(false); // September
+      expect(isValidIsoUtcDateString("2026-11-31T12:00:00Z")).toBe(false); // November
+
+      // Out of bound month, day, and time components
+      expect(isValidIsoUtcDateString("2026-00-10T12:00:00Z")).toBe(false);
+      expect(isValidIsoUtcDateString("2026-13-10T12:00:00Z")).toBe(false);
+      expect(isValidIsoUtcDateString("2026-05-32T12:00:00Z")).toBe(false);
+      expect(isValidIsoUtcDateString("2026-05-10T25:00:00Z")).toBe(false);
+      expect(isValidIsoUtcDateString("2026-05-10T12:61:00Z")).toBe(false);
+      expect(isValidIsoUtcDateString("2026-05-10T12:00:61Z")).toBe(false);
+    });
   });
 });

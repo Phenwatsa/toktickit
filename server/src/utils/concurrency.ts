@@ -19,14 +19,41 @@ export interface ConcurrencyCheckResult {
 
 /**
  * Validates ISO-8601 UTC date string format per RFC 3339 / ISO 8601.
- * Must end in 'Z'.
+ * Must end in 'Z' and represent a valid real calendar date (preventing JavaScript Date normalization roll-overs).
  */
 export function isValidIsoUtcDateString(val: unknown): boolean {
   if (typeof val !== "string") return false;
-  const isoUtcPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-  if (!isoUtcPattern.test(val)) return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z$/.exec(val);
+  if (!match) return false;
+
+  const [_, yearStr, monthStr, dayStr, hourStr, minStr, secStr] = match;
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+  const hour = parseInt(hourStr, 10);
+  const min = parseInt(minStr, 10);
+  const sec = parseInt(secStr, 10);
+
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+  if (hour > 23 || min > 59 || sec > 59) return false;
+
   const d = new Date(val);
-  return !isNaN(d.getTime());
+  if (isNaN(d.getTime())) return false;
+
+  // Strict Calendar Date Integrity: JavaScript Date must not roll over (e.g. Feb 31 -> Mar 3)
+  if (
+    d.getUTCFullYear() !== year ||
+    d.getUTCMonth() + 1 !== month ||
+    d.getUTCDate() !== day ||
+    d.getUTCHours() !== hour ||
+    d.getUTCMinutes() !== min ||
+    d.getUTCSeconds() !== sec
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 /**

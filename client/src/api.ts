@@ -574,15 +574,36 @@ export async function updateStaffTicketPriority(
 
 export async function updateStaffTicketStatus(
   ticketId: number,
-  status: TicketStatus
-): Promise<{ message: string; currentStatus: TicketStatus }> {
+  status: TicketStatus,
+  expectedUpdatedAt?: string
+): Promise<{ message: string; currentStatus: TicketStatus; updatedAt?: string }> {
+  let timestamp = expectedUpdatedAt;
+  if (!timestamp) {
+    try {
+      const ticketRes = await fetch(`${API_URL}/api/staff/tickets/${ticketId}`, {
+        headers: { ...getAuthHeaders() },
+      });
+      if (ticketRes.ok) {
+        const ticketData = await ticketRes.json();
+        timestamp = ticketData.ticket?.updatedAt || ticketData.updatedAt;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  const payload: { status: TicketStatus; expectedUpdatedAt?: string } = { status };
+  if (timestamp) {
+    payload.expectedUpdatedAt = timestamp;
+  }
+
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       ...getAuthHeaders(),
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(payload),
   });
 
   const data = await res.json();

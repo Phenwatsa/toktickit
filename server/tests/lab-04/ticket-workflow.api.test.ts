@@ -522,6 +522,51 @@ describe("Lab 4 Ticket Workflow API Tests (ticket-workflow.api.test.ts)", () => 
       expect(resRetry.status).toBe(200);
       expect(resRetry.body.currentStatus).toBe("CANCELLED");
     });
+
+    it("API-07: rejects non-existent calendar date (e.g. Feb 31) with 400 VALIDATION_ERROR", async () => {
+      const ticket = await createTestTicket("NEW");
+
+      const res = await request(app)
+        .patch(`/api/staff/tickets/${ticket.id}/status`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({ status: "OPEN", expectedUpdatedAt: "2026-02-31T12:00:00Z" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_ERROR");
+      expect(res.body.details[0].field).toBe("expectedUpdatedAt");
+      expect(res.body.details[0].message).toContain("must be a valid ISO-8601 UTC date string");
+    });
+
+    it("API-08: guarantees atomic race condition resolution when two concurrent requests update with the same timestamp", async () => {
+      const ticket = await createTestTicket("OPEN");
+      const initialTimestamp = ticket.updatedAt.toISOString();
+
+      // Launch two concurrent status transitions targeting different valid target statuses (IN_PROGRESS vs CANCELLED)
+      const [reqA, reqB] = await Promise.all([
+        request(app)
+          .patch(`/api/staff/tickets/${ticket.id}/status`)
+          .set("Authorization", `Bearer ${tokenStaff1}`)
+          .send({ status: "IN_PROGRESS", expectedUpdatedAt: initialTimestamp }),
+        request(app)
+          .patch(`/api/staff/tickets/${ticket.id}/status`)
+          .set("Authorization", `Bearer ${tokenStaff2}`)
+          .send({ status: "CANCELLED", expectedUpdatedAt: initialTimestamp }),
+      ]);
+
+      const statuses = [reqA.status, reqB.status].sort();
+      expect(statuses).toEqual([200, 409]);
+
+      const successReq = reqA.status === 200 ? reqA : reqB;
+      const conflictReq = reqA.status === 409 ? reqA : reqB;
+
+      expect(successReq.body.currentStatus).toBeDefined();
+      expect(conflictReq.body.code).toBe("STALE_UPDATE_CONFLICT");
+      expect(conflictReq.body.currentUpdatedAt).toBeDefined();
+
+      // Verify the final state in the database matches the successful transition
+      const finalTicket = await prisma.ticket.findUnique({ where: { id: ticket.id } });
+      expect(finalTicket?.currentStatus).toBe(successReq.body.currentStatus);
+    });
   });
 
   // =========================================================================
