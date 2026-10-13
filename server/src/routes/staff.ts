@@ -553,6 +553,12 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
     // Atomic conditional update enforcing optimistic concurrency at the database layer (BR-10, AC-11, API-08)
     if (expectedUpdatedAt) {
       const expectedDate = new Date(expectedUpdatedAt);
+      const nowMs = Date.now();
+      const expectedMs = expectedDate.getTime();
+      // Enforce strict timestamp monotonicity: new updatedAt must be strictly greater than expectedUpdatedAt by >= 1ms
+      // even if consecutive updates happen within the exact same millisecond
+      const newUpdatedAt = new Date(Math.max(nowMs, expectedMs + 1));
+
       const updateResult = await prisma.ticket.updateMany({
         where: {
           id: ticketId,
@@ -560,7 +566,7 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
         },
         data: {
           currentStatus: targetStatus,
-          updatedAt: new Date(),
+          updatedAt: newUpdatedAt,
         },
       });
 

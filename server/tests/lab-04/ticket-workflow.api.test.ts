@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
 import bcrypt from "bcryptjs";
 import { app } from "../../src/app.js";
@@ -566,6 +566,38 @@ describe("Lab 4 Ticket Workflow API Tests (ticket-workflow.api.test.ts)", () => 
       // Verify the final state in the database matches the successful transition
       const finalTicket = await prisma.ticket.findUnique({ where: { id: ticket.id } });
       expect(finalTicket?.currentStatus).toBe(successReq.body.currentStatus);
+    });
+
+    it("API-08: guarantees strict timestamp monotonicity and rejects identical-timestamp re-update (same-millisecond OCC)", async () => {
+      const ticket = await createTestTicket("OPEN");
+      const initialTimestamp = ticket.updatedAt.toISOString();
+
+      // Request 1 updates the ticket using initialTimestamp
+      const res1 = await request(app)
+        .patch(`/api/staff/tickets/${ticket.id}/status`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({ status: "IN_PROGRESS", expectedUpdatedAt: initialTimestamp });
+
+      expect(res1.status).toBe(200);
+      expect(res1.body.currentStatus).toBe("IN_PROGRESS");
+      const updatedTimestamp = res1.body.updatedAt;
+
+      // Monotonicity assertion: new updatedAt MUST be strictly greater than initialTimestamp by at least 1ms
+      expect(new Date(updatedTimestamp).getTime()).toBeGreaterThan(new Date(initialTimestamp).getTime());
+
+      // Request 2 immediately attempts to re-update using the exact same initialTimestamp
+      const res2 = await request(app)
+        .patch(`/api/staff/tickets/${ticket.id}/status`)
+        .set("Authorization", `Bearer ${tokenStaff2}`)
+        .send({ status: "WAITING_FOR_REQUESTER", expectedUpdatedAt: initialTimestamp });
+
+      expect(res2.status).toBe(409);
+      expect(res2.body.code).toBe("STALE_UPDATE_CONFLICT");
+      expect(res2.body.currentUpdatedAt).toBe(updatedTimestamp);
+
+      // Verify the database status remains IN_PROGRESS and was not overwritten by Request 2
+      const inDb = await prisma.ticket.findUnique({ where: { id: ticket.id } });
+      expect(inDb?.currentStatus).toBe("IN_PROGRESS");
     });
   });
 

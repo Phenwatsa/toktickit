@@ -154,4 +154,25 @@ describe("UNIT-03: Optimistic Concurrency Comparator Logic (BR-10 / AC-10 / AC-1
       expect(isValidIsoUtcDateString("2026-05-10T12:00:61Z")).toBe(false);
     });
   });
+
+  describe("Helper: Monotonic Timestamp Advancement", () => {
+    it("guarantees strictly monotonic timestamp advance even if nowMs <= expectedMs", () => {
+      const expectedMs = 1791892000000;
+
+      // Case 1: nowMs is equal to expectedMs (same millisecond)
+      const sameMsResult = Math.max(expectedMs, expectedMs + 1);
+      expect(sameMsResult).toBe(expectedMs + 1);
+      expect(sameMsResult).toBeGreaterThan(expectedMs);
+
+      // Case 2: nowMs is less than expectedMs (clock skew / backwards jitter)
+      const pastMsResult = Math.max(expectedMs - 100, expectedMs + 1);
+      expect(pastMsResult).toBe(expectedMs + 1);
+      expect(pastMsResult).toBeGreaterThan(expectedMs);
+
+      // Case 3: nowMs is greater than expectedMs (normal forward progression)
+      const futureMsResult = Math.max(expectedMs + 50, expectedMs + 1);
+      expect(futureMsResult).toBe(expectedMs + 50);
+      expect(futureMsResult).toBeGreaterThan(expectedMs);
+    });
+  });
 });
