@@ -512,15 +512,6 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
       return res.status(404).json({ error: "Ticket not found", code: "NOT_FOUND", details: [] });
     }
 
-    // Terminal CANCELLED check (BR-11, AC-23, API-14b)
-    if (ticket.currentStatus === "CANCELLED") {
-      return res.status(400).json({
-        error: "Cannot transition status of a cancelled ticket",
-        code: "TICKET_CANCELLED",
-        details: [],
-      });
-    }
-
     const { status, expectedUpdatedAt } = req.body || {};
     const validStatuses = Object.values(TicketStatus);
 
@@ -532,13 +523,22 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
       });
     }
 
-    // In legacy Lab 3 test mode: optimistic concurrency was not enforced
-    if (process.env.LAB3_TEST_MODE !== "true") {
-      // Mandatory Optimistic Concurrency Check (BR-10, AC-10, AC-11, API-07, API-08)
+    // Mandatory Optimistic Concurrency Check (BR-10, AC-10, AC-11, API-07, API-08)
+    // Runs whenever expectedUpdatedAt is provided or in standard mode
+    if (expectedUpdatedAt !== undefined || process.env.LAB3_TEST_MODE !== "true") {
       const concurrencyCheck = checkOptimisticConcurrency(expectedUpdatedAt, ticket.updatedAt);
       if (!concurrencyCheck.isValid) {
         return res.status(concurrencyCheck.error!.status).json(concurrencyCheck.error!.body);
       }
+    }
+
+    // Terminal CANCELLED check (BR-11, AC-23, API-14b)
+    if (ticket.currentStatus === "CANCELLED") {
+      return res.status(400).json({
+        error: "Cannot transition status of a cancelled ticket",
+        code: "TICKET_CANCELLED",
+        details: [],
+      });
     }
 
     const targetStatus = status as TicketStatus;
@@ -551,7 +551,7 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
     }
 
     // Atomic conditional update enforcing optimistic concurrency at the database layer (BR-10, AC-11, API-08)
-    if (expectedUpdatedAt && process.env.LAB3_TEST_MODE !== "true") {
+    if (expectedUpdatedAt) {
       const expectedDate = new Date(expectedUpdatedAt);
       const updateResult = await prisma.ticket.updateMany({
         where: {

@@ -541,7 +541,7 @@ describe("Lab 4 Ticket Workflow API Tests (ticket-workflow.api.test.ts)", () => 
       const ticket = await createTestTicket("OPEN");
       const initialTimestamp = ticket.updatedAt.toISOString();
 
-      // Launch two concurrent status transitions targeting different valid target statuses (IN_PROGRESS vs CANCELLED)
+      // Launch two concurrent status transitions targeting different valid target statuses (IN_PROGRESS vs WAITING_FOR_REQUESTER)
       const [reqA, reqB] = await Promise.all([
         request(app)
           .patch(`/api/staff/tickets/${ticket.id}/status`)
@@ -550,7 +550,7 @@ describe("Lab 4 Ticket Workflow API Tests (ticket-workflow.api.test.ts)", () => 
         request(app)
           .patch(`/api/staff/tickets/${ticket.id}/status`)
           .set("Authorization", `Bearer ${tokenStaff2}`)
-          .send({ status: "CANCELLED", expectedUpdatedAt: initialTimestamp }),
+          .send({ status: "WAITING_FOR_REQUESTER", expectedUpdatedAt: initialTimestamp }),
       ]);
 
       const statuses = [reqA.status, reqB.status].sort();
