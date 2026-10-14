@@ -113,7 +113,24 @@ export function StaffTicketDetail({
     setActionError(null);
     try {
       const res = await claimStaffTicket(ticket.id);
-      setTicket((prev) => (prev ? { ...prev, ticketOwner: res.ticketOwner } : null));
+      let latestUpdatedAt = res.updatedAt;
+      if (!latestUpdatedAt) {
+        try {
+          const fresh = await fetchStaffTicketDetail(ticket.id);
+          latestUpdatedAt = fresh.updatedAt;
+        } catch {
+          // fallback
+        }
+      }
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              ticketOwner: res.ticketOwner,
+              updatedAt: latestUpdatedAt || prev.updatedAt,
+            }
+          : null
+      );
       setSelectedOwnerId(res.ticketOwner.id);
       setActionSuccess("Ticket successfully claimed by you.");
     } catch (err) {
@@ -131,7 +148,24 @@ export function StaffTicketDetail({
     setActionError(null);
     try {
       const res = await assignStaffTicket(ticket.id, Number(selectedOwnerId));
-      setTicket((prev) => (prev ? { ...prev, ticketOwner: res.ticketOwner } : null));
+      let latestUpdatedAt = res.updatedAt;
+      if (!latestUpdatedAt) {
+        try {
+          const fresh = await fetchStaffTicketDetail(ticket.id);
+          latestUpdatedAt = fresh.updatedAt;
+        } catch {
+          // fallback
+        }
+      }
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              ticketOwner: res.ticketOwner,
+              updatedAt: latestUpdatedAt || prev.updatedAt,
+            }
+          : null
+      );
       setActionSuccess(`Ticket reassigned to ${res.ticketOwner.name}.`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to reassign ticket");
@@ -148,7 +182,24 @@ export function StaffTicketDetail({
     setActionError(null);
     try {
       const res = await updateStaffTicketPriority(ticket.id, selectedPriority as Priority);
-      setTicket((prev) => (prev ? { ...prev, itPriority: res.itPriority } : null));
+      let latestUpdatedAt = res.updatedAt;
+      if (!latestUpdatedAt) {
+        try {
+          const fresh = await fetchStaffTicketDetail(ticket.id);
+          latestUpdatedAt = fresh.updatedAt;
+        } catch {
+          // fallback
+        }
+      }
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              itPriority: res.itPriority,
+              updatedAt: latestUpdatedAt || prev.updatedAt,
+            }
+          : null
+      );
       setActionSuccess(`IT Priority updated to ${res.itPriority}.`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to update IT Priority");

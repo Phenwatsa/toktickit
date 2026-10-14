@@ -524,7 +524,9 @@ export async function fetchStaffTicketDetail(ticketId: number): Promise<StaffTic
   return data.ticket;
 }
 
-export async function claimStaffTicket(ticketId: number): Promise<{ message: string; ticketOwner: StaffTicketOwner }> {
+export async function claimStaffTicket(
+  ticketId: number
+): Promise<{ message: string; ticketOwner: StaffTicketOwner; updatedAt?: string }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/claim`, {
     method: "PATCH",
     headers: {
@@ -543,7 +545,7 @@ export async function claimStaffTicket(ticketId: number): Promise<{ message: str
 export async function assignStaffTicket(
   ticketId: number,
   newOwnerId: number
-): Promise<{ message: string; ticketOwner: StaffTicketOwner }> {
+): Promise<{ message: string; ticketOwner: StaffTicketOwner; updatedAt?: string }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/assign`, {
     method: "PATCH",
     headers: {
@@ -563,7 +565,7 @@ export async function assignStaffTicket(
 export async function updateStaffTicketPriority(
   ticketId: number,
   itPriority: Priority
-): Promise<{ message: string; itPriority: Priority }> {
+): Promise<{ message: string; itPriority: Priority; updatedAt?: string }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/priority`, {
     method: "PATCH",
     headers: {
