@@ -307,6 +307,7 @@ export interface CreateActionTakenPayload {
 }
 
 export interface UpdateActionTakenPayload {
+  actionDateTime?: string;
   actionDescription?: string;
   result?: string;
   isFollowUpRequired?: boolean;

@@ -11,6 +11,17 @@ interface ActionsTakenSectionProps {
   onActionsUpdated?: () => void;
 }
 
+function sortActionsChronologically(items: ActionTakenItem[]): ActionTakenItem[] {
+  return [...items].sort((a, b) => {
+    const timeA = new Date(a.actionDateTime).getTime();
+    const timeB = new Date(b.actionDateTime).getTime();
+    if (timeA !== timeB) {
+      return timeA - timeB;
+    }
+    return a.id - b.id;
+  });
+}
+
 export function ActionsTakenSection({
   ticketId,
   isStaff: propIsStaff,
@@ -39,7 +50,7 @@ export function ActionsTakenSection({
     setError(null);
     try {
       const data = await fetchActionsTaken(ticketId);
-      setActions(data);
+      setActions(sortActionsChronologically(data));
     } catch (err: any) {
       setError(err.message || "Failed to load Actions Taken records");
     } finally {
@@ -70,8 +81,9 @@ export function ActionsTakenSection({
 
   async function handleModalSubmit(formData: ActionTakenFormData) {
     if (editingAction) {
-      // Update action
+      // Update action with actionDateTime
       const updated = await updateActionTaken(ticketId, editingAction.id, {
+        actionDateTime: formData.actionDateTime,
         actionDescription: formData.actionDescription,
         result: formData.result,
         isFollowUpRequired: formData.isFollowUpRequired,
@@ -80,7 +92,9 @@ export function ActionsTakenSection({
       });
 
       setActions((prev) =>
-        prev.map((act) => (act.id === updated.id ? { ...act, ...updated } : act))
+        sortActionsChronologically(
+          prev.map((act) => (act.id === updated.id ? { ...act, ...updated } : act))
+        )
       );
     } else {
       // Create action
@@ -93,7 +107,8 @@ export function ActionsTakenSection({
         attachmentNotes: formData.attachmentNotes,
       });
 
-      setActions((prev) => [...prev, created]);
+      // Maintain ascending chronological order when creating retroactive actions
+      setActions((prev) => sortActionsChronologically([...prev, created]));
     }
 
     // Trigger parent refresh if provided

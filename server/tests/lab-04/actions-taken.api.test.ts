@@ -573,6 +573,23 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
       expect(res.body.followUpNote).toBeNull();
     });
 
+    it("updates actionDateTime along with other fields on PATCH", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+      const newDateTime = "2026-10-08T09:00:00.000Z";
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDateTime: newDateTime,
+          actionDescription: "Updated with retroactively adjusted timestamp.",
+        });
+
+      expect(res.status).toBe(200);
+      expect(new Date(res.body.actionDateTime).toISOString()).toBe(newDateTime);
+      expect(res.body.actionDescription).toBe("Updated with retroactively adjusted timestamp.");
+    });
+
     it("rejects with 400 VALIDATION_ERROR when PATCH receives string isFollowUpRequired (e.g. 'false') without modifying the record", async () => {
       const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
 

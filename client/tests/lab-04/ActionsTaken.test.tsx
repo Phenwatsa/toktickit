@@ -186,6 +186,54 @@ describe("ActionsTaken Component (ActionsTaken.test.tsx)", () => {
         ).toBeInTheDocument();
       });
     });
+
+    it("inserts newly created retroactive action in ascending chronological order rather than appending to bottom", async () => {
+      const user = userEvent.setup();
+      const retroactiveAction: ActionTakenItem = {
+        id: 99,
+        ticketId: 101,
+        actionDateTime: "2026-10-09T08:00:00.000Z", // Earlier than mockActions[0] (2026-10-10)
+        actionDescription: "Retroactive initial diagnostic performed on day 1.",
+        result: "Initial telemetry captured.",
+        performedById: 2,
+        performedBy: { id: 2, name: "Alex Taylor", email: "alex@test.com", role: "IT_STAFF" },
+        isFollowUpRequired: false,
+        followUpNote: null,
+        attachmentNotes: null,
+        createdAt: "2026-10-12T10:00:00.000Z",
+        updatedAt: "2026-10-12T10:00:00.000Z",
+      };
+
+      vi.mocked(api.createActionTaken).mockResolvedValueOnce(retroactiveAction);
+
+      render(<ActionsTakenSection ticketId={101} isStaff={true} />);
+      expect(await screen.findByTestId("actions-desktop-table")).toBeInTheDocument();
+
+      await user.click(screen.getByTestId("add-action-btn"));
+      expect(await screen.findByTestId("action-taken-modal")).toBeInTheDocument();
+
+      fireEvent.change(screen.getByTestId("action-datetime-input"), {
+        target: { value: "2026-10-09T08:00" },
+      });
+      fireEvent.change(screen.getByTestId("action-description-input"), {
+        target: { value: "Retroactive initial diagnostic performed on day 1." },
+      });
+      fireEvent.change(screen.getByTestId("action-result-input"), {
+        target: { value: "Initial telemetry captured." },
+      });
+
+      await user.click(screen.getByTestId("modal-submit-btn"));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("action-taken-modal")).not.toBeInTheDocument();
+      });
+
+      // The retroactive action must appear at index 0 (top of the chronological list)
+      await waitFor(() => {
+        const rows = screen.getAllByTestId(/^action-row-/);
+        expect(rows[0]).toHaveAttribute("data-testid", "action-row-99");
+      });
+    });
   });
 
   // =========================================================================
@@ -244,6 +292,56 @@ describe("ActionsTaken Component (ActionsTaken.test.tsx)", () => {
         expect(
           screen.getAllByText("Cluster balanced and latency restored to under 5ms.")[0]
         ).toBeInTheDocument();
+      });
+    });
+
+    it("submits updated actionDateTime when edited and re-sorts table chronologically", async () => {
+      const user = userEvent.setup();
+      // mockActions[1] is originally 2026-10-11T09:15:00.000Z. We modify it to 2026-10-08T09:00:00.000Z
+      const earlierDate = "2026-10-08T09:00:00.000Z";
+      const updatedAction: ActionTakenItem = {
+        ...mockActions[1],
+        actionDateTime: earlierDate,
+        actionDescription: "Adjusted historical timestamp for action #2.",
+      };
+
+      vi.mocked(api.updateActionTaken).mockResolvedValueOnce(updatedAction);
+
+      render(<ActionsTakenSection ticketId={101} isStaff={true} />);
+      expect(await screen.findByTestId("actions-desktop-table")).toBeInTheDocument();
+
+      // Click Edit button on the second action (id: 2)
+      const editButtons = screen.getAllByTestId("edit-action-btn");
+      await user.click(editButtons[1]);
+
+      expect(await screen.findByTestId("action-taken-modal")).toBeInTheDocument();
+
+      // Change date/time
+      fireEvent.change(screen.getByTestId("action-datetime-input"), {
+        target: { value: "2026-10-08T09:00" },
+      });
+      fireEvent.change(screen.getByTestId("action-description-input"), {
+        target: { value: "Adjusted historical timestamp for action #2." },
+      });
+
+      await user.click(screen.getByTestId("modal-submit-btn"));
+
+      await waitFor(() => {
+        expect(api.updateActionTaken).toHaveBeenCalledWith(
+          101,
+          2,
+          expect.objectContaining({
+            actionDateTime: expect.stringMatching(/^2026-10-08/),
+            actionDescription: "Adjusted historical timestamp for action #2.",
+          })
+        );
+        expect(screen.queryByTestId("action-taken-modal")).not.toBeInTheDocument();
+      });
+
+      // After updating timestamp to 2026-10-08, action #2 should now be at row index 0
+      await waitFor(() => {
+        const rows = screen.getAllByTestId(/^action-row-/);
+        expect(rows[0]).toHaveAttribute("data-testid", "action-row-2");
       });
     });
   });
