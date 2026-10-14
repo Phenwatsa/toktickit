@@ -26,6 +26,7 @@ export function ActionsTakenSection({
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingAction, setEditingAction] = useState<ActionTakenItem | null>(null);
   const addActionBtnRef = useRef<HTMLButtonElement>(null);
+  const activeTriggerRef = useRef<HTMLElement | null>(null);
 
   // Determine whether current user has Staff/Admin edit authority
   const isStaffOrAdmin =
@@ -50,12 +51,14 @@ export function ActionsTakenSection({
     loadActions();
   }, [loadActions]);
 
-  function handleOpenCreateModal() {
+  function handleOpenCreateModal(e?: React.MouseEvent<HTMLElement>) {
+    activeTriggerRef.current = (e?.currentTarget as HTMLElement) || addActionBtnRef.current;
     setEditingAction(null);
     setIsModalOpen(true);
   }
 
-  function handleOpenEditModal(action: ActionTakenItem) {
+  function handleOpenEditModal(action: ActionTakenItem, e?: React.MouseEvent<HTMLElement>) {
+    activeTriggerRef.current = (e?.currentTarget as HTMLElement) || null;
     setEditingAction(action);
     setIsModalOpen(true);
   }
@@ -324,6 +327,7 @@ export function ActionsTakenSection({
                 {actions.map((act) => (
                   <tr
                     key={act.id}
+                    data-action-id={act.id}
                     data-testid={`action-row-${act.id}`}
                     style={{
                       borderBottom: "1px solid var(--color-border)",
@@ -412,7 +416,7 @@ export function ActionsTakenSection({
                         <button
                           type="button"
                           className="zen-btn-secondary"
-                          onClick={() => handleOpenEditModal(act)}
+                          onClick={(e) => handleOpenEditModal(act, e)}
                           disabled={isCancelled}
                           data-testid="edit-action-btn"
                           style={{
@@ -436,6 +440,7 @@ export function ActionsTakenSection({
             {actions.map((act) => (
               <div
                 key={act.id}
+                data-action-id={act.id}
                 className="zen-card"
                 data-testid={`action-card-${act.id}`}
                 style={{
@@ -510,7 +515,7 @@ export function ActionsTakenSection({
                       <button
                         type="button"
                         className="zen-btn-secondary"
-                        onClick={() => handleOpenEditModal(act)}
+                        onClick={(e) => handleOpenEditModal(act, e)}
                         disabled={isCancelled}
                         data-testid="edit-action-btn"
                         style={{
@@ -657,7 +662,7 @@ export function ActionsTakenSection({
         onSubmit={handleModalSubmit}
         initialData={editingAction}
         currentUserName={user?.name}
-        triggerRef={addActionBtnRef}
+        triggerRef={activeTriggerRef}
       />
     </div>
   );

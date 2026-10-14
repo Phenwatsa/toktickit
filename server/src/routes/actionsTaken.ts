@@ -89,8 +89,8 @@ actionsTakenRouter.get("/:id/actions", async (req: Request, res: Response) => {
 /**
  * POST /api/tickets/:id/actions
  * Create an Action Taken record.
- * Permitted: IT Staff only.
- * Forbidden: Requester, Administrator (403 FORBIDDEN).
+ * Permitted: IT Staff, Administrator.
+ * Forbidden: Requester (403 FORBIDDEN).
  */
 actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
   try {
@@ -98,10 +98,10 @@ actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
     const user = req.user!;
     const ticketId = Number(req.params.id);
 
-    // Role verification: strictly IT_STAFF only
-    if (user.role !== "IT_STAFF") {
+    // Role verification: IT_STAFF and ADMINISTRATOR permitted (AC-01)
+    if (user.role !== "IT_STAFF" && user.role !== "ADMINISTRATOR") {
       return res.status(403).json({
-        error: "Access denied. Only IT Staff may record Actions Taken",
+        error: "Access denied. Only IT Staff and Administrators may record Actions Taken",
         code: "FORBIDDEN",
         details: [],
       });
@@ -252,8 +252,8 @@ actionsTakenRouter.post("/:id/actions", async (req: Request, res: Response) => {
 /**
  * PATCH /api/tickets/:id/actions/:actionId
  * Update details of an existing Action Taken record.
- * Permitted: IT Staff only.
- * Forbidden: Requester, Administrator (403 FORBIDDEN).
+ * Permitted: IT Staff, Administrator.
+ * Forbidden: Requester (403 FORBIDDEN).
  */
 actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Response) => {
   try {
@@ -262,10 +262,10 @@ actionsTakenRouter.patch("/:id/actions/:actionId", async (req: Request, res: Res
     const ticketId = Number(req.params.id);
     const actionId = Number(req.params.actionId);
 
-    // Role verification: strictly IT_STAFF only
-    if (user.role !== "IT_STAFF") {
+    // Role verification: IT_STAFF and ADMINISTRATOR permitted (AC-06)
+    if (user.role !== "IT_STAFF" && user.role !== "ADMINISTRATOR") {
       return res.status(403).json({
-        error: "Access denied. Only IT Staff may modify Actions Taken",
+        error: "Access denied. Only IT Staff and Administrators may modify Actions Taken",
         code: "FORBIDDEN",
         details: [],
       });

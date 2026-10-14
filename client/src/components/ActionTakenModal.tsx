@@ -57,10 +57,12 @@ export function ActionTakenModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
   const previousActiveElement = useRef<Element | null>(null);
+  const wasOpenRef = useRef<boolean>(false);
 
   // Initialize or reset form values when opening or changing initialData
   useEffect(() => {
     if (isOpen) {
+      wasOpenRef.current = true;
       previousActiveElement.current = document.activeElement;
       setFieldErrors({});
       setSubmitError(null);
@@ -83,20 +85,54 @@ export function ActionTakenModal({
       }
 
       // Automatically focus first input upon open
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         firstInputRef.current?.focus();
       }, 50);
-    } else {
-      // Focus restoration upon modal dismissal
-      if (triggerRef?.current) {
-        triggerRef.current.focus();
-      } else if (previousActiveElement.current instanceof HTMLElement) {
-        previousActiveElement.current.focus();
+      return () => clearTimeout(timer);
+    } else if (wasOpenRef.current) {
+      // Focus restoration upon modal dismissal ONLY when modal was previously open
+      wasOpenRef.current = false;
+      let targetEl: HTMLElement | null =
+        (triggerRef?.current && triggerRef.current.isConnected
+          ? triggerRef.current
+          : null) ||
+        (previousActiveElement.current instanceof HTMLElement &&
+        previousActiveElement.current.isConnected
+          ? previousActiveElement.current
+          : null);
+
+      if (!targetEl && initialData?.id) {
+        targetEl = document.querySelector<HTMLElement>(
+          `[data-action-id="${initialData.id}"] [data-testid="edit-action-btn"]`
+        );
+      }
+      if (!targetEl && triggerRef?.current) {
+        targetEl = triggerRef.current;
+      }
+
+      if (targetEl) {
+        const restoreTimer = setTimeout(() => {
+          targetEl?.focus();
+        }, 0);
+        return () => clearTimeout(restoreTimer);
       }
     }
   }, [isOpen, initialData, triggerRef]);
 
-  // Focus trap and Escape key listener
+  // Global Escape key listener when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [isOpen, onClose]);
+
+  // Focus trap and Escape key listener on modal container
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "Escape") {
