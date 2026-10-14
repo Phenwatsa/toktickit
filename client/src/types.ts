@@ -271,3 +271,47 @@ export interface UpdateUserPayload {
   isActive?: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Lab 4 — Actions Taken Types
+// ---------------------------------------------------------------------------
+
+export interface ActionTakenPerformer {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+}
+
+export interface ActionTakenItem {
+  id: number;
+  ticketId: number;
+  actionDateTime: string;
+  actionDescription: string;
+  result: string;
+  performedById?: number;
+  performedBy: ActionTakenPerformer;
+  isFollowUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateActionTakenPayload {
+  actionDateTime?: string;
+  actionDescription: string;
+  result: string;
+  isFollowUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionTakenPayload {
+  actionDescription?: string;
+  result?: string;
+  isFollowUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+

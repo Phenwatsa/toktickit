@@ -26,6 +26,22 @@
   --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
   --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
+
+  /* Lab 4 Zen Green Design System Tokens (ui-spec.md §1) */
+  --zg-primary: #006B3C;
+  --zg-primary-hover: #00522E;
+  --zg-primary-light: #E8F5E9;
+  --zg-pale-green: #EAF6EF;
+  --zg-bg-page: #F5F7F6;
+  --zg-surface: #FFFFFF;
+  --zg-bg-card: #FFFFFF;
+  --zg-border: #E2E8F0;
+  --zg-text-primary: #1E293B;
+  --zg-text-muted: #64748B;
+  --zg-warning: #D97706;
+  --zg-danger: #DC2626;
+  --zg-radius: 10px;
+  --zg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 * {
@@ -1432,4 +1448,98 @@ body {
     display: flex !important;
   }
 }
+
+/* ==========================================================================
+   Lab 4 — Loading Skeletons & Empty States (BR-16, AC-24)
+   ========================================================================== */
+@keyframes zg-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.zg-skeleton {
+  animation: zg-pulse 1.6s ease-in-out infinite;
+  background-color: var(--color-border);
+  border-radius: 6px;
+}
+
+.zg-skeleton-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  animation: zg-pulse 1.6s ease-in-out infinite;
+}
+
+.zg-empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background-color: var(--color-readonly-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-muted);
+}
+
+.zg-empty-state-icon {
+  margin: 0 auto 0.75rem;
+  color: var(--color-primary);
+  opacity: 0.85;
+}
+
+.zg-empty-state-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.zg-empty-state-text {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+/* Actions Taken Responsive Styling */
+.actions-taken-container {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.actions-taken-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+@media (max-width: 768px) {
+  .actions-taken-desktop-table {
+    display: none !important;
+  }
+  .actions-taken-mobile-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
+}
+
+@media (min-width: 769px) {
+  .actions-taken-desktop-table {
+    display: table !important;
+    width: 100%;
+  }
+  .actions-taken-mobile-cards {
+    display: none !important;
+  }
+}
+
 

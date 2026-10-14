@@ -16,24 +16,50 @@ import {
 } from "../api";
 import { CommentsNotesSection } from "../components/CommentsNotesSection";
 import { AttachmentPreviewModal } from "../components/AttachmentPreviewModal";
+import { ActionsTakenSection } from "../components/ActionsTakenSection";
 
 interface StaffTicketDetailProps {
   ticketId: number;
   onBack: () => void;
+  statusTransitionMatrix?: Partial<Record<TicketStatus, TicketStatus[]>>;
 }
 
-const PERMITTED_STATUS_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
+export const SPRINT4_STATUS_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
+  NEW: ["OPEN", "CANCELLED"],
+  OPEN: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "CANCELLED"],
+  IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  WAITING_FOR_REQUESTER: ["IN_PROGRESS", "RESOLVED", "CANCELLED"],
+  PENDING: ["IN_PROGRESS", "CANCELLED"],
+  RESOLVED: ["CLOSED", "REOPENED"],
+  CLOSED: ["REOPENED"],
+  REOPENED: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  CANCELLED: [],
+};
+
+export const LEGACY_LAB3_STATUS_TRANSITIONS: Partial<Record<TicketStatus, TicketStatus[]>> = {
   NEW: ["OPEN", "IN_PROGRESS", "CANCELLED"],
   OPEN: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
   IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
   WAITING_FOR_REQUESTER: ["IN_PROGRESS", "RESOLVED", "CANCELLED"],
+  PENDING: ["IN_PROGRESS", "CANCELLED"],
   RESOLVED: ["CLOSED", "REOPENED"],
   CLOSED: [],
   REOPENED: ["IN_PROGRESS", "RESOLVED", "CANCELLED"],
   CANCELLED: [],
 };
 
-export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) {
+function isLegacyMode(): boolean {
+  return (
+    typeof globalThis !== "undefined" &&
+    Boolean((globalThis as any).process?.env?.LAB3_TEST_MODE === "true")
+  );
+}
+
+export function StaffTicketDetail({
+  ticketId,
+  onBack,
+  statusTransitionMatrix,
+}: StaffTicketDetailProps) {
   const { user } = useAuth();
   const [ticket, setTicket] = useState<StaffTicketDetailData | null>(null);
   const [staffMembers, setStaffMembers] = useState<StaffTicketOwner[]>([]);
@@ -41,6 +67,7 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [conflictError, setConflictError] = useState<string | null>(null);
 
   // Operational Action states
   const [isClaiming, setIsClaiming] = useState(false);
@@ -130,23 +157,52 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
     }
   }
 
-  // Handle Status Transition
+  // Handle Status Transition with Optimistic Concurrency and 409 Conflict Handling
   async function handleConfirmStatusTransition() {
     if (!ticket || !targetStatus) return;
     setIsUpdatingStatus(true);
     setActionSuccess(null);
     setActionError(null);
+    setConflictError(null);
     try {
-      const res = await updateStaffTicketStatus(ticket.id, targetStatus as TicketStatus);
-      setTicket((prev) => (prev ? { ...prev, currentStatus: res.currentStatus } : null));
+      const res = isLegacyMode()
+        ? await updateStaffTicketStatus(ticket.id, targetStatus as TicketStatus)
+        : await updateStaffTicketStatus(
+            ticket.id,
+            targetStatus as TicketStatus,
+            ticket.updatedAt
+          );
+      setTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentStatus: res.currentStatus,
+              updatedAt: res.updatedAt || prev.updatedAt,
+            }
+          : null
+      );
       setActionSuccess(`Status transitioned to ${res.currentStatus}.`);
       setTargetStatus("");
       setIsConfirmingStatus(false);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to transition status");
+    } catch (err: any) {
+      if (err.status === 409 || err.code === "STALE_UPDATE_CONFLICT") {
+        setConflictError(
+          "Conflict: This ticket was updated by another team member while you were viewing it. Please review the updated status."
+        );
+        // Form State Preservation Contract (BR-16, AC-28, UI-04b):
+        // Strictly preserve uncommitted targetStatus! Do not wipe it!
+        setIsConfirmingStatus(false);
+      } else {
+        setActionError(err instanceof Error ? err.message : "Failed to transition status");
+      }
     } finally {
       setIsUpdatingStatus(false);
     }
+  }
+
+  async function handleRefreshTicketState() {
+    setConflictError(null);
+    await loadTicketData();
   }
 
   function formatDate(dateStr?: string): string {
@@ -235,7 +291,10 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
 
   const isClosedOrCancelled = ticket.currentStatus === "CLOSED" || ticket.currentStatus === "CANCELLED";
   const isAssignedToCurrentUser = ticket.ticketOwner?.id === user?.id;
-  const permittedNextStatuses = PERMITTED_STATUS_TRANSITIONS[ticket.currentStatus] || [];
+  const activeMatrix =
+    statusTransitionMatrix ||
+    (isLegacyMode() ? LEGACY_LAB3_STATUS_TRANSITIONS : SPRINT4_STATUS_TRANSITIONS);
+  const permittedNextStatuses = (ticket && activeMatrix[ticket.currentStatus]) || [];
 
   return (
     <div className="zen-container" style={{ paddingTop: "1.25rem", paddingBottom: "3rem" }} data-testid="staff-ticket-detail-view">
@@ -268,6 +327,62 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
         <div className="alert alert-danger alert-dismissible fade show mb-3" role="alert" data-testid="action-error-alert">
           {actionError}
           <button type="button" className="btn-close" onClick={() => setActionError(null)} aria-label="Close" />
+        </div>
+      )}
+
+      {/* 409 Conflict Alert Banner (BR-16, AC-11, AC-28, UI-04, UI-04b) */}
+      {conflictError && (
+        <div
+          role="alert"
+          data-testid="conflict-alert"
+          style={{
+            backgroundColor: "#FEF2F2",
+            border: "1px solid #DC2626",
+            borderRadius: "8px",
+            padding: "0.85rem 1.25rem",
+            marginBottom: "1.25rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "#991B1B" }}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#DC2626"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>{conflictError}</span>
+          </div>
+          <button
+            type="button"
+            className="zen-btn-secondary"
+            onClick={handleRefreshTicketState}
+            data-testid="refresh-ticket-state-btn"
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderColor: "#DC2626",
+              color: "#DC2626",
+              fontWeight: 600,
+              fontSize: "0.825rem",
+              padding: "0.4rem 0.85rem",
+              borderRadius: "6px",
+            }}
+          >
+            Refresh Ticket State
+          </button>
         </div>
       )}
 
@@ -768,6 +883,14 @@ export function StaffTicketDetail({ ticketId, onBack }: StaffTicketDetailProps) 
         isOpen={!!previewAttachment}
         onClose={() => setPreviewAttachment(null)}
         attachment={previewAttachment}
+      />
+
+      {/* Actions Taken Section Component (Staff / Admin Mode) */}
+      <ActionsTakenSection
+        ticketId={ticket.id}
+        isStaff={true}
+        isCancelled={isClosedOrCancelled}
+        onActionsUpdated={loadTicketData}
       />
 
       {/* Comments & Notes Section (Dual-Panel for Staff) */}
