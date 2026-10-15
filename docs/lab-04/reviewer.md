@@ -13,7 +13,7 @@
 | [PR #60](https://github.com/Phenwatsa/toktickit/pull/60) | `feature/lab4-1-actions-taken-foundation` | Issue 21 (#52): Database Migration, Seed Data & Actions Taken Backend API | **Approved** | `lab4-staging` |
 | [PR #61](https://github.com/Phenwatsa/toktickit/pull/61) | `feature/lab4-2-ticket-workflow-enforcement` | Issue 22 (#53): Ticket Workflow Hardening & Resolution Gate (Backend & State Enforcement) | **Approved** | `lab4-staging` |
 | [PR #62](https://github.com/Phenwatsa/toktickit/pull/62) | `feature/lab4-3-actions-taken-ui` | Issue 23 (#54): Actions Taken UI & Ticket Detail Integration (Frontend) | **Approved** | `lab4-staging` |
-| [PR #55](https://github.com/Phenwatsa/toktickit/pull/55) | `feature/lab4-4-dashboard-apis` | Issue 24 (#55): Role-Appropriate Dashboard Metrics APIs (Backend) | **Planned** | `lab4-staging` |
+| [PR #63](https://github.com/Phenwatsa/toktickit/pull/63) | `feature/lab4-4-dashboard-apis` | Issue 24 (#55): Role-Appropriate Dashboard Metrics APIs (Backend) | **Approved** | `lab4-staging` |
 | [PR #56](https://github.com/Phenwatsa/toktickit/pull/56) | `feature/lab4-5-dashboard-ui` | Issue 25 (#56): Role-Appropriate Dashboards UI & Drill-Down (Frontend) | **Planned** | `lab4-staging` |
 | [PR #57](https://github.com/Phenwatsa/toktickit/pull/57) | `feature/lab4-6-e2e-and-responsive` | Issue 26 (#57): End-to-End Testing, Responsive Audit & Screenshot Artifacts | **Planned** | `lab4-staging` |
 | [PR #58](https://github.com/Phenwatsa/toktickit/pull/58) | `docs/lab4-documentation` | Issue 27 (#58): Release Integration, Peer Review, AI Reflection & Final Handover | **Planned** | `lab4-staging` |
@@ -122,6 +122,27 @@
 
 ---
 
+### [PR #63](https://github.com/Phenwatsa/toktickit/pull/63) — Issue 24 (#55): Role-Appropriate Dashboard Metrics APIs (Backend)
+* **Branch:** `feature/lab4-4-dashboard-apis`
+* **Target branch:** `lab4-staging`
+* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/63](https://github.com/Phenwatsa/toktickit/pull/63)
+* **Review Cycle 1 (Approval) — Feedback received from @lephirada:**
+  > "The dashboard APIs look good to me. The endpoints enforce role-based access, keep requester ticket data isolated, and return the required metrics and recent tickets. The performance smoke tests cover all three dashboard endpoints and the Actions list endpoint. The CI checks also pass, including the server tests and build. I approved."
+
+* **Summary of Changes Applied:**
+  - **Modular Dashboard Metric Calculators**: Implemented pure, deterministic calculation functions in `server/src/utils/dashboardCalculator.ts` (`calculateRequesterMetrics`, `calculateStaffMetrics`, `calculateAdminMetrics`) covering status and priority breakdowns, assigned/unassigned counts, active users, and system operational stats.
+  - **Requester Dashboard Endpoint (`GET /api/requester/dashboard`)**: Added authenticated endpoint scoped strictly to `req.user.id` enforcing complete data isolation, returning total tickets, active tickets, pending actions, resolved/closed counts, and the 5 most recent tickets.
+  - **IT Staff Dashboard Endpoint (`GET /api/staff/dashboard`)**: Implemented comprehensive operational summary for IT Staff and Administrators, featuring 5 primary metric cards (`totalAssignedQueue`, `myAssignedTickets`, `unassignedTickets`, `waitingForRequester`, `resolvedPast7Days`), breakdowns across all 8 statuses (`byStatus`) and 4 priorities (`byPriority`), and the 10 most recent queue tickets.
+  - **Administrator Dashboard Endpoint (`GET /api/admin/dashboard`)**: Mounted under `/api/admin` with role guard (`ADMINISTRATOR` only), returning supervisory operational summaries, ticket breakdowns, user statistics (`totalUsers`, `requesterCount`, `staffCount`, `adminCount`), and the 10 most recent system tickets.
+  - **Comprehensive Test Coverage & Performance Smoke Verification**: Added pure unit test suite for calculation logic (`dashboard-calculator.unit.test.ts`, 9 tests), Requester dashboard API suite (`requester-dashboard.api.test.ts`, 6 tests), Staff dashboard API suite (`staff-dashboard.api.test.ts`, 10 tests), and dedicated performance smoke tests (`performance-smoke.test.ts`, 4 tests verifying latency < 300ms for dashboards and < 200ms for actions list). Passed all 143 Lab 4 server tests and 152 regression tests.
+
+* **Author Response to @lephirada:**
+  > "Thank you for the review and approval! All requirements for role-appropriate dashboard metrics APIs—including strict data isolation for Requesters, operational queue breakdowns for IT Staff, supervisory system metrics for Administrators, and performance smoke benchmarks—are verified and passing with clean CI checks. PR #63 is ready to merge into `lab4-staging`."
+
+* **Verdict:** **Approved**
+
+---
+
 ## 2. Pull Requests I Reviewed for Partner (@lephirada)
 
 ### Partner Sprint Roadmap & Issue Breakdown
@@ -133,7 +154,7 @@
 | [Issue #43](https://github.com/lephirada/toktickit/issues/43) | Issue 20: Actions Taken REST APIs with Concurrency Control & Validation | [PR #52](https://github.com/lephirada/toktickit/pull/52) | **Completed / Merged** | `lab4-staging` |
 | [Issue #44](https://github.com/lephirada/toktickit/issues/44) | Issue 21: Ticket Resolution Gate and Lab 3 State Machine Preservation | [PR #53](https://github.com/lephirada/toktickit/pull/53) | **Completed / Merged** | `lab4-staging` |
 | [Issue #45](https://github.com/lephirada/toktickit/issues/45) | Issue 22: Requester and Staff Dashboard Backend APIs | [PR #55](https://github.com/lephirada/toktickit/pull/55) | **Completed / Merged** | `lab4-staging` |
-| [Issue #46](https://github.com/lephirada/toktickit/issues/46) | Issue 23: Actions Taken UI & Ticket Detail Integration (Frontend) | *(Planned)* | Planned | `lab4-staging` |
+| [Issue #46](https://github.com/lephirada/toktickit/issues/46) | Issue 23: Actions Taken UI & Ticket Detail Integration (Frontend) | [PR #56](https://github.com/lephirada/toktickit/pull/56) | **Completed / Merged** | `lab4-staging` |
 | [Issue #47](https://github.com/lephirada/toktickit/issues/47) | Issue 24: Role-Appropriate Dashboards UI & Drill-Down (Frontend) | *(Planned)* | Planned | `lab4-staging` |
 | [Issue #48](https://github.com/lephirada/toktickit/issues/48) | Issue 25: End-to-End Testing, Responsive Audit & Screenshot Artifacts | *(Planned)* | Planned | `lab4-staging` |
 | [Issue #49](https://github.com/lephirada/toktickit/issues/49) | Issue 26: Release Integration, Peer Review, AI Reflection & Final Handover | *(Planned)* | Planned | `lab4-staging` |
@@ -149,6 +170,7 @@
 | [PR #52](https://github.com/lephirada/toktickit/pull/52) | `feature/20-actions-taken-backend` | Issue 20 (#43): Actions Taken REST APIs with Concurrency Control & Validation | **Approved** | `lab4-staging` | Merged |
 | [PR #53](https://github.com/lephirada/toktickit/pull/53) | `feature/21-ticket-resolution-gate` | Issue 21 (#44): Server-Enforced Resolution Gate and Lab 3 State Machine Preservation | **Approved** | `lab4-staging` | Merged |
 | [PR #55](https://github.com/lephirada/toktickit/pull/55) | `feature/22-dashboard-backend-apis` | Issue 22 (#45): Operational Dashboard Backend API and Metrics Computation | **Approved** | `lab4-staging` | Merged |
+| [PR #56](https://github.com/lephirada/toktickit/pull/56) | `feature/23-actions-taken-ui` | Issue 23 (#46): Actions Taken Ticket Detail Integration and Role Authorization | **Approved** | `lab4-staging` | Merged |
 
 ---
 
@@ -256,6 +278,27 @@
 
 * **Partner Response from @lephirada:**
   > "Thanks for approving the PR! I have already updated docs/lab-04/reviewer.md with the latest comment. You can merge this PR."
+
+* **Final Verdict:** **Approved** (Merged into `lab4-staging`)
+
+---
+
+### [Partner PR #56](https://github.com/lephirada/toktickit/pull/56) — Issue 23 (#46): Actions Taken Ticket Detail Integration and Role Authorization
+* **Partner Repository / PR:** [@lephirada/toktickit#56](https://github.com/lephirada/toktickit/pull/56)
+* **Branch:** `feature/23-actions-taken-ui` $\rightarrow$ `lab4-staging`
+* **Review Cycle 1 (Approval) — Comments Submitted by @Phenwatsa:**
+  > "Approved. The implementation aligns with the Actions Taken UI integration requirements.
+  > - Integrates ActionsTakenSection into both TicketDetailScreen.tsx and StaffTicketDetail.tsx.
+  > - Displays action history with date/time, description, result, performer, follow-up information, and attachment notes.
+  > - Enforces role-based UI rendering so Requesters do not have Create/Edit buttons or mutation forms in the DOM, while IT Staff and Administrators can manage actions.
+  > - Implements create/edit forms with required-field validation and conditional validation for Follow-up Notes.
+  > - Handles stale updates using the expected update timestamp and a conflict dialog that allows users to reload the latest data.
+  > - Includes responsive layout checks and component tests covering the main UI, authorization, and conflict-handling scenarios.
+  > The CI workflow has passed.
+  > No blocking issues found. Thank you for the implementation."
+
+* **Partner Response from @lephirada:**
+  > "Thanks for approving the PR! I have already updated docs/lab-04/reviewer.md with the latest comment and docs/lab-04/evidence.md with the latest review status . You can merge this PR."
 
 * **Final Verdict:** **Approved** (Merged into `lab4-staging`)
 
