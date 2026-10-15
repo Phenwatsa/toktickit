@@ -82,3 +82,99 @@ requesterOpsRouter.patch("/tickets/:id/resolve-indication", async (req: Request,
     return res.status(500).json({ error: "Failed to update problem resolution indication" });
   }
 });
+
+/**
+ * GET /api/requester/dashboard
+ * Computes authoritative requester dashboard metrics and retrieves up to 5 recent tickets (BR-12, BR-13, AC-12, API-09).
+ * Access: Authenticated REQUESTER only.
+ * Forbidden: Non-requester users (IT Staff and Administrator receive 403 FORBIDDEN).
+ */
+requesterOpsRouter.get("/dashboard", async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+
+    if (user.role !== "REQUESTER") {
+      return res.status(403).json({
+        error: "Access denied. Only Requesters can access the Requester Dashboard",
+        code: "FORBIDDEN",
+        details: [],
+      });
+    }
+
+    const prisma = getPrisma();
+
+    const [
+      openTickets,
+      inProgressTickets,
+      waitingForRequesterTickets,
+      resolvedTickets,
+      closedTickets,
+      recentTickets,
+    ] = await Promise.all([
+      prisma.ticket.count({
+        where: {
+          requesterId: user.id,
+          currentStatus: { in: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] },
+        },
+      }),
+      prisma.ticket.count({
+        where: {
+          requesterId: user.id,
+          currentStatus: "IN_PROGRESS",
+        },
+      }),
+      prisma.ticket.count({
+        where: {
+          requesterId: user.id,
+          currentStatus: "WAITING_FOR_REQUESTER",
+        },
+      }),
+      prisma.ticket.count({
+        where: {
+          requesterId: user.id,
+          currentStatus: "RESOLVED",
+        },
+      }),
+      prisma.ticket.count({
+        where: {
+          requesterId: user.id,
+          currentStatus: "CLOSED",
+        },
+      }),
+      prisma.ticket.findMany({
+        where: { requesterId: user.id },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          ticketNumber: true,
+          summary: true,
+          currentStatus: true,
+          requestedPriority: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    return res.status(200).json({
+      metrics: {
+        openTickets,
+        inProgressTickets,
+        waitingForRequesterTickets,
+        resolvedTickets,
+        closedTickets,
+      },
+      recentTickets,
+    });
+  } catch (error) {
+    console.error("Failed to compute requester dashboard metrics:", error);
+    return res.status(500).json({ error: "Failed to fetch requester dashboard metrics" });
+  }
+});
+

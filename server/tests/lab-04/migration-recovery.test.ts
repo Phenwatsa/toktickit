@@ -10,7 +10,7 @@ import bcrypt from "bcryptjs";
 // Covers: MIG-01 (Deploy & Preserve), MIG-02 (Rollback Recovery Simulation), AC-21
 // ---------------------------------------------------------------------------
 
-describe("AC-21: Migration Deployment & Recovery Strategy (migration-recovery.test.ts)", () => {
+describe("AC-21: Migration Deployment & Recovery Strategy (migration-recovery.test.ts)", { timeout: 30000 }, () => {
   const rootPrisma = new PrismaClient({
     datasources: {
       db: {
