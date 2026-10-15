@@ -334,12 +334,14 @@ staffRouter.patch("/tickets/:id/claim", requireRole("IT_STAFF"), async (req: Req
         ticketOwner: {
           select: { id: true, name: true, email: true },
         },
+        updatedAt: true,
       },
     });
 
     return res.status(200).json({
       message: "Ticket successfully claimed",
       ticketOwner: updated.ticketOwner,
+      updatedAt: updated.updatedAt,
     });
   } catch (error) {
     console.error("Failed to claim ticket:", error);
@@ -416,12 +418,14 @@ staffRouter.patch("/tickets/:id/assign", requireRole("IT_STAFF"), async (req: Re
         ticketOwner: {
           select: { id: true, name: true, email: true },
         },
+        updatedAt: true,
       },
     });
 
     return res.status(200).json({
       message: "Ticket reassigned successfully",
       ticketOwner: updated.ticketOwner,
+      updatedAt: updated.updatedAt,
     });
   } catch (error) {
     console.error("Failed to reassign ticket:", error);
@@ -466,12 +470,14 @@ staffRouter.patch("/tickets/:id/priority", requireRole("IT_STAFF"), async (req: 
       },
       select: {
         itPriority: true,
+        updatedAt: true,
       },
     });
 
     return res.status(200).json({
       message: "IT Priority updated",
       itPriority: updated.itPriority,
+      updatedAt: updated.updatedAt,
     });
   } catch (error) {
     console.error("Failed to update IT Priority:", error);

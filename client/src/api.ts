@@ -26,6 +26,10 @@ import {
   AdminUser,
   CreateUserPayload,
   UpdateUserPayload,
+  ActionTakenPerformer,
+  ActionTakenItem,
+  CreateActionTakenPayload,
+  UpdateActionTakenPayload,
 } from "./types";
 export type {
   Category,
@@ -55,6 +59,10 @@ export type {
   AdminUser,
   CreateUserPayload,
   UpdateUserPayload,
+  ActionTakenPerformer,
+  ActionTakenItem,
+  CreateActionTakenPayload,
+  UpdateActionTakenPayload,
 };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -516,7 +524,9 @@ export async function fetchStaffTicketDetail(ticketId: number): Promise<StaffTic
   return data.ticket;
 }
 
-export async function claimStaffTicket(ticketId: number): Promise<{ message: string; ticketOwner: StaffTicketOwner }> {
+export async function claimStaffTicket(
+  ticketId: number
+): Promise<{ message: string; ticketOwner: StaffTicketOwner; updatedAt?: string }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/claim`, {
     method: "PATCH",
     headers: {
@@ -535,7 +545,7 @@ export async function claimStaffTicket(ticketId: number): Promise<{ message: str
 export async function assignStaffTicket(
   ticketId: number,
   newOwnerId: number
-): Promise<{ message: string; ticketOwner: StaffTicketOwner }> {
+): Promise<{ message: string; ticketOwner: StaffTicketOwner; updatedAt?: string }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/assign`, {
     method: "PATCH",
     headers: {
@@ -555,7 +565,7 @@ export async function assignStaffTicket(
 export async function updateStaffTicketPriority(
   ticketId: number,
   itPriority: Priority
-): Promise<{ message: string; itPriority: Priority }> {
+): Promise<{ message: string; itPriority: Priority; updatedAt?: string }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/priority`, {
     method: "PATCH",
     headers: {
@@ -608,7 +618,12 @@ export async function updateStaffTicketStatus(
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.message || data.error || "Failed to transition ticket status");
+    const error: any = new Error(data.message || data.error || "Failed to transition ticket status");
+    error.status = res.status;
+    error.code = data.code;
+    error.details = data.details;
+    error.currentUpdatedAt = data.currentUpdatedAt;
+    throw error;
   }
   return data;
 }
@@ -799,4 +814,76 @@ export async function resetAdminUserPassword(
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Lab 4 — Actions Taken API Handlers
+// ---------------------------------------------------------------------------
+
+export async function fetchActionsTaken(ticketId: number): Promise<ActionTakenItem[]> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to fetch Actions Taken");
+    error.status = res.status;
+    error.code = data.code;
+    throw error;
+  }
+  return data;
+}
+
+export async function createActionTaken(
+  ticketId: number,
+  payload: CreateActionTakenPayload
+): Promise<ActionTakenItem> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to create Action Taken");
+    error.status = res.status;
+    error.code = data.code;
+    error.details = data.details;
+    throw error;
+  }
+  return data;
+}
+
+export async function updateActionTaken(
+  ticketId: number,
+  actionId: number,
+  payload: UpdateActionTakenPayload
+): Promise<ActionTakenItem> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions/${actionId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to update Action Taken");
+    error.status = res.status;
+    error.code = data.code;
+    error.details = data.details;
+    throw error;
+  }
+  return data;
+}
+
 

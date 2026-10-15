@@ -376,9 +376,9 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
   });
 
   // -------------------------------------------------------------------------
-  // API-03a, API-03b / AC-03: Requester & Administrator blocked from create/edit (403)
+  // API-03a, API-03b / AC-03, AC-01, AC-06: Requester blocked (403), Administrator permitted (201/200)
   // -------------------------------------------------------------------------
-  describe("API-03a & API-03b / AC-03: Requester and Administrator role authorization guards", () => {
+  describe("API-03a & API-03b / AC-03, AC-01, AC-06: Role authorization guards and Administrator access", () => {
     it("API-03a: rejects with 403 Forbidden when Requester attempts to create Action Taken", async () => {
       const res = await request(app)
         .post(`/api/tickets/${ticket1Id}/actions`)
@@ -390,21 +390,27 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe("FORBIDDEN");
-      expect(res.body.error).toContain("Only IT Staff may record Actions Taken");
+      expect(res.body.error).toContain("Only IT Staff and Administrators may record Actions Taken");
     });
 
-    it("API-03a: rejects with 403 Forbidden when Administrator attempts to create Action Taken", async () => {
+    it("API-01 / AC-01: allows Administrator to create Action Taken with 201 Created and auto-attribution", async () => {
+      const payload = {
+        actionDescription: "Administrator executed kernel patch and security updates on node.",
+        result: "Host upgraded successfully without network disruption.",
+        isFollowUpRequired: false,
+      };
+
       const res = await request(app)
         .post(`/api/tickets/${ticket1Id}/actions`)
         .set("Authorization", `Bearer ${tokenAdmin}`)
-        .send({
-          actionDescription: "Administrator trying to submit an action.",
-          result: "Should be forbidden.",
-        });
+        .send(payload);
 
-      expect(res.status).toBe(403);
-      expect(res.body.code).toBe("FORBIDDEN");
-      expect(res.body.error).toContain("Only IT Staff may record Actions Taken");
+      expect(res.status).toBe(201);
+      expect(res.body.ticketId).toBe(ticket1Id);
+      expect(res.body.actionDescription).toBe(payload.actionDescription);
+      expect(res.body.result).toBe(payload.result);
+      expect(res.body.performedBy.id).toBe(adminId);
+      expect(res.body.performedBy.role).toBe("ADMINISTRATOR");
     });
 
     it("API-03b: rejects with 403 Forbidden when Requester attempts to edit an existing Action Taken", async () => {
@@ -419,22 +425,23 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe("FORBIDDEN");
-      expect(res.body.error).toContain("Only IT Staff may modify Actions Taken");
+      expect(res.body.error).toContain("Only IT Staff and Administrators may modify Actions Taken");
     });
 
-    it("API-03b: rejects with 403 Forbidden when Administrator attempts to edit an existing Action Taken", async () => {
+    it("API-06 / AC-06: allows Administrator to edit an existing Action Taken with 200 OK", async () => {
       const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
 
       const res = await request(app)
         .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
         .set("Authorization", `Bearer ${tokenAdmin}`)
         .send({
-          actionDescription: "Administrator trying to modify an action.",
+          actionDescription: "Administrator amended the diagnostic description with CVE details.",
+          result: "All vulnerability scanners report clean state.",
         });
 
-      expect(res.status).toBe(403);
-      expect(res.body.code).toBe("FORBIDDEN");
-      expect(res.body.error).toContain("Only IT Staff may modify Actions Taken");
+      expect(res.status).toBe(200);
+      expect(res.body.actionDescription).toBe("Administrator amended the diagnostic description with CVE details.");
+      expect(res.body.result).toBe("All vulnerability scanners report clean state.");
     });
   });
 
@@ -564,6 +571,23 @@ describe("Lab 4 Actions Taken API Tests (actions-taken.api.test.ts)", () => {
       expect(res.body.result).toBe("Verified system stability post-modification.");
       expect(res.body.isFollowUpRequired).toBe(false);
       expect(res.body.followUpNote).toBeNull();
+    });
+
+    it("updates actionDateTime along with other fields on PATCH", async () => {
+      const action = await prisma.actionTaken.findFirstOrThrow({ where: { ticketId: ticket1Id } });
+      const newDateTime = "2026-10-08T09:00:00.000Z";
+
+      const res = await request(app)
+        .patch(`/api/tickets/${ticket1Id}/actions/${action.id}`)
+        .set("Authorization", `Bearer ${tokenStaff1}`)
+        .send({
+          actionDateTime: newDateTime,
+          actionDescription: "Updated with retroactively adjusted timestamp.",
+        });
+
+      expect(res.status).toBe(200);
+      expect(new Date(res.body.actionDateTime).toISOString()).toBe(newDateTime);
+      expect(res.body.actionDescription).toBe("Updated with retroactively adjusted timestamp.");
     });
 
     it("rejects with 400 VALIDATION_ERROR when PATCH receives string isFollowUpRequired (e.g. 'false') without modifying the record", async () => {

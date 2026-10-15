@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { fetchTicketDetail, markProblemAppearsResolved } from "../api";
 import { AttachmentSection } from "./AttachmentSection";
 import { CommentsNotesSection } from "./CommentsNotesSection";
+import { ActionsTakenSection } from "./ActionsTakenSection";
 
 interface RequesterTicketDetailProps {
   ticketId: number;
@@ -394,6 +395,13 @@ export function RequesterTicketDetail({
         ticketId={ticket.id}
         attachments={ticket.attachments}
         onAttachmentChange={loadTicketDetail}
+      />
+
+      {/* Actions Taken Component (Requester View: Read-Only) */}
+      <ActionsTakenSection
+        ticketId={ticket.id}
+        isStaff={false}
+        isCancelled={ticket.currentStatus === "CANCELLED"}
       />
 
       {/* Public Comments Component (Requester View) */}
