@@ -626,3 +626,139 @@ staffRouter.patch("/tickets/:id/status", async (req: Request, res: Response) => 
     return res.status(500).json({ error: "Failed to transition ticket status" });
   }
 });
+
+/**
+ * GET /api/staff/dashboard
+ * Computes authoritative IT Staff dashboard metrics and retrieves up to 5 recent active queue tickets (BR-12, BR-14, AC-13, API-10).
+ * Access: Authenticated IT_STAFF only.
+ * Forbidden: Requesters and Administrators receive 403 FORBIDDEN (AC-14, API-11).
+ */
+staffRouter.get("/dashboard", async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+
+    if (user.role !== "IT_STAFF") {
+      return res.status(403).json({
+        error: "Access denied. Only IT Staff can access the Staff Dashboard",
+        code: "FORBIDDEN",
+        details: [],
+      });
+    }
+
+    const prisma = getPrisma();
+
+    const [
+      statusCounts,
+      myAssignedTickets,
+      unassignedTickets,
+      priorityCounts,
+      recentTickets,
+    ] = await Promise.all([
+      // Complete status counts across all 8 statuses
+      prisma.ticket.groupBy({
+        by: ["currentStatus"],
+        _count: { id: true },
+      }),
+      // Active tickets assigned to current staff user
+      prisma.ticket.count({
+        where: {
+          ticketOwnerId: user.id,
+          currentStatus: { notIn: ["CLOSED", "CANCELLED"] },
+        },
+      }),
+      // Active unassigned queue
+      prisma.ticket.count({
+        where: {
+          ticketOwnerId: null,
+          currentStatus: { notIn: ["CLOSED", "CANCELLED"] },
+        },
+      }),
+      // Active tickets by IT priority
+      prisma.ticket.groupBy({
+        by: ["itPriority"],
+        where: {
+          currentStatus: { notIn: ["CLOSED", "CANCELLED"] },
+        },
+        _count: { id: true },
+      }),
+      // Up to 5 most recently updated active queue tickets
+      prisma.ticket.findMany({
+        where: {
+          currentStatus: { notIn: ["CLOSED", "CANCELLED"] },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          ticketNumber: true,
+          summary: true,
+          currentStatus: true,
+          itPriority: true,
+          ticketOwner: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          requester: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    const statusMap: Record<string, number> = {};
+    for (const item of statusCounts) {
+      statusMap[item.currentStatus] = item._count.id;
+    }
+
+    const byStatus = {
+      new: statusMap["NEW"] || 0,
+      open: statusMap["OPEN"] || 0,
+      inProgress: statusMap["IN_PROGRESS"] || 0,
+      waitingForRequester: statusMap["WAITING_FOR_REQUESTER"] || 0,
+      resolved: statusMap["RESOLVED"] || 0,
+      closed: statusMap["CLOSED"] || 0,
+      reopened: statusMap["REOPENED"] || 0,
+      cancelled: statusMap["CANCELLED"] || 0,
+    };
+
+    const priorityMap: Record<string, number> = {};
+    for (const item of priorityCounts) {
+      if (item.itPriority) {
+        priorityMap[item.itPriority] = item._count.id;
+      }
+    }
+
+    const byPriority = {
+      low: priorityMap["LOW"] || 0,
+      medium: priorityMap["MEDIUM"] || 0,
+      high: priorityMap["HIGH"] || 0,
+      urgent: priorityMap["URGENT"] || 0,
+    };
+
+    return res.status(200).json({
+      metrics: {
+        primary: {
+          newTickets: byStatus.new,
+          openTickets: byStatus.open,
+          inProgressTickets: byStatus.inProgress,
+          waitingForRequesterTickets: byStatus.waitingForRequester,
+          myAssignedTickets,
+        },
+        unassignedTickets,
+        byStatus,
+        byPriority,
+      },
+      recentTickets,
+    });
+  } catch (error) {
+    console.error("Failed to compute staff dashboard metrics:", error);
+    return res.status(500).json({ error: "Failed to fetch staff dashboard metrics" });
+  }
+});
+

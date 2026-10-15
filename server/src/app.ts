@@ -10,6 +10,7 @@ import { staffRouter } from "./routes/staff.js";
 import { commentsNotesRouter } from "./routes/commentsNotes.js";
 import { requesterOpsRouter } from "./routes/requesterOps.js";
 import { adminRouter } from "./routes/admin.js";
+import { adminDashboardRouter } from "./routes/adminDashboard.js";
 import { actionsTakenRouter } from "./routes/actionsTaken.js";
 import { requireAuth, requirePasswordChanged } from "./middleware/auth.js";
 import { initializeTicketPriority } from "./utils/priorityInit.js";
@@ -63,6 +64,7 @@ app.use("/api/tickets", commentsNotesRouter);
 app.use("/api/tickets", actionsTakenRouter);
 app.use("/api/requester", requesterOpsRouter);
 app.use("/api/admin/users", adminRouter);
+app.use("/api/admin", adminDashboardRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
