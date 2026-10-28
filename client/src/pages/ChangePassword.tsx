@@ -54,6 +54,7 @@ export function ChangePassword() {
         confirmNewPassword: confirmPassword,
       });
       setSuccessMessage("Password updated successfully! Continuing into TokTickIT...");
+      window.location.hash = user?.role === "REQUESTER" ? "#/my-tickets" : "#/dashboard";
     } catch (err: any) {
       setErrorMessage(err?.message || "Failed to update password. Please check your inputs.");
       setIsSubmitting(false);
