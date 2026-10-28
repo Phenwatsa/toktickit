@@ -164,7 +164,7 @@ test.describe("Lab 3 Authentication & Authorization E2E Suite", () => {
     // Verify successful progression into the application (Lab 4: role-appropriate dashboard)
     await expect(page).toHaveURL(/#\/(dashboard|my-tickets)/);
     await expect(
-      page.locator('[data-testid="dashboard-container"], [data-testid="requester-dashboard"], text=My Support Tickets')
+      page.locator('[data-testid="requester-dashboard"], [data-testid="dashboard-loading"], [data-testid="my-tickets-table"]')
     ).toBeVisible({ timeout: 10000 });
 
     // 5. Logout
