@@ -19,7 +19,7 @@ import "./styles/zen-green.css";
 
 function MainApp() {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<AppView>("dashboard");
+  const [currentView, setCurrentView] = useState<AppView>("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [isForbidden, setIsForbidden] = useState<boolean>(false);
 
@@ -29,12 +29,16 @@ function MainApp() {
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   // Role-based route guard helpers
-  const getDefaultViewForRole = useCallback((_role?: Role): AppView => {
-    return "dashboard";
+  const getDefaultViewForRole = useCallback((role?: Role): AppView => {
+    if (role === "IT_STAFF") return "staff-queue";
+    if (role === "ADMINISTRATOR") return "admin-users";
+    return "my-tickets";
   }, []);
 
-  const getDefaultHashForRole = useCallback((_role?: Role): string => {
-    return "#/dashboard";
+  const getDefaultHashForRole = useCallback((role?: Role): string => {
+    if (role === "IT_STAFF") return "#/staff-queue";
+    if (role === "ADMINISTRATOR") return "#/admin-users";
+    return "#/my-tickets";
   }, []);
 
   const isViewPermittedForRole = useCallback((view: AppView, role?: Role): boolean => {
@@ -79,7 +83,7 @@ function MainApp() {
   // Hash-based Browser Back/Forward Navigation Handler with Route Guards
   const syncViewFromHash = useCallback(() => {
     const hash = window.location.hash || "";
-    let requestedView: AppView = "dashboard";
+    let requestedView: AppView = getDefaultViewForRole(user?.role);
     let ticketId: number | null = null;
     let forbidden = false;
 
@@ -133,9 +137,9 @@ function MainApp() {
         forbidden = true;
       }
     } else if (hash === "") {
-      requestedView = "dashboard";
+      requestedView = getDefaultViewForRole(user?.role);
     } else {
-      requestedView = "dashboard";
+      requestedView = getDefaultViewForRole(user?.role);
     }
 
     if (forbidden) {
@@ -148,7 +152,7 @@ function MainApp() {
       setSelectedTicketId(ticketId);
     }
     setCurrentView(requestedView);
-  }, [user?.role]);
+  }, [user?.role, getDefaultViewForRole]);
 
   useEffect(() => {
     syncViewFromHash();
@@ -297,7 +301,7 @@ function MainApp() {
         )}
 
         {!isForbidden && currentView === "create-ticket" && (
-          <CreateTicket onCancel={() => navigateTo("dashboard")} />
+          <CreateTicket onCancel={() => navigateTo(user?.role === "REQUESTER" || !user?.role ? "my-tickets" : "dashboard")} />
         )}
 
         {/* IT Staff & Admin Shared Queue Views (Guarded) */}
