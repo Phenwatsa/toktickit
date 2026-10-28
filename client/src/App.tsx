@@ -241,7 +241,7 @@ function MainApp() {
       <Header currentView={currentView} onNavigate={(view) => navigateTo(view)} />
 
       {/* Main Content Area */}
-      <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1560, margin: "0 auto", width: "100%" }}>
+      <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1560, margin: "0 auto", width: "100%", overflowX: "hidden" }}>
         {/* 403 Forbidden State (ui-spec.md §6.3) */}
         {isForbidden && (
           <div className="zg-forbidden-container" role="alert" data-testid="forbidden-banner">

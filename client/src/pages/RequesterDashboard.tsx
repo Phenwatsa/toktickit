@@ -383,10 +383,10 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
       {/* 3. Middle Row: Wave Chart (Service Activity Trend) + Spacious Recent Tickets Table */}
       <div className="dashboard-middle-grid mb-4">
         {/* Left: Wave Chart (Activity & Resolution Velocity) with comfortable spacing */}
-        <div className="zen-card p-3 shadow-sm d-flex flex-column justify-content-between" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px" }}>
+        <div className="zen-card p-3 shadow-sm d-flex flex-column justify-content-between" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px", minWidth: 0, maxWidth: "100%" }}>
           <div>
-            <div className="d-flex align-items-center justify-content-between mb-2">
-              <div>
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+              <div style={{ minWidth: 0, flex: "1 1 200px" }}>
                 <h2 className="h6 fw-bold mb-0 text-dark" style={{ fontSize: "0.98rem" }}>
                   Service Activity & Resolution Trend
                 </h2>
@@ -394,25 +394,25 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
                   Resolution throughput and request activity over the active cycle
                 </span>
               </div>
-              <span className="zen-badge zen-badge-resolved" style={{ fontSize: "0.74rem", padding: "0.22rem 0.6rem" }}>
+              <span className="zen-badge zen-badge-resolved" style={{ fontSize: "0.74rem", padding: "0.22rem 0.6rem", whiteSpace: "nowrap" }}>
                 Service Desk: Active
               </span>
             </div>
 
             {/* Micro stats strip derived from authoritative API metrics */}
-            <div className="d-flex align-items-center gap-3 py-2 mb-2 border-bottom" style={{ borderColor: "#F1F5F9", fontSize: "0.82rem" }}>
+            <div className="d-flex flex-wrap align-items-center gap-2 gap-sm-3 py-2 mb-2 border-bottom" style={{ borderColor: "#F1F5F9", fontSize: "0.82rem" }}>
               <div>
                 <span className="text-muted">Total Requests: </span>
                 <strong className="text-dark">{totalTickets}</strong>
               </div>
-              <div style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
+              <div className="d-none d-sm-block" style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
               <div>
                 <span className="text-muted">Resolved & Closed: </span>
                 <strong style={{ color: "var(--zg-primary)" }}>
                   {resolvedTickets + closedTickets}
                 </strong>
               </div>
-              <div style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
+              <div className="d-none d-sm-block" style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
               <div>
                 <span className="text-muted">Active Requests: </span>
                 <strong className="text-dark">{openTickets + inProgressTickets + waitingForRequesterTickets}</strong>
@@ -467,9 +467,9 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
         </div>
 
         {/* Right: My Recent Tickets (Spacious Table with Room for 5 Full Tickets, No Scrollbar) */}
-        <div className="zen-card p-0 shadow-sm d-flex flex-column" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px" }}>
-          <div className="p-3 d-flex justify-content-between align-items-center border-bottom" style={{ borderColor: "#E2E8F0" }}>
-            <div>
+        <div className="zen-card p-0 shadow-sm d-flex flex-column" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px", minWidth: 0, maxWidth: "100%", overflow: "hidden" }}>
+          <div className="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom" style={{ borderColor: "#E2E8F0" }}>
+            <div style={{ minWidth: 0 }}>
               <h2 className="h6 fw-bold mb-0 text-dark" style={{ fontSize: "0.98rem" }}>
                 My Recent Tickets
               </h2>
@@ -485,7 +485,7 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
                   window.location.hash = "#/my-tickets";
                   onNavigate("my-tickets");
                 }}
-                style={{ color: "var(--zg-primary)", fontWeight: 600, fontSize: "0.85rem" }}
+                style={{ color: "var(--zg-primary)", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
               >
                 View all ({totalTickets}) &rarr;
               </button>
@@ -493,26 +493,24 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
           </div>
 
           {/* List / Table Area */}
-          <div style={{ flex: 1, padding: "0.25rem 0.5rem" }}>
+          <div style={{ flex: 1, padding: "0.25rem 0.5rem", minWidth: 0, maxWidth: "100%", overflowX: "auto" }}>
             {data && data.recentTickets && data.recentTickets.length > 0 ? (
-              <div className="table-responsive">
+              <div className="table-responsive" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                 <table
                   className="zen-table mb-0 w-100"
                   data-testid="recent-tickets-table"
                   style={{
-                    tableLayout: "fixed",
                     width: "100%",
                     fontSize: "0.85rem",
                   }}
                 >
-                  <colgroup><col style={{ width: "135px" }} /><col style={{ minWidth: "220px" }} /><col style={{ width: "95px" }} /><col style={{ width: "110px" }} /><col style={{ width: "70px" }} /></colgroup>
                   <thead>
                     <tr>
-                      <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem" }}>Ticket #</th>
+                      <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "130px" }}>Ticket #</th>
                       <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem" }}>Summary & Updated</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.6rem", fontSize: "0.78rem" }}>Priority</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.6rem", fontSize: "0.78rem" }}>Status</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem" }}>Action</th>
+                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.6rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "100px" }}>Priority</th>
+                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.6rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "115px" }}>Status</th>
+                      <th scope="col" className="d-none d-sm-table-cell" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "75px" }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -530,7 +528,7 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
                           }
                         }}
                       >
-                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem" }}>
+                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem", whiteSpace: "nowrap" }}>
                           <span className="zen-ticket-number">{ticket.ticketNumber}</span>
                         </td>
                         <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem" }}>
@@ -545,13 +543,13 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
                             {formatUpdatedDate(ticket.updatedAt)}
                           </span>
                         </td>
-                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.6rem" }}>
+                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.6rem", whiteSpace: "nowrap" }}>
                           {getPriorityBadge(ticket.requestedPriority)}
                         </td>
-                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.6rem" }}>
+                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.6rem", whiteSpace: "nowrap" }}>
                           {getStatusBadge(ticket.currentStatus)}
                         </td>
-                        <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.65rem 0.5rem" }}>
+                        <td className="d-none d-sm-table-cell" style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.65rem 0.5rem" }}>
                           <button
                             type="button"
                             className="zen-btn-view"

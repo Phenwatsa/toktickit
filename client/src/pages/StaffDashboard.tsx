@@ -394,10 +394,10 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
       {/* 3. Middle Row: Priority Bar Chart & Unassigned Focus (Left) + Spacious Recent Queue Table (Right) */}
       <div className="dashboard-middle-grid mb-4">
         {/* Left: Priority & Workload Analytics Bar Chart with Zen Green Harmony */}
-        <div className="zen-card p-3 shadow-sm d-flex flex-column justify-content-between" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px" }}>
+        <div className="zen-card p-3 shadow-sm d-flex flex-column justify-content-between" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px", minWidth: 0, maxWidth: "100%" }}>
           <div>
-            <div className="d-flex align-items-center justify-content-between mb-2">
-              <div>
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+              <div style={{ minWidth: 0, flex: "1 1 200px" }}>
                 <h2 className="h6 fw-bold mb-0 text-dark" style={{ fontSize: "0.98rem" }}>
                   Active Queue Priority & Triage Health
                 </h2>
@@ -437,7 +437,7 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
 
             {/* Priority badges strip with clickable testids */}
             {byPriority && (
-              <div className="d-flex align-items-center gap-2 py-2 mb-2 border-bottom" style={{ borderColor: "#F1F5F9" }} role="region" aria-label="Tickets by Priority">
+              <div className="d-flex flex-wrap align-items-center gap-2 py-2 mb-2 border-bottom" style={{ borderColor: "#F1F5F9" }} role="region" aria-label="Tickets by Priority">
                 <span
                   className="zen-badge zen-badge-priority-urgent"
                   data-testid="priority-badge-urgent"
@@ -622,9 +622,9 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
         </div>
 
         {/* Right: Recent Queue Tickets (Spacious Table, All 5 Rows Fit Without Scrollbar) */}
-        <div className="zen-card p-0 shadow-sm d-flex flex-column" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px" }}>
-          <div className="p-3 d-flex justify-content-between align-items-center border-bottom" style={{ borderColor: "#E2E8F0" }}>
-            <div>
+        <div className="zen-card p-0 shadow-sm d-flex flex-column" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px", minWidth: 0, maxWidth: "100%", overflow: "hidden" }}>
+          <div className="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom" style={{ borderColor: "#E2E8F0" }}>
+            <div style={{ minWidth: 0 }}>
               <h2 className="h6 fw-bold mb-0 text-dark" style={{ fontSize: "0.98rem" }}>
                 Recent Queue Tickets
               </h2>
@@ -639,34 +639,32 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                 window.location.hash = "#/staff-queue";
                 onNavigate("staff-queue");
               }}
-              style={{ color: "var(--zg-primary)", fontWeight: 600, fontSize: "0.85rem" }}
+              style={{ color: "var(--zg-primary)", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
             >
               Open Full Queue &rarr;
             </button>
           </div>
 
           {/* List / Table Area */}
-          <div style={{ flex: 1, padding: "0.25rem 0.5rem" }}>
+          <div style={{ flex: 1, padding: "0.25rem 0.5rem", minWidth: 0, maxWidth: "100%", overflowX: "auto" }}>
             {data && data.recentTickets && data.recentTickets.length > 0 ? (
-              <div className="table-responsive">
+              <div className="table-responsive" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                 <table
                   className="zen-table mb-0 w-100"
                   data-testid="staff-recent-tickets-table"
                   style={{
-                    tableLayout: "fixed",
                     width: "100%",
                     fontSize: "0.85rem",
                   }}
                 >
-                  <colgroup><col style={{ width: "135px" }} /><col style={{ minWidth: "200px" }} /><col style={{ width: "90px" }} /><col style={{ width: "105px" }} /><col style={{ width: "140px" }} /><col style={{ width: "70px" }} /></colgroup>
                   <thead>
                     <tr>
-                      <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem" }}>Ticket #</th>
+                      <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "125px" }}>Ticket #</th>
                       <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem" }}>Summary & Updated</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem" }}>Priority</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem" }}>Status</th>
-                      <th scope="col" style={{ padding: "0.65rem 0.75rem", fontSize: "0.78rem" }}>Requester</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.4rem", fontSize: "0.78rem" }}>Action</th>
+                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "95px" }}>Priority</th>
+                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "110px" }}>Status</th>
+                      <th scope="col" className="d-none d-sm-table-cell" style={{ padding: "0.65rem 0.75rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "135px" }}>Requester</th>
+                      <th scope="col" className="d-none d-md-table-cell" style={{ textAlign: "center", padding: "0.65rem 0.4rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "70px" }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -684,7 +682,7 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                           }
                         }}
                       >
-                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem" }}>
+                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem", whiteSpace: "nowrap" }}>
                           <span className="zen-ticket-number">{ticket.ticketNumber}</span>
                         </td>
                         <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem" }}>
@@ -697,20 +695,23 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                           </div>
                           <span className="text-muted d-block" style={{ fontSize: "0.74rem" }}>
                             {formatUpdatedDate(ticket.updatedAt)} {ticket.ticketOwner ? `• ${ticket.ticketOwner.name}` : ""}
+                            {ticket.requester ? (
+                              <span className="d-sm-none"> • Req: {ticket.requester.name}</span>
+                            ) : null}
                           </span>
                         </td>
-                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem" }}>
+                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem", whiteSpace: "nowrap" }}>
                           {getPriorityBadge(ticket.itPriority)}
                         </td>
-                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem" }}>
+                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem", whiteSpace: "nowrap" }}>
                           {getStatusBadge(ticket.currentStatus)}
                         </td>
-                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.75rem" }}>
+                        <td className="d-none d-sm-table-cell" style={{ verticalAlign: "middle", padding: "0.65rem 0.75rem" }}>
                           <span className="text-dark fw-medium text-truncate d-inline-block" style={{ fontSize: "0.82rem", maxWidth: "100%", whiteSpace: "nowrap" }}>
                             {ticket.requester?.name || "—"}
                           </span>
                         </td>
-                        <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.65rem 0.4rem" }}>
+                        <td className="d-none d-md-table-cell" style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.65rem 0.4rem" }}>
                           <button
                             type="button"
                             className="zen-btn-view"

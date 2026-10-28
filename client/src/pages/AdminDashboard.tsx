@@ -413,10 +413,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
       {/* 3. Middle Row: Donut Chart User Role Composition (Left) + Spacious Recent System Queue (Right) */}
       <div className="dashboard-middle-grid mb-4">
         {/* Left: User Role Composition & Platform Oversight Card */}
-        <div className="zen-card p-3 shadow-sm d-flex flex-column justify-content-between" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px" }}>
+        <div className="zen-card p-3 shadow-sm d-flex flex-column justify-content-between" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px", minWidth: 0, maxWidth: "100%" }}>
           <div>
-            <div className="d-flex align-items-center justify-content-between mb-2">
-              <div>
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+              <div style={{ minWidth: 0, flex: "1 1 200px" }}>
                 <h2 className="h6 fw-bold mb-0 text-dark" style={{ fontSize: "0.98rem" }}>
                   Enterprise User Composition & Platform Health
                 </h2>
@@ -424,23 +424,23 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                   Directory account distribution and access status
                 </span>
               </div>
-              <span className="zen-badge zen-badge-resolved" style={{ fontSize: "0.74rem", padding: "0.22rem 0.6rem" }}>
+              <span className="zen-badge zen-badge-resolved" style={{ fontSize: "0.74rem", padding: "0.22rem 0.6rem", whiteSpace: "nowrap" }}>
                 Active Rate: {totalUsers > 0 ? Math.round(((users?.activeUsers ?? 0) / totalUsers) * 100) : 100}%
               </span>
             </div>
 
             {/* Health Bar Strip */}
-            <div className="d-flex align-items-center gap-3 py-2 mb-2 border-bottom" style={{ borderColor: "#F1F5F9", fontSize: "0.82rem" }}>
+            <div className="d-flex flex-wrap align-items-center gap-2 gap-sm-3 py-2 mb-2 border-bottom" style={{ borderColor: "#F1F5F9", fontSize: "0.82rem" }}>
               <div>
                 <span className="text-muted">Total Accounts: </span>
                 <strong className="text-dark">{totalUsers}</strong>
               </div>
-              <div style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
+              <div className="d-none d-sm-block" style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
               <div>
                 <span className="text-muted">Active: </span>
                 <strong className="text-success">{users?.activeUsers ?? 0}</strong>
               </div>
-              <div style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
+              <div className="d-none d-sm-block" style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
               <div>
                 <span className="text-muted">Deactivated: </span>
                 <strong className="text-muted">{users?.inactiveUsers ?? 0}</strong>
@@ -449,9 +449,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           </div>
 
           {/* SVG Donut Chart with Legend (Proportionally balanced) */}
-          <div className="d-flex align-items-center justify-content-around py-2">
+          <div className="d-flex flex-wrap align-items-center justify-content-around gap-3 py-2">
             {/* SVG Donut */}
-            <div style={{ position: "relative", width: "140px", height: "140px", flexShrink: 0 }}>
+            <div style={{ position: "relative", width: "130px", height: "130px", flexShrink: 0 }}>
               <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%", transform: "rotate(-90deg)" }}>
                 {/* Background Ring */}
                 <circle cx="50" cy="50" r="38" fill="none" stroke="#F1F5F9" strokeWidth="12" />
@@ -513,47 +513,47 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             </div>
 
             {/* Right Legend */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", fontSize: "0.85rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", fontSize: "0.85rem", minWidth: "170px", maxWidth: "100%" }}>
               <div className="d-flex align-items-center justify-content-between gap-3">
                 <div className="d-flex align-items-center gap-2">
-                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#006B3C", display: "inline-block" }} />
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#006B3C", display: "inline-block", flexShrink: 0 }} />
                   <span className="fw-medium text-dark">Requesters</span>
                 </div>
-                <strong className="text-dark">{requesterCount} <span className="text-muted fw-normal">({Math.round(reqPct * 100)}%)</span></strong>
+                <strong className="text-dark" style={{ whiteSpace: "nowrap" }}>{requesterCount} <span className="text-muted fw-normal">({Math.round(reqPct * 100)}%)</span></strong>
               </div>
 
               <div className="d-flex align-items-center justify-content-between gap-3">
                 <div className="d-flex align-items-center gap-2">
-                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#10B981", display: "inline-block" }} />
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#10B981", display: "inline-block", flexShrink: 0 }} />
                   <span className="fw-medium text-dark">IT Staff</span>
                 </div>
-                <strong className="text-dark">{staffCount} <span className="text-muted fw-normal">({Math.round(staffPct * 100)}%)</span></strong>
+                <strong className="text-dark" style={{ whiteSpace: "nowrap" }}>{staffCount} <span className="text-muted fw-normal">({Math.round(staffPct * 100)}%)</span></strong>
               </div>
 
               <div className="d-flex align-items-center justify-content-between gap-3">
                 <div className="d-flex align-items-center gap-2">
-                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#334155", display: "inline-block" }} />
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#334155", display: "inline-block", flexShrink: 0 }} />
                   <span className="fw-medium text-dark">Administrators</span>
                 </div>
-                <strong className="text-dark">{adminCount} <span className="text-muted fw-normal">({Math.round(adminPct * 100)}%)</span></strong>
+                <strong className="text-dark" style={{ whiteSpace: "nowrap" }}>{adminCount} <span className="text-muted fw-normal">({Math.round(adminPct * 100)}%)</span></strong>
               </div>
             </div>
           </div>
 
           {/* Infrastructure Health Sub-Panel (Eliminates empty void with useful security info) */}
           <div className="border-top pt-2 mt-2" style={{ borderColor: "#F1F5F9" }}>
-            <div className="d-flex align-items-center justify-content-between text-muted" style={{ fontSize: "0.76rem" }}>
-              <span>Database: <strong className="text-success">Connected</strong></span>
-              <span>RBAC Policy: <strong className="text-dark">Enforced</strong></span>
-              <span>Concurrency Gate: <strong className="text-dark">Active</strong></span>
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 text-muted" style={{ fontSize: "0.76rem" }}>
+              <span style={{ whiteSpace: "nowrap" }}>Database: <strong className="text-success">Connected</strong></span>
+              <span style={{ whiteSpace: "nowrap" }}>RBAC Policy: <strong className="text-dark">Enforced</strong></span>
+              <span style={{ whiteSpace: "nowrap" }}>Concurrency Gate: <strong className="text-dark">Active</strong></span>
             </div>
           </div>
         </div>
 
         {/* Right: Recent System Queue (Spacious Table, All 5 Rows Fit Without Scrollbar) */}
-        <div className="zen-card p-0 shadow-sm d-flex flex-column" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px" }}>
-          <div className="p-3 d-flex justify-content-between align-items-center border-bottom" style={{ borderColor: "#E2E8F0" }}>
-            <div>
+        <div className="zen-card p-0 shadow-sm d-flex flex-column" style={{ backgroundColor: "#FFFFFF", margin: 0, border: "1px solid #E2E8F0", borderRadius: "10px", minHeight: "380px", minWidth: 0, maxWidth: "100%", overflow: "hidden" }}>
+          <div className="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom" style={{ borderColor: "#E2E8F0" }}>
+            <div style={{ minWidth: 0 }}>
               <h2 className="h6 fw-bold mb-0 text-dark" style={{ fontSize: "0.98rem" }}>
                 Recent System Queue
               </h2>
@@ -565,34 +565,32 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               type="button"
               className="btn btn-link btn-sm p-0 text-decoration-none"
               onClick={handleDrillDownStaffQueue}
-              style={{ color: "var(--zg-primary)", fontWeight: 600, fontSize: "0.85rem" }}
+              style={{ color: "var(--zg-primary)", fontWeight: 600, fontSize: "0.85rem", whiteSpace: "nowrap" }}
             >
               Open Queue &rarr;
             </button>
           </div>
 
           {/* List / Table Area */}
-          <div style={{ flex: 1, padding: "0.25rem 0.5rem" }}>
+          <div style={{ flex: 1, padding: "0.25rem 0.5rem", minWidth: 0, maxWidth: "100%", overflowX: "auto" }}>
             {data && data.recentTickets && data.recentTickets.length > 0 ? (
-              <div className="table-responsive">
+              <div className="table-responsive" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                 <table
                   className="zen-table mb-0 w-100"
                   data-testid="admin-recent-tickets"
                   style={{
-                    tableLayout: "fixed",
                     width: "100%",
                     fontSize: "0.85rem",
                   }}
                 >
-                  <colgroup><col style={{ width: "135px" }} /><col style={{ minWidth: "200px" }} /><col style={{ width: "90px" }} /><col style={{ width: "105px" }} /><col style={{ width: "135px" }} /><col style={{ width: "70px" }} /></colgroup>
                   <thead>
                     <tr>
-                      <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem" }}>Ticket #</th>
+                      <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "125px" }}>Ticket #</th>
                       <th scope="col" style={{ padding: "0.65rem 0.85rem", fontSize: "0.78rem" }}>Summary & Updated</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem" }}>Priority</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem" }}>Status</th>
-                      <th scope="col" style={{ padding: "0.65rem 0.75rem", fontSize: "0.78rem" }}>Owner</th>
-                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.4rem", fontSize: "0.78rem" }}>Action</th>
+                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "95px" }}>Priority</th>
+                      <th scope="col" style={{ textAlign: "center", padding: "0.65rem 0.5rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "110px" }}>Status</th>
+                      <th scope="col" className="d-none d-sm-table-cell" style={{ padding: "0.65rem 0.75rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "135px" }}>Owner</th>
+                      <th scope="col" className="d-none d-md-table-cell" style={{ textAlign: "center", padding: "0.65rem 0.4rem", fontSize: "0.78rem", whiteSpace: "nowrap", width: "70px" }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -610,7 +608,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                           }
                         }}
                       >
-                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem" }}>
+                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem", whiteSpace: "nowrap" }}>
                           <span className="zen-ticket-number">{ticket.ticketNumber}</span>
                         </td>
                         <td style={{ verticalAlign: "middle", padding: "0.65rem 0.85rem" }}>
@@ -623,15 +621,20 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                           </div>
                           <span className="text-muted d-block" style={{ fontSize: "0.74rem" }}>
                             {formatUpdatedDate(ticket.updatedAt)} {ticket.requester ? `• ${ticket.requester.name}` : ""}
+                            {ticket.ticketOwner ? (
+                              <span className="d-sm-none"> • {ticket.ticketOwner.name}</span>
+                            ) : (
+                              <span className="d-sm-none"> • Unassigned</span>
+                            )}
                           </span>
                         </td>
-                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem" }}>
+                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem", whiteSpace: "nowrap" }}>
                           {getPriorityBadge(ticket.itPriority || ticket.requestedPriority)}
                         </td>
-                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem" }}>
+                        <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.65rem 0.5rem", whiteSpace: "nowrap" }}>
                           {getStatusBadge(ticket.currentStatus)}
                         </td>
-                        <td style={{ verticalAlign: "middle", padding: "0.65rem 0.75rem" }}>
+                        <td className="d-none d-sm-table-cell" style={{ verticalAlign: "middle", padding: "0.65rem 0.75rem" }}>
                           {ticket.ticketOwner ? (
                             <span className="text-dark fw-medium text-truncate d-inline-block" style={{ fontSize: "0.82rem", maxWidth: "100%", whiteSpace: "nowrap" }}>
                               {ticket.ticketOwner.name}
@@ -642,7 +645,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                             </span>
                           )}
                         </td>
-                        <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.65rem 0.4rem" }}>
+                        <td className="d-none d-md-table-cell" style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.65rem 0.4rem" }}>
                           <button
                             type="button"
                             className="zen-btn-view"
