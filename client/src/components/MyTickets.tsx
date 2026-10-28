@@ -45,12 +45,24 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     hasPrevPage: false,
   });
 
+  const getInitialStatusFromHash = useCallback((): string => {
+    if (typeof window === "undefined") return "ALL";
+    const hash = window.location.hash || "";
+    const queryIndex = hash.indexOf("?");
+    if (queryIndex !== -1) {
+      const searchParams = new URLSearchParams(hash.slice(queryIndex));
+      const s = searchParams.get("status");
+      if (s) return s;
+    }
+    return "ALL";
+  }, []);
+
   // Filter & Search State
   const [search, setSearch] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [priority, setPriority] = useState<string>("ALL");
-  const [status, setStatus] = useState<string>("ALL");
+  const [status, setStatus] = useState<string>(() => getInitialStatusFromHash());
   const [sortOption, setSortOption] = useState<string>("createdAt_desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -100,6 +112,17 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Sync filter from URL hash parameters (e.g. drill-down from Dashboard)
+  useEffect(() => {
+    const handleHash = () => {
+      const s = getInitialStatusFromHash();
+      setStatus(s);
+      setCurrentPage(1);
+    };
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, [getInitialStatusFromHash]);
 
   // Load Categories on mount
   useEffect(() => {
@@ -552,6 +575,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                 }}
               >
                 <option value="ALL">All Statuses</option>
+                <option value="OPEN_GROUP">Open / Active</option>
                 <option value="NEW">New</option>
                 <option value="OPEN">Open</option>
                 <option value="IN_PROGRESS">In Progress</option>
@@ -847,6 +871,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                   }}
                 >
                   <option value="ALL">All Statuses</option>
+                  <option value="OPEN_GROUP">Open / Active</option>
                   <option value="NEW">New</option>
                   <option value="OPEN">Open</option>
                   <option value="IN_PROGRESS">In Progress</option>

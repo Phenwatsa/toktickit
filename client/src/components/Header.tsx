@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { Role } from "../types";
 
 export type AppView =
+  | "dashboard"
   | "my-tickets"
   | "create-ticket"
   | "legacy-check"
@@ -99,9 +100,7 @@ export function Header({ currentView, onNavigate }: HeaderProps) {
                 className="navbar-brand"
                 onClick={(e) => {
                   e.preventDefault();
-                  if (isStaff) onNavigate("staff-queue");
-                  else if (isAdmin) onNavigate("admin-users");
-                  else onNavigate("my-tickets");
+                  onNavigate("dashboard");
                 }}
               >
                 <div
@@ -146,8 +145,38 @@ export function Header({ currentView, onNavigate }: HeaderProps) {
                 <>
                   <button
                     type="button"
+                    className={`zen-nav-link ${currentView === "dashboard" ? "active" : ""}`}
+                    onClick={() => {
+                      window.location.hash = "#/dashboard";
+                      onNavigate("dashboard");
+                    }}
+                    data-testid="nav-dashboard"
+                  >
+                    <svg
+                      className="zen-nav-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="7" height="9" />
+                      <rect x="14" y="3" width="7" height="5" />
+                      <rect x="14" y="12" width="7" height="9" />
+                      <rect x="3" y="16" width="7" height="5" />
+                    </svg>
+                    <span>Dashboard</span>
+                  </button>
+                  <button
+                    type="button"
                     className={`zen-nav-link ${currentView === "my-tickets" ? "active" : ""}`}
-                    onClick={() => onNavigate("my-tickets")}
+                    onClick={() => {
+                      window.location.hash = "#/my-tickets";
+                      onNavigate("my-tickets");
+                    }}
                     data-testid="nav-my-tickets"
                   >
                     <svg
@@ -204,58 +233,122 @@ export function Header({ currentView, onNavigate }: HeaderProps) {
 
               {/* IT Staff Navigation Links */}
               {isStaff && (
-                <button
-                  type="button"
-                  className={`zen-nav-link ${currentView === "staff-queue" ? "active" : ""}`}
-                  onClick={() => onNavigate("staff-queue")}
-                  data-testid="nav-staff-queue"
-                >
-                  <svg
-                    className="zen-nav-icon"
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                <>
+                  <button
+                    type="button"
+                    className={`zen-nav-link ${currentView === "dashboard" ? "active" : ""}`}
+                    onClick={() => {
+                      window.location.hash = "#/dashboard";
+                      onNavigate("dashboard");
+                    }}
+                    data-testid="nav-dashboard"
                   >
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                  </svg>
-                  <span>Ticket Queue</span>
-                </button>
+                    <svg
+                      className="zen-nav-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="7" height="9" />
+                      <rect x="14" y="3" width="7" height="5" />
+                      <rect x="14" y="12" width="7" height="9" />
+                      <rect x="3" y="16" width="7" height="5" />
+                    </svg>
+                    <span>Dashboard</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`zen-nav-link ${currentView === "staff-queue" ? "active" : ""}`}
+                    onClick={() => {
+                      window.location.hash = "#/staff-queue";
+                      onNavigate("staff-queue");
+                    }}
+                    data-testid="nav-staff-queue"
+                  >
+                    <svg
+                      className="zen-nav-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                      <path d="M13 5v2" />
+                      <path d="M13 17v2" />
+                      <path d="M13 11v2" />
+                    </svg>
+                    <span>Ticket Queue</span>
+                  </button>
+                </>
               )}
 
               {/* Administrator Navigation Links */}
               {isAdmin && (
-                <button
-                  type="button"
-                  className={`zen-nav-link ${currentView === "admin-users" ? "active" : ""}`}
-                  onClick={() => onNavigate("admin-users")}
-                  data-testid="nav-admin-users"
-                >
-                  <svg
-                    className="zen-nav-icon"
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                <>
+                  <button
+                    type="button"
+                    className={`zen-nav-link ${currentView === "dashboard" ? "active" : ""}`}
+                    onClick={() => {
+                      window.location.hash = "#/dashboard";
+                      onNavigate("dashboard");
+                    }}
+                    data-testid="nav-dashboard"
                   >
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  <span>User Management</span>
-                </button>
+                    <svg
+                      className="zen-nav-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="7" height="9" />
+                      <rect x="14" y="3" width="7" height="5" />
+                      <rect x="14" y="12" width="7" height="9" />
+                      <rect x="3" y="16" width="7" height="5" />
+                    </svg>
+                    <span>Dashboard</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`zen-nav-link ${currentView === "admin-users" ? "active" : ""}`}
+                    onClick={() => {
+                      window.location.hash = "#/admin-users";
+                      onNavigate("admin-users");
+                    }}
+                    data-testid="nav-admin-users"
+                  >
+                    <svg
+                      className="zen-nav-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span>User Management</span>
+                  </button>
+                </>
               )}
             </nav>
           </div>
@@ -446,6 +539,24 @@ export function Header({ currentView, onNavigate }: HeaderProps) {
                 <>
                   <button
                     type="button"
+                    className={`zen-drawer-nav-item ${currentView === "dashboard" ? "active" : ""}`}
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      onNavigate("dashboard");
+                    }}
+                    data-testid="drawer-nav-dashboard"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="7" height="9" />
+                      <rect x="14" y="3" width="7" height="5" />
+                      <rect x="14" y="12" width="7" height="9" />
+                      <rect x="3" y="16" width="7" height="5" />
+                    </svg>
+                    <span>Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
                     className={`zen-drawer-nav-item ${currentView === "my-tickets" ? "active" : ""}`}
                     onClick={() => {
                       setIsDrawerOpen(false);
@@ -496,43 +607,83 @@ export function Header({ currentView, onNavigate }: HeaderProps) {
               )}
 
               {isStaff && (
-                <button
-                  type="button"
-                  className={`zen-drawer-nav-item ${currentView === "staff-queue" ? "active" : ""}`}
-                  onClick={() => {
-                    setIsDrawerOpen(false);
-                    onNavigate("staff-queue");
-                  }}
-                  data-testid="drawer-nav-staff-queue"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                  </svg>
-                  <span>Ticket Queue</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={`zen-drawer-nav-item ${currentView === "dashboard" ? "active" : ""}`}
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      onNavigate("dashboard");
+                    }}
+                    data-testid="drawer-nav-dashboard"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="7" height="9" />
+                      <rect x="14" y="3" width="7" height="5" />
+                      <rect x="14" y="12" width="7" height="9" />
+                      <rect x="3" y="16" width="7" height="5" />
+                    </svg>
+                    <span>Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`zen-drawer-nav-item ${currentView === "staff-queue" ? "active" : ""}`}
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      onNavigate("staff-queue");
+                    }}
+                    data-testid="drawer-nav-staff-queue"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                      <path d="M13 5v2" />
+                      <path d="M13 17v2" />
+                      <path d="M13 11v2" />
+                    </svg>
+                    <span>Ticket Queue</span>
+                  </button>
+                </>
               )}
 
               {isAdmin && (
-                <button
-                  type="button"
-                  className={`zen-drawer-nav-item ${currentView === "admin-users" ? "active" : ""}`}
-                  onClick={() => {
-                    setIsDrawerOpen(false);
-                    onNavigate("admin-users");
-                  }}
-                  data-testid="drawer-nav-admin-users"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  <span>User Management</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={`zen-drawer-nav-item ${currentView === "dashboard" ? "active" : ""}`}
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      onNavigate("dashboard");
+                    }}
+                    data-testid="drawer-nav-dashboard"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="7" height="9" />
+                      <rect x="14" y="3" width="7" height="5" />
+                      <rect x="14" y="12" width="7" height="9" />
+                      <rect x="3" y="16" width="7" height="5" />
+                    </svg>
+                    <span>Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`zen-drawer-nav-item ${currentView === "admin-users" ? "active" : ""}`}
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      onNavigate("admin-users");
+                    }}
+                    data-testid="drawer-nav-admin-users"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span>User Management</span>
+                  </button>
+                </>
               )}
             </div>
           </div>

@@ -347,7 +347,11 @@ app.get("/api/tickets", requireAuth, requirePasswordChanged, async (req: Request
 
     // Status filter
     if (status && typeof status === "string" && status !== "ALL") {
-      where.currentStatus = status;
+      if (status === "OPEN_GROUP") {
+        where.currentStatus = { in: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] };
+      } else {
+        where.currentStatus = status;
+      }
     }
 
     // Pagination calculations

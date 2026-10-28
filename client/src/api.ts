@@ -30,6 +30,15 @@ import {
   ActionTakenItem,
   CreateActionTakenPayload,
   UpdateActionTakenPayload,
+  RequesterRecentTicket,
+  RequesterDashboardData,
+  StaffDashboardPrimaryMetrics,
+  StaffDashboardStatusBreakdown,
+  StaffDashboardPriorityBreakdown,
+  StaffRecentTicket,
+  StaffDashboardData,
+  AdminRecentTicket,
+  AdminDashboardData,
 } from "./types";
 export type {
   Category,
@@ -63,6 +72,15 @@ export type {
   ActionTakenItem,
   CreateActionTakenPayload,
   UpdateActionTakenPayload,
+  RequesterRecentTicket,
+  RequesterDashboardData,
+  StaffDashboardPrimaryMetrics,
+  StaffDashboardStatusBreakdown,
+  StaffDashboardPriorityBreakdown,
+  StaffRecentTicket,
+  StaffDashboardData,
+  AdminRecentTicket,
+  AdminDashboardData,
 };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -885,5 +903,72 @@ export async function updateActionTaken(
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Lab 4 — Role-Appropriate Dashboard API Handlers
+// ---------------------------------------------------------------------------
+
+export async function fetchRequesterDashboard(): Promise<RequesterDashboardData> {
+  const res = await fetch(`${API_URL}/api/requester/dashboard`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to fetch Requester Dashboard metrics");
+    error.status = res.status;
+    error.code = data.code;
+    throw error;
+  }
+  return {
+    openTickets: data.metrics?.openTickets ?? data.openTickets ?? 0,
+    inProgressTickets: data.metrics?.inProgressTickets ?? data.inProgressTickets ?? 0,
+    waitingForRequesterTickets: data.metrics?.waitingForRequesterTickets ?? data.waitingForRequesterTickets ?? 0,
+    resolvedTickets: data.metrics?.resolvedTickets ?? data.resolvedTickets ?? 0,
+    closedTickets: data.metrics?.closedTickets ?? data.closedTickets ?? 0,
+    recentTickets: data.recentTickets || [],
+    metrics: data.metrics,
+  };
+}
+
+export async function fetchStaffDashboard(): Promise<StaffDashboardData> {
+  const res = await fetch(`${API_URL}/api/staff/dashboard`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to fetch IT Staff Dashboard metrics");
+    error.status = res.status;
+    error.code = data.code;
+    throw error;
+  }
+  return data;
+}
+
+export async function fetchAdminDashboard(): Promise<AdminDashboardData> {
+  const res = await fetch(`${API_URL}/api/admin/dashboard`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || "Failed to fetch Administrator Dashboard metrics");
+    error.status = res.status;
+    error.code = data.code;
+    throw error;
+  }
+  return data;
+}
+
 
 
