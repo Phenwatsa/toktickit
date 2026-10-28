@@ -50,6 +50,7 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
     else if (status === "WAITING_FOR_REQUESTER") colorClass = "zen-badge-waiting";
     else if (status === "RESOLVED") colorClass = "zen-badge-resolved";
     else if (status === "CLOSED") colorClass = "zen-badge-closed";
+    else if (status === "REOPENED") colorClass = "zen-badge-reopened";
     else if (status === "CANCELLED") colorClass = "zen-badge-cancelled";
 
     return (

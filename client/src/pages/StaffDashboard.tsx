@@ -55,6 +55,7 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
     else if (status === "WAITING_FOR_REQUESTER") colorClass = "zen-badge-waiting";
     else if (status === "RESOLVED") colorClass = "zen-badge-resolved";
     else if (status === "CLOSED") colorClass = "zen-badge-closed";
+    else if (status === "REOPENED") colorClass = "zen-badge-reopened";
     else if (status === "CANCELLED") colorClass = "zen-badge-cancelled";
 
     return (
@@ -775,7 +776,7 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
               className="dashboard-pills-wrap"
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(8, 1fr)",
+                gridTemplateColumns: "repeat(auto-fit, minmax(105px, 1fr))",
                 gap: "0.35rem",
                 width: "100%",
               }}

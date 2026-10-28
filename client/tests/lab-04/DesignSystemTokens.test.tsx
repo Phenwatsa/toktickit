@@ -162,17 +162,24 @@ describe("DesignSystemTokens (UI-STYLE-01, AC-17)", () => {
           <span className="zen-badge zen-badge-waiting">Waiting</span>
           <span className="zen-badge zen-badge-resolved">Resolved</span>
           <span className="zen-badge zen-badge-closed">Closed</span>
+          <span className="zen-badge zen-badge-reopened">Reopened</span>
           <span className="zen-badge zen-badge-cancelled">Cancelled</span>
         </div>
       );
 
       const badges = container.querySelectorAll(".zen-badge");
-      expect(badges.length).toBe(7);
+      expect(badges.length).toBe(8);
 
       badges.forEach((badge) => {
         const style = window.getComputedStyle(badge);
         expect(style.display).toMatch(/inline-flex|inline-block|flex/);
       });
+
+      const reopenedBadge = container.querySelector(".zen-badge-reopened") as HTMLElement;
+      expect(reopenedBadge).not.toBeNull();
+      const reopenedStyle = window.getComputedStyle(reopenedBadge);
+      expect(reopenedStyle.display).toMatch(/inline-flex|inline-block|flex/);
+      expect(reopenedStyle.color).toBe("rgb(29, 78, 216)"); // #1D4ED8
     });
 
     it("verifies computed styles on rendered dashboard container (.dashboard-container)", () => {
