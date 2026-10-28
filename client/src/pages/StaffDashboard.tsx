@@ -443,9 +443,10 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                   data-testid="priority-badge-urgent"
                   style={{ fontSize: "0.76rem", padding: "0.24rem 0.6rem", cursor: "pointer" }}
                   onClick={() => {
-                    window.location.hash = "#/staff-queue";
+                    window.location.hash = "#/staff-queue?priority=URGENT";
                     onNavigate("staff-queue");
                   }}
+                  title="Filter queue by Urgent priority"
                 >
                   Urgent: <strong>{byPriority.urgent}</strong>
                 </span>
@@ -454,23 +455,34 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                   data-testid="priority-badge-high"
                   style={{ fontSize: "0.76rem", padding: "0.24rem 0.6rem", cursor: "pointer" }}
                   onClick={() => {
-                    window.location.hash = "#/staff-queue";
+                    window.location.hash = "#/staff-queue?priority=HIGH";
                     onNavigate("staff-queue");
                   }}
+                  title="Filter queue by High priority"
                 >
                   High: <strong>{byPriority.high}</strong>
                 </span>
                 <span
                   className="zen-badge zen-badge-priority-medium"
                   data-testid="priority-badge-medium"
-                  style={{ fontSize: "0.76rem", padding: "0.24rem 0.6rem" }}
+                  style={{ fontSize: "0.76rem", padding: "0.24rem 0.6rem", cursor: "pointer" }}
+                  onClick={() => {
+                    window.location.hash = "#/staff-queue?priority=MEDIUM";
+                    onNavigate("staff-queue");
+                  }}
+                  title="Filter queue by Medium priority"
                 >
                   Medium: <strong>{byPriority.medium}</strong>
                 </span>
                 <span
                   className="zen-badge zen-badge-priority-low"
                   data-testid="priority-badge-low"
-                  style={{ fontSize: "0.76rem", padding: "0.24rem 0.6rem" }}
+                  style={{ fontSize: "0.76rem", padding: "0.24rem 0.6rem", cursor: "pointer" }}
+                  onClick={() => {
+                    window.location.hash = "#/staff-queue?priority=LOW";
+                    onNavigate("staff-queue");
+                  }}
+                  title="Filter queue by Low priority"
                 >
                   Low: <strong>{byPriority.low}</strong>
                 </span>
@@ -491,7 +503,13 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                 const uCount = byPriority?.urgent ?? 0;
                 const h = Math.max(12, Math.round((uCount / maxPriorityCount) * 100));
                 return (
-                  <g>
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      window.location.hash = "#/staff-queue?priority=URGENT";
+                      onNavigate("staff-queue");
+                    }}
+                  >
                     <rect x="45" y={130 - h} width="50" height={h} rx="6" fill="#BE123C" opacity="0.88" />
                     <text x="70" y={120 - h} textAnchor="middle" fill="#9F1239" fontSize="12" fontWeight="700">
                       {uCount}
@@ -505,7 +523,13 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                 const hCount = byPriority?.high ?? 0;
                 const h = Math.max(12, Math.round((hCount / maxPriorityCount) * 100));
                 return (
-                  <g>
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      window.location.hash = "#/staff-queue?priority=HIGH";
+                      onNavigate("staff-queue");
+                    }}
+                  >
                     <rect x="170" y={130 - h} width="50" height={h} rx="6" fill="#D97706" opacity="0.88" />
                     <text x="195" y={120 - h} textAnchor="middle" fill="#B45309" fontSize="12" fontWeight="700">
                       {hCount}
@@ -519,7 +543,13 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                 const mCount = byPriority?.medium ?? 0;
                 const h = Math.max(12, Math.round((mCount / maxPriorityCount) * 100));
                 return (
-                  <g>
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      window.location.hash = "#/staff-queue?priority=MEDIUM";
+                      onNavigate("staff-queue");
+                    }}
+                  >
                     <rect x="295" y={130 - h} width="50" height={h} rx="6" fill="#059669" opacity="0.88" />
                     <text x="320" y={120 - h} textAnchor="middle" fill="#047857" fontSize="12" fontWeight="700">
                       {mCount}
@@ -533,7 +563,13 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
                 const lCount = byPriority?.low ?? 0;
                 const h = Math.max(12, Math.round((lCount / maxPriorityCount) * 100));
                 return (
-                  <g>
+                  <g
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      window.location.hash = "#/staff-queue?priority=LOW";
+                      onNavigate("staff-queue");
+                    }}
+                  >
                     <rect x="420" y={130 - h} width="50" height={h} rx="6" fill="#006B3C" opacity="0.88" />
                     <text x="445" y={120 - h} textAnchor="middle" fill="#006B3C" fontSize="12" fontWeight="700">
                       {lCount}
@@ -545,10 +581,42 @@ export function StaffDashboard({ onNavigate }: StaffDashboardProps) {
 
             {/* X-Axis Labels comfortably spaced inside card */}
             <div className="d-flex justify-content-around text-muted pb-1 px-2" style={{ fontSize: "0.8rem", fontWeight: 600 }}>
-              <span style={{ color: "#BE123C" }}>Urgent</span>
-              <span style={{ color: "#D97706" }}>High</span>
-              <span style={{ color: "#059669" }}>Medium</span>
-              <span style={{ color: "#006B3C" }}>Low</span>
+              <span
+                style={{ color: "#BE123C", cursor: "pointer" }}
+                onClick={() => {
+                  window.location.hash = "#/staff-queue?priority=URGENT";
+                  onNavigate("staff-queue");
+                }}
+              >
+                Urgent
+              </span>
+              <span
+                style={{ color: "#D97706", cursor: "pointer" }}
+                onClick={() => {
+                  window.location.hash = "#/staff-queue?priority=HIGH";
+                  onNavigate("staff-queue");
+                }}
+              >
+                High
+              </span>
+              <span
+                style={{ color: "#059669", cursor: "pointer" }}
+                onClick={() => {
+                  window.location.hash = "#/staff-queue?priority=MEDIUM";
+                  onNavigate("staff-queue");
+                }}
+              >
+                Medium
+              </span>
+              <span
+                style={{ color: "#006B3C", cursor: "pointer" }}
+                onClick={() => {
+                  window.location.hash = "#/staff-queue?priority=LOW";
+                  onNavigate("staff-queue");
+                }}
+              >
+                Low
+              </span>
             </div>
           </div>
         </div>

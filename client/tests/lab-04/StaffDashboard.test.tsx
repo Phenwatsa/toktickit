@@ -197,7 +197,7 @@ describe("StaffDashboard Component (UI-06, UI-07b)", () => {
       expect(mockNavigate).toHaveBeenCalledWith("staff-queue");
     });
 
-    it("renders 4-level priority breakdown badges", async () => {
+    it("renders 4-level priority breakdown badges and drills down to queue with priority filter", async () => {
       vi.mocked(api.fetchStaffDashboard).mockResolvedValue(mockStaffData);
 
       render(<StaffDashboard onNavigate={mockNavigate} />);
@@ -210,6 +210,20 @@ describe("StaffDashboard Component (UI-06, UI-07b)", () => {
       expect(screen.getByTestId("priority-badge-high")).toHaveTextContent("High: 4");
       expect(screen.getByTestId("priority-badge-medium")).toHaveTextContent("Medium: 5");
       expect(screen.getByTestId("priority-badge-low")).toHaveTextContent("Low: 2");
+
+      // Drill-down for all 4 priorities
+      fireEvent.click(screen.getByTestId("priority-badge-urgent"));
+      expect(window.location.hash).toBe("#/staff-queue?priority=URGENT");
+      expect(mockNavigate).toHaveBeenCalledWith("staff-queue");
+
+      fireEvent.click(screen.getByTestId("priority-badge-high"));
+      expect(window.location.hash).toBe("#/staff-queue?priority=HIGH");
+
+      fireEvent.click(screen.getByTestId("priority-badge-medium"));
+      expect(window.location.hash).toBe("#/staff-queue?priority=MEDIUM");
+
+      fireEvent.click(screen.getByTestId("priority-badge-low"));
+      expect(window.location.hash).toBe("#/staff-queue?priority=LOW");
     });
 
     it("renders recent queue tickets table and navigates to ticket detail on row click", async () => {

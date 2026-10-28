@@ -395,11 +395,11 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
                 </span>
               </div>
               <span className="zen-badge zen-badge-resolved" style={{ fontSize: "0.74rem", padding: "0.22rem 0.6rem" }}>
-                Operational Health: Normal
+                Service Desk: Active
               </span>
             </div>
 
-            {/* Micro stats strip */}
+            {/* Micro stats strip derived from authoritative API metrics */}
             <div className="d-flex align-items-center gap-3 py-2 mb-2 border-bottom" style={{ borderColor: "#F1F5F9", fontSize: "0.82rem" }}>
               <div>
                 <span className="text-muted">Total Requests: </span>
@@ -407,15 +407,15 @@ export function RequesterDashboard({ onNavigate }: RequesterDashboardProps) {
               </div>
               <div style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
               <div>
-                <span className="text-muted">Resolution Rate: </span>
+                <span className="text-muted">Resolved & Closed: </span>
                 <strong style={{ color: "var(--zg-primary)" }}>
-                  {totalTickets > 0 ? Math.round(((resolvedTickets + closedTickets) / totalTickets) * 100) : 100}%
+                  {resolvedTickets + closedTickets}
                 </strong>
               </div>
               <div style={{ width: 1, height: 14, backgroundColor: "#E2E8F0" }} />
               <div>
-                <span className="text-muted">Avg Response: </span>
-                <strong className="text-dark">&lt; 2 Hours</strong>
+                <span className="text-muted">Active Requests: </span>
+                <strong className="text-dark">{openTickets + inProgressTickets + waitingForRequesterTickets}</strong>
               </div>
             </div>
           </div>

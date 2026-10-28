@@ -19,7 +19,7 @@ import "./styles/zen-green.css";
 
 function MainApp() {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<AppView>("my-tickets");
+  const [currentView, setCurrentView] = useState<AppView>("dashboard");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [isForbidden, setIsForbidden] = useState<boolean>(false);
 
@@ -28,17 +28,13 @@ function MainApp() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // Role-based route guard helpers
-  const getDefaultViewForRole = useCallback((role?: Role): AppView => {
-    if (role === "IT_STAFF") return "staff-queue";
-    if (role === "ADMINISTRATOR") return "admin-users";
-    return "my-tickets";
+  // Role-based route guard helpers (Lab 4: Default landing view is role-appropriate Dashboard)
+  const getDefaultViewForRole = useCallback((_role?: Role): AppView => {
+    return "dashboard";
   }, []);
 
-  const getDefaultHashForRole = useCallback((role?: Role): string => {
-    if (role === "IT_STAFF") return "#/staff-queue";
-    if (role === "ADMINISTRATOR") return "#/admin-users";
-    return "#/my-tickets";
+  const getDefaultHashForRole = useCallback((_role?: Role): string => {
+    return "#/dashboard";
   }, []);
 
   const isViewPermittedForRole = useCallback((view: AppView, role?: Role): boolean => {
@@ -73,7 +69,7 @@ function MainApp() {
       const defaultHash = getDefaultHashForRole(user.role);
       const defaultView = getDefaultViewForRole(user.role);
       const hash = window.location.hash || "";
-      if (hash === "#/login" || hash === "" || !isViewPermittedForRole(currentView, user.role)) {
+      if (hash === "#/login" || hash === "" || hash === "#" || hash === "#/" || !isViewPermittedForRole(currentView, user.role)) {
         setCurrentView(defaultView);
         window.history.replaceState(null, "", defaultHash);
       }
@@ -83,7 +79,7 @@ function MainApp() {
   // Hash-based Browser Back/Forward Navigation Handler with Route Guards
   const syncViewFromHash = useCallback(() => {
     const hash = window.location.hash || "";
-    let requestedView: AppView = getDefaultViewForRole(user?.role);
+    let requestedView: AppView = "dashboard";
     let ticketId: number | null = null;
     let forbidden = false;
 
@@ -136,10 +132,10 @@ function MainApp() {
       } else {
         forbidden = true;
       }
-    } else if (hash === "") {
-      requestedView = getDefaultViewForRole(user?.role);
+    } else if (hash === "" || hash === "#" || hash === "#/") {
+      requestedView = "dashboard";
     } else {
-      requestedView = getDefaultViewForRole(user?.role);
+      requestedView = "dashboard";
     }
 
     if (forbidden) {
@@ -152,7 +148,7 @@ function MainApp() {
       setSelectedTicketId(ticketId);
     }
     setCurrentView(requestedView);
-  }, [user?.role, getDefaultViewForRole]);
+  }, [user?.role]);
 
   useEffect(() => {
     syncViewFromHash();
