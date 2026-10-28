@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { render } from "@testing-library/react";
 // @ts-ignore
 import fs from "fs";
@@ -10,6 +10,18 @@ describe("DesignSystemTokens (UI-STYLE-01, AC-17)", () => {
   // @ts-ignore
   const cssPath = path.resolve(__dirname, "../../src/styles/zen-green.css");
   const cssContent = fs.readFileSync(cssPath, "utf-8");
+
+  beforeAll(() => {
+    const styleEl = document.createElement("style");
+    styleEl.setAttribute("data-testid", "zen-green-style");
+    styleEl.innerHTML = cssContent;
+    document.head.appendChild(styleEl);
+  });
+
+  afterAll(() => {
+    const styleEl = document.querySelector('[data-testid="zen-green-style"]');
+    if (styleEl) styleEl.remove();
+  });
 
   describe("Zen Green CSS Variables in :root", () => {
     it("defines --zg-primary as #006B3C", () => {
@@ -99,6 +111,81 @@ describe("DesignSystemTokens (UI-STYLE-01, AC-17)", () => {
 
     it("defines .zg-forbidden-container for accessible 403 route protection", () => {
       expect(cssContent).toContain(".zg-forbidden-container");
+    });
+  });
+
+  describe("Computed Styles & Rendered Component Styling (UI-STYLE-01, AC-17)", () => {
+    it("verifies computed CSS variables on document root", () => {
+      const rootStyle = window.getComputedStyle(document.documentElement);
+      expect(rootStyle.getPropertyValue("--zg-primary").trim().toUpperCase()).toBe("#006B3C");
+      expect(rootStyle.getPropertyValue("--zg-bg-page").trim().toUpperCase()).toBe("#F5F7F6");
+      expect(rootStyle.getPropertyValue("--zg-surface").trim().toUpperCase()).toBe("#FFFFFF");
+      expect(rootStyle.getPropertyValue("--zg-border").trim().toUpperCase()).toBe("#E2E8F0");
+      expect(rootStyle.getPropertyValue("--zg-warning").trim().toUpperCase()).toBe("#D97706");
+      expect(rootStyle.getPropertyValue("--zg-danger").trim().toUpperCase()).toBe("#DC2626");
+    });
+
+    it("verifies computed styles on rendered metric card element (.zg-metric-card)", () => {
+      const { container } = render(
+        <div className="zg-metric-card active-accent">
+          <span className="zg-metric-card-title">Open Tickets</span>
+          <span className="zg-metric-card-value">12</span>
+        </div>
+      );
+
+      const card = container.querySelector(".zg-metric-card") as HTMLElement;
+      expect(card).not.toBeNull();
+      const style = window.getComputedStyle(card);
+      expect(style.cursor).toBe("pointer");
+      expect(style.minHeight).toBe("120px");
+    });
+
+    it("verifies computed styles on rendered quick action button (.zg-quick-action-btn)", () => {
+      const { container } = render(
+        <button type="button" className="zg-quick-action-btn">
+          Create Ticket
+        </button>
+      );
+
+      const btn = container.querySelector(".zg-quick-action-btn") as HTMLElement;
+      expect(btn).not.toBeNull();
+      const style = window.getComputedStyle(btn);
+      expect(style.minHeight).toBe("44px");
+    });
+
+    it("verifies computed styles on rendered status badge elements across lifecycle", () => {
+      const { container } = render(
+        <div>
+          <span className="zen-badge zen-badge-new">New</span>
+          <span className="zen-badge zen-badge-open">Open</span>
+          <span className="zen-badge zen-badge-in-progress">In Progress</span>
+          <span className="zen-badge zen-badge-waiting">Waiting</span>
+          <span className="zen-badge zen-badge-resolved">Resolved</span>
+          <span className="zen-badge zen-badge-closed">Closed</span>
+          <span className="zen-badge zen-badge-cancelled">Cancelled</span>
+        </div>
+      );
+
+      const badges = container.querySelectorAll(".zen-badge");
+      expect(badges.length).toBe(7);
+
+      badges.forEach((badge) => {
+        const style = window.getComputedStyle(badge);
+        expect(style.display).toMatch(/inline-flex|inline-block|flex/);
+      });
+    });
+
+    it("verifies computed styles on rendered dashboard container (.dashboard-container)", () => {
+      const { container } = render(
+        <div className="dashboard-container">
+          <p>Dashboard Content</p>
+        </div>
+      );
+
+      const el = container.querySelector(".dashboard-container") as HTMLElement;
+      expect(el).not.toBeNull();
+      const style = window.getComputedStyle(el);
+      expect(style.maxWidth).toBe("1560px");
     });
   });
 
