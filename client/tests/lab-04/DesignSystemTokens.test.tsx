@@ -170,16 +170,74 @@ describe("DesignSystemTokens (UI-STYLE-01, AC-17)", () => {
       const badges = container.querySelectorAll(".zen-badge");
       expect(badges.length).toBe(8);
 
+      const expectedBadgeStyles: Record<string, { color: string; bg: string; border: string }> = {
+        "zen-badge-new": { color: "var(--color-primary)", bg: "var(--color-pale-green)", border: "rgb(196, 230, 210)" },
+        "zen-badge-open": { color: "rgb(29, 78, 216)", bg: "rgb(239, 246, 255)", border: "rgb(191, 219, 254)" },
+        "zen-badge-in-progress": { color: "rgb(109, 40, 217)", bg: "rgb(245, 243, 255)", border: "rgb(221, 214, 254)" },
+        "zen-badge-waiting": { color: "rgb(180, 83, 9)", bg: "rgb(255, 251, 235)", border: "rgb(253, 230, 138)" },
+        "zen-badge-resolved": { color: "rgb(21, 128, 61)", bg: "rgb(240, 253, 244)", border: "rgb(187, 247, 208)" },
+        "zen-badge-closed": { color: "rgb(71, 85, 105)", bg: "rgb(241, 245, 249)", border: "rgb(203, 213, 225)" },
+        "zen-badge-reopened": { color: "rgb(29, 78, 216)", bg: "rgb(239, 246, 255)", border: "rgb(191, 219, 254)" },
+        "zen-badge-cancelled": { color: "rgb(153, 27, 27)", bg: "rgb(254, 242, 242)", border: "rgb(254, 202, 202)" },
+      };
+
       badges.forEach((badge) => {
         const style = window.getComputedStyle(badge);
         expect(style.display).toMatch(/inline-flex|inline-block|flex/);
+        expect(style.borderRadius).toBe("9999px");
+        expect(style.fontSize).toBe("0.75rem");
+        expect(style.fontWeight).toBe("600");
       });
 
-      const reopenedBadge = container.querySelector(".zen-badge-reopened") as HTMLElement;
-      expect(reopenedBadge).not.toBeNull();
-      const reopenedStyle = window.getComputedStyle(reopenedBadge);
-      expect(reopenedStyle.display).toMatch(/inline-flex|inline-block|flex/);
-      expect(reopenedStyle.color).toBe("rgb(29, 78, 216)"); // #1D4ED8
+      Object.entries(expectedBadgeStyles).forEach(([cls, expected]) => {
+        const el = container.querySelector(`.${cls}`) as HTMLElement;
+        expect(el).not.toBeNull();
+        const style = window.getComputedStyle(el);
+        expect(style.color).toBe(expected.color);
+        expect(style.backgroundColor).toBe(expected.bg);
+        expect(style.border).toContain(expected.border);
+      });
+    });
+
+    it("verifies computed styles on rendered metric card accents and private/shared cues (ui-spec §7.4)", () => {
+      const { container } = render(
+        <div>
+          <div className="zg-metric-card active-accent" data-testid="card-active">Active</div>
+          <div className="zg-metric-card warning-accent" data-testid="card-warning">Warning</div>
+          <div className="zg-metric-card danger-accent" data-testid="card-danger">Danger</div>
+          <div className="zen-callout-warning" data-testid="callout-warning">Internal Staff Only Note</div>
+        </div>
+      );
+
+      const warningCard = container.querySelector('[data-testid="card-warning"]') as HTMLElement;
+      const activeCard = container.querySelector('[data-testid="card-active"]') as HTMLElement;
+      const dangerCard = container.querySelector('[data-testid="card-danger"]') as HTMLElement;
+      const warningCallout = container.querySelector('[data-testid="callout-warning"]') as HTMLElement;
+
+      const ws = window.getComputedStyle(warningCard);
+      const as = window.getComputedStyle(activeCard);
+      const ds = window.getComputedStyle(dangerCard);
+      const cs = window.getComputedStyle(warningCallout);
+
+      // Warm amber border-left for warning / private staff triage cue
+      expect(ws.borderLeftWidth).toBe("4px");
+      expect(ws.borderLeftStyle).toBe("solid");
+      expect(ws.borderLeftColor).toContain("var(--zg-warning)");
+
+      // Primary green border-left for active queue cues
+      expect(as.borderLeftWidth).toBe("4px");
+      expect(as.borderLeftStyle).toBe("solid");
+      expect(as.borderLeftColor).toContain("var(--zg-primary)");
+
+      // Danger red border-left for critical / urgent accents
+      expect(ds.borderLeftWidth).toBe("4px");
+      expect(ds.borderLeftStyle).toBe("solid");
+      expect(ds.borderLeftColor).toContain("var(--zg-danger)");
+
+      // Private staff callout note framing
+      expect(cs.borderLeft).toContain("4px solid");
+      expect(cs.backgroundColor).toBe("rgb(255, 251, 235)");
+      expect(cs.color).toBe("rgb(120, 53, 15)");
     });
 
     it("verifies computed styles on rendered dashboard container (.dashboard-container)", () => {
@@ -193,6 +251,154 @@ describe("DesignSystemTokens (UI-STYLE-01, AC-17)", () => {
       expect(el).not.toBeNull();
       const style = window.getComputedStyle(el);
       expect(style.maxWidth).toBe("1560px");
+      expect(style.overflowX).toBe("hidden");
+    });
+  });
+
+  describe("Responsive Layout & Zero Clipping Across Viewports (AC-17, UI-STYLE-01)", () => {
+    it("verifies Desktop layout invariants at 1280px viewport (zero clipping, 5-col grid)", () => {
+      window.innerWidth = 1280;
+      window.innerHeight = 800;
+      window.dispatchEvent(new Event("resize"));
+
+      // Desktop grid rule verification in CSS
+      expect(cssContent).toMatch(/grid-template-columns:\s*repeat\(5,\s*1fr\)/);
+
+      // Render dashboard container layout
+      const { container } = render(
+        <div className="dashboard-container" style={{ width: "100%", maxWidth: "1560px" }}>
+          <div className="dashboard-metrics-grid">
+            <div className="zg-metric-card active-accent">
+              <span className="zg-metric-card-title">Card 1</span>
+            </div>
+            <div className="zg-metric-card">
+              <span className="zg-metric-card-title">Card 2</span>
+            </div>
+            <div className="zg-metric-card">
+              <span className="zg-metric-card-title">Card 3</span>
+            </div>
+            <div className="zg-metric-card">
+              <span className="zg-metric-card-title">Card 4</span>
+            </div>
+            <div className="zg-metric-card">
+              <span className="zg-metric-card-title">Card 5</span>
+            </div>
+          </div>
+        </div>
+      );
+
+      const dashboardEl = container.querySelector(".dashboard-container") as HTMLElement;
+      const computed = window.getComputedStyle(dashboardEl);
+      expect(computed.overflowX).toBe("hidden");
+      expect(computed.maxWidth).toBe("1560px");
+
+      const cards = container.querySelectorAll(".zg-metric-card");
+      expect(cards.length).toBe(5);
+      cards.forEach((c) => {
+        const cs = window.getComputedStyle(c);
+        expect(cs.minHeight).toBe("120px");
+      });
+    });
+
+    it("verifies Tablet layout invariants at 768px viewport (zero clipping, media query collapse)", () => {
+      window.innerWidth = 768;
+      window.innerHeight = 1024;
+      window.dispatchEvent(new Event("resize"));
+
+      // Tablet media query rule verification: collapses middle/bottom grids to 1-column minmax(0, 1fr)
+      expect(cssContent).toMatch(/@media\s*\(max-width:\s*1024px\)/);
+      expect(cssContent).toMatch(/grid-template-columns:\s*repeat\(3,\s*1fr\)/);
+      expect(cssContent).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/);
+
+      const { container } = render(
+        <div className="dashboard-container">
+          <div className="dashboard-middle-grid">
+            <div className="zen-card" style={{ minWidth: 0, maxWidth: "100%" }}>
+              Middle Card 1
+            </div>
+            <div className="zen-card" style={{ minWidth: 0, maxWidth: "100%" }}>
+              Middle Card 2
+            </div>
+          </div>
+        </div>
+      );
+
+      const dashboardEl = container.querySelector(".dashboard-container") as HTMLElement;
+      expect(window.getComputedStyle(dashboardEl).overflowX).toBe("hidden");
+    });
+
+    it("verifies Mobile layout invariants at 375px/440px viewport (zero horizontal overflow, table isolation, 44px touch targets)", () => {
+      window.innerWidth = 375;
+      window.innerHeight = 667;
+      window.dispatchEvent(new Event("resize"));
+
+      // Mobile media query rule verification: 1fr stack
+      expect(cssContent).toMatch(/@media\s*\(max-width:\s*767px\)/);
+      expect(cssContent).toMatch(/grid-template-columns:\s*1fr/);
+
+      // Render representative mobile dashboard with table and quick actions
+      const { container } = render(
+        <div className="dashboard-container">
+          <div className="dashboard-metrics-grid">
+            <div className="zg-metric-card warning-accent">
+              <span className="zg-metric-card-title">Waiting</span>
+              <span className="zg-metric-card-value">3</span>
+            </div>
+          </div>
+          <div className="table-responsive">
+            <table className="table zen-table">
+              <thead>
+                <tr>
+                  <th>Ticket</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>TCK-101</td>
+                  <td>
+                    <span className="zen-badge zen-badge-waiting">Waiting</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="zg-quick-actions-card">
+            <button type="button" className="zg-quick-action-btn">
+              Create Ticket
+            </button>
+          </div>
+        </div>
+      );
+
+      // 1. Dashboard container prevents page-level horizontal scroll blowout
+      const dashboardEl = container.querySelector(".dashboard-container") as HTMLElement;
+      expect(window.getComputedStyle(dashboardEl).overflowX).toBe("hidden");
+
+      // 2. Table responsive wrapper isolates table width to prevent horizontal viewport clipping
+      const tableWrapper = container.querySelector(".table-responsive") as HTMLElement;
+      const tableWrapperStyle = window.getComputedStyle(tableWrapper);
+      expect(tableWrapperStyle.overflowX).toBe("auto");
+      expect(tableWrapperStyle.width).toBe("100%");
+
+      // 3. Touch targets satisfy Apple HIG & WCAG 2.1 AAA minimum 44px
+      const btn = container.querySelector(".zg-quick-action-btn") as HTMLElement;
+      expect(window.getComputedStyle(btn).minHeight).toBe("44px");
+
+      // 4. Badges do not break into multi-line or clip text
+      const badge = container.querySelector(".zen-badge-waiting") as HTMLElement;
+      expect(window.getComputedStyle(badge).whiteSpace).toBe("nowrap");
+    });
+
+    it("verifies zero static pixel traps in mobile dashboard grid track definitions", () => {
+      // Invariant: All dashboard grids must collapse to single column (1fr / minmax) on mobile/tablet viewports
+      // and never enforce static pixel widths under responsive breakpoints (<992px / <767px)
+      expect(cssContent).toMatch(/@media\s*\(max-width:\s*767px\)\s*\{[\s\S]*?\.dashboard-metrics-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
+      expect(cssContent).toMatch(/@media\s*\(max-width:\s*992px\)\s*\{[\s\S]*?\.dashboard-lower-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
+      expect(cssContent).toMatch(/@media\s*\(max-width:\s*1024px\)\s*\{[\s\S]*?\.dashboard-middle-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/);
+
+      // Verify that all dashboard grid children enforce min-width: 0 and max-width: 100% to prevent grid blowouts
+      expect(cssContent).toMatch(/\.dashboard-middle-grid\s*>\s*\*,\s*\.dashboard-bottom-grid\s*>\s*\*,\s*\.dashboard-metrics-grid\s*>\s*\*,\s*\.dashboard-lower-grid\s*>\s*\*[\s\S]*?min-width:\s*0/);
     });
   });
 

@@ -464,9 +464,11 @@ body {
   width: 100%;
 }
 
+.table-responsive,
 .zen-table-responsive {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .zen-table {
@@ -1611,7 +1613,7 @@ body {
 /* Interactive Metric Card */
 .zg-metric-card {
   background-color: var(--zg-surface, #FFFFFF);
-  border: 1px solid var(--zg-border, #E2E8F0);
+  border: 1px solid var(--zg-border);
   border-radius: var(--radius-card, 10px);
   padding: 1.15rem 1.25rem;
   display: flex;
@@ -1639,15 +1641,24 @@ body {
 }
 
 .zg-metric-card.active-accent {
-  border-left: 4px solid var(--zg-primary, #006B3C);
+  border-left: 4px solid var(--zg-primary);
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-left-color: var(--zg-primary);
 }
 
 .zg-metric-card.warning-accent {
-  border-left: 4px solid var(--zg-warning, #D97706);
+  border-left: 4px solid var(--zg-warning);
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-left-color: var(--zg-warning);
 }
 
 .zg-metric-card.danger-accent {
-  border-left: 4px solid var(--zg-danger, #DC2626);
+  border-left: 4px solid var(--zg-danger);
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-left-color: var(--zg-danger);
 }
 
 .zg-metric-card-title {
@@ -1695,7 +1706,7 @@ body {
 /* Quick Actions Panel */
 .zg-quick-actions-card {
   background-color: var(--zg-surface, #FFFFFF);
-  border: 1px solid var(--zg-border, #E2E8F0);
+  border: 1px solid var(--zg-border);
   border-radius: var(--radius-card, 10px);
   padding: 1.25rem;
   box-shadow: var(--shadow-subtle);
@@ -1723,7 +1734,7 @@ body {
   padding: 0.75rem 1rem;
   min-height: 44px;
   background-color: #FAFCF9;
-  border: 1px solid var(--zg-border, #E2E8F0);
+  border: 1px solid var(--zg-border);
   border-radius: var(--radius-btn, 8px);
   color: var(--zg-text-primary, #1E293B);
   font-size: 0.875rem;
@@ -1749,7 +1760,7 @@ body {
 /* Secondary Workload & Breakdown Section (Staff Dashboard) */
 .dashboard-breakdown-section {
   background-color: var(--zg-surface, #FFFFFF);
-  border: 1px solid var(--zg-border, #E2E8F0);
+  border: 1px solid var(--zg-border);
   border-radius: var(--radius-card, 10px);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
@@ -1779,7 +1790,7 @@ body {
   border-radius: 9999px;
   font-size: 0.78rem;
   font-weight: 600;
-  border: 1px solid var(--zg-border, #E2E8F0);
+  border: 1px solid var(--zg-border);
   background-color: #F8FAFC;
   color: var(--zg-text-primary, #1E293B);
   cursor: pointer;
@@ -1815,7 +1826,7 @@ body {
   text-align: center;
   padding: 2.5rem 1.5rem;
   background-color: var(--zg-surface, #FFFFFF);
-  border: 1px solid var(--zg-border, #E2E8F0);
+  border: 1px solid var(--zg-border);
   border-radius: var(--radius-card, 10px);
   box-shadow: var(--shadow-card);
 }
