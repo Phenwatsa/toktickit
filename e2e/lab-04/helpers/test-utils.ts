@@ -225,25 +225,27 @@ export async function assertGridColumnCount(
   expectedCols: number | number[]
 ): Promise<void> {
   const grid = page.locator(".dashboard-metrics-grid").first();
-  if (await grid.isVisible()) {
-    const colCount = await grid.evaluate((el) => {
-      const computed = window.getComputedStyle(el);
-      const cols = computed.gridTemplateColumns;
-      if (!cols || cols === "none") return 1;
-      return cols.split(/\s+/).filter(Boolean).length;
-    });
+  await expect(grid, "Expected .dashboard-metrics-grid to be present and visible").toBeVisible({
+    timeout: 10000,
+  });
 
-    if (Array.isArray(expectedCols)) {
-      expect(
-        expectedCols.includes(colCount),
-        `Expected grid columns to be one of [${expectedCols.join(", ")}], but got ${colCount}`
-      ).toBe(true);
-    } else {
-      expect(
-        colCount,
-        `Expected grid columns to be ${expectedCols}, but got ${colCount}`
-      ).toBe(expectedCols);
-    }
+  const colCount = await grid.evaluate((el) => {
+    const computed = window.getComputedStyle(el);
+    const cols = computed.gridTemplateColumns;
+    if (!cols || cols === "none") return 1;
+    return cols.split(/\s+/).filter(Boolean).length;
+  });
+
+  if (Array.isArray(expectedCols)) {
+    expect(
+      expectedCols.includes(colCount),
+      `Expected grid columns to be one of [${expectedCols.join(", ")}], but got ${colCount}`
+    ).toBe(true);
+  } else {
+    expect(
+      colCount,
+      `Expected grid columns to be ${expectedCols}, but got ${colCount}`
+    ).toBe(expectedCols);
   }
 }
 

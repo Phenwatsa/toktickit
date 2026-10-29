@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
+    "test:e2e:regression": "TEST_DIR=./e2e/lab-03 LAB3_TEST_MODE=true playwright test",
     "test:server": "npm --prefix server test",
     "test:client": "npm --prefix client test",
     "test": "npm run test:server && npm run test:client && npm run test:e2e"

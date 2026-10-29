@@ -140,13 +140,27 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E Tests (Playwright)
+      - name: Run Lab 4 E2E Tests (Playwright)
         env:
           CI: true
           DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public
           JWT_SECRET: your-jwt-secret-key-change-in-production
           PORT: 3000
         run: npm run test:e2e
+
+      - name: Re-seed Database for Regression E2E
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public
+        run: npm run prisma:seed
+
+      - name: Run Regression E2E Tests (Playwright Lab 3 - REG-03)
+        env:
+          CI: true
+          DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public
+          JWT_SECRET: your-jwt-secret-key-change-in-production
+          PORT: 3000
+        run: npm run test:e2e:regression
 
       - name: Upload Playwright Test Results
         if: failure()
