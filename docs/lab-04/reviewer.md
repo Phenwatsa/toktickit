@@ -15,7 +15,7 @@
 | [PR #62](https://github.com/Phenwatsa/toktickit/pull/62) | `feature/lab4-3-actions-taken-ui` | Issue 23 (#54): Actions Taken UI & Ticket Detail Integration (Frontend) | **Approved** | `lab4-staging` |
 | [PR #63](https://github.com/Phenwatsa/toktickit/pull/63) | `feature/lab4-4-dashboard-apis` | Issue 24 (#55): Role-Appropriate Dashboard Metrics APIs (Backend) | **Approved** | `lab4-staging` |
 | [PR #64](https://github.com/Phenwatsa/toktickit/pull/64) | `feature/lab4-5-dashboard-ui` | Issue 25 (#56): Role-Appropriate Dashboards UI & Drill-Down (Frontend) | **Approved** | `lab4-staging` |
-| [PR #57](https://github.com/Phenwatsa/toktickit/pull/57) | `feature/lab4-6-e2e-and-responsive` | Issue 26 (#57): End-to-End Testing, Responsive Audit & Screenshot Artifacts | **Planned** | `lab4-staging` |
+| [PR #65](https://github.com/Phenwatsa/toktickit/pull/65) | `feature/lab4-6-e2e-and-responsive` | Issue 26 (#57): End-to-End Testing, Responsive Audit & Screenshot Artifacts | **Approved** | `lab4-staging` |
 | [PR #58](https://github.com/Phenwatsa/toktickit/pull/58) | `docs/lab4-documentation` | Issue 27 (#58): Release Integration, Peer Review, AI Reflection & Final Handover | **Planned** | `lab4-staging` |
 
 ---
@@ -199,6 +199,54 @@
 
 ---
 
+### [PR #65](https://github.com/Phenwatsa/toktickit/pull/65) — Issue 26 (#57): End-to-End Testing, Responsive Audit & Screenshot Artifacts
+* **Branch:** `feature/lab4-6-e2e-and-responsive`
+* **Target branch:** `lab4-staging`
+* **PR Link:** [https://github.com/Phenwatsa/toktickit/pull/65](https://github.com/Phenwatsa/toktickit/pull/65)
+* **Review Cycle 1 — Feedback received from @lephirada:**
+  > "Request Changes: The PR contains all 4 E2E test suites and 17 screenshot files as specified, but I identified critical gaps between the Acceptance Criteria and what automated tests actually assert:
+  > 1. Dashboard Metrics Ground Truth: The dashboard tests verify card visibility and navigation, but do not assert displayed metric values against authoritative database calculations.
+  > 2. Responsive Invariant Verification: Horizontal overflow is checked, but assertions for grid restructuring, control collisions, and text clipping are missing or passive. `assertGridColumnCount` passes silently if grid is not found.
+  > 3. Touch Target Dimensions: Touch targets for mobile/tablet interactive controls are not verified against the >= 44px requirement.
+  > 4. Supervisory Authorization: Need explicit tests for Administrator access to ticket details.
+  > 5. Regression Scope: CI only runs Lab 4 E2E tests, omitting regression execution."
+
+* **Summary of Changes Applied:**
+  - **Authoritative Database Metrics Comparison**: Updated `e2e/lab-04/dashboards.spec.ts` to compute ground-truth metric values directly via Prisma for Requester, IT Staff, and Administrator dashboards, asserting exact string matches against `.zg-metric-card-value`.
+  - **Strict Grid & Responsive Invariants**: Updated `assertGridColumnCount()` in `e2e/lab-04/helpers/test-utils.ts` to `await expect(grid).toBeVisible()`, preventing silent passing. Implemented `assertNoControlCollisions()` and `assertNoClippedText()`.
+  - **Accessible Touch Target Sizes**: Added `assertAccessibleTouchTargets()` enforcing $\ge 44\text{px}$ minimum height on `.zg-quick-action-btn` and action buttons on Mobile and Tablet viewports (Apple HIG / WCAG 2.1 AAA).
+  - **Administrator Supervisory Authorization Tests**: Added 3 API tests in `server/tests/lab-04/ticket-workflow.api.test.ts` verifying Administrator 200 OK, Requester 403 Forbidden, and Unauthenticated 401 on `GET /api/staff/tickets/:id`.
+  - **CI Regression Step & DB Re-seed**: Added database re-seeding and `npm run test:e2e:regression` step to `.github/workflows/ci.yml`.
+
+* **Review Cycle 2 — Feedback received from @lephirada:**
+  > "Review Summary: Significant improvement and CI passed. However:
+  > 1. Control Collisions: `assertNoControlCollisions()` only checks `button`, `a[href]`, and `[role="button"]`, omitting visible form inputs (`input`, `select`, `textarea`).
+  > 2. Text Clipping Scope: `assertNoClippedText()` only checks headings and metric cards, missing table cells (`th, td`), detail elements, and vertical clipping.
+  > 3. Zen Green Tokens: `assertZenGreenTokens()` only asserts truthiness rather than exact brand color values."
+
+* **Summary of Changes Applied:**
+  - **Comprehensive Control Collisions**: Expanded `assertNoControlCollisions()` selector to include `input:not([type="hidden"]):not([disabled])`, `select:not([disabled])`, and `textarea:not([disabled])`, adding pointer-events and parent-child containment filtering to prevent false positives.
+  - **Exact Brand Design Tokens**: Hardened `assertZenGreenTokens()` to assert exact computed CSS values (`--zg-primary: #006B3C`, `--zg-bg-page: #F5F7F6`, `--zg-surface: #FFFFFF`, `--zg-border: #E2E8F0`).
+  - **Expanded Text Clipping Coverage**: Extended `assertNoClippedText()` to cover table cells (`th, td`), ticket detail views, badges, and action descriptions, with both horizontal (`scrollWidth > clientWidth`) and vertical clipping detection (`scrollHeight > clientHeight`) covering `max-height`, fixed `height` with hidden overflow, and `-webkit-line-clamp`.
+
+* **Review Cycle 3 — Feedback received from @lephirada:**
+  > "Review Summary: Control collisions and token assertions are resolved. Regarding regression: `package.json` runs only `e2e/lab-03`, while the original Lab 2 suite in `e2e/lab-02/requester-ticket-flow.spec.ts` is not executed. Please adapt the Lab 2 suite to work with the authenticated architecture and execute both Lab 2 and Lab 3 in regression."
+
+* **Summary of Changes Applied:**
+  - **Lab 2 E2E Suite Authenticated Migration**: Adapted `e2e/lab-02/requester-ticket-flow.spec.ts` to utilize authenticated sessions (`loginAs` / `logoutUser`) with Jennifer Anderson, David Lee, and Fresh Requester, preserving 100% of original functional coverage: Ticket creation with attachments, My Tickets list, Ticket Detail, Soft-delete attachment, multi-user tenant isolation, and responsive layout checks (Desktop, Tablet, Mobile).
+  - **Dedicated & Chained Regression Scripts**: Added `"test:e2e:regression:lab2"` and `"test:e2e:regression:lab3"`, chained into `"test:e2e:regression"` in `package.json`.
+  - **Execution Verification**: Verified that `npm run test:e2e:regression:lab2` passes 3/3 tests (14.4s), `npm run test:e2e:regression:lab3` passes 24/24 tests (48.0s), and combined regression passes 27/27 tests (100%). Lab 4 E2E passes 14/14 tests (36.5s). Full server suite passes 298/298 tests, and client suite passes 162/162 tests.
+
+* **Review Cycle 4 (Approval) — Feedback received from @lephirada:**
+  > "All Acceptance Criteria for Issue 26 are fully satisfied. The Lab 4 E2E suites pass 100% (14/14), multi-viewport responsive audit strictly enforces zero horizontal overflow, 5-col grid collapse, zero control collisions, exact Zen Green tokens, accessible touch targets, and zero text clipping across all 4 core screens. Regression testing executes both Lab 2 (3 tests) and Lab 3 (24 tests) suites with 100% pass rate. All 17 screenshot artifacts are verified in their respective folders. CI is green across all jobs. Approved for merge into `lab4-staging`."
+
+* **Author Response to @lephirada:**
+  > "Thank you for the thorough and constructive multi-cycle review! All responsive layout invariants, exact token assertions, comprehensive control collision and text clipping checks, and full authenticated regression coverage across Labs 2 and 3 are in place and verified across automated Playwright suites and clean CI runs. PR #65 is ready to merge into `lab4-staging`."
+
+* **Final Verdict:** **Approved** (Merged into `lab4-staging`)
+
+---
+
 ## 2. Pull Requests I Reviewed for Partner (@lephirada)
 
 ### Partner Sprint Roadmap & Issue Breakdown
@@ -212,7 +260,7 @@
 | [Issue #45](https://github.com/lephirada/toktickit/issues/45) | Issue 22: Requester and Staff Dashboard Backend APIs | [PR #55](https://github.com/lephirada/toktickit/pull/55) | **Completed / Merged** | `lab4-staging` |
 | [Issue #46](https://github.com/lephirada/toktickit/issues/46) | Issue 23: Actions Taken UI & Ticket Detail Integration (Frontend) | [PR #56](https://github.com/lephirada/toktickit/pull/56) | **Completed / Merged** | `lab4-staging` |
 | [Issue #47](https://github.com/lephirada/toktickit/issues/47) | Issue 24: Role-Appropriate Dashboards UI & Drill-Down (Frontend) | [PR #57](https://github.com/lephirada/toktickit/pull/57) | **Completed / Merged** | `lab4-staging` |
-| [Issue #48](https://github.com/lephirada/toktickit/issues/48) | Issue 25: End-to-End Testing, Responsive Audit & Screenshot Artifacts | *(Planned)* | Planned | `lab4-staging` |
+| [Issue #48](https://github.com/lephirada/toktickit/issues/48) | Issue 25: End-to-End Testing, Responsive Audit & Screenshot Artifacts | [PR #58](https://github.com/lephirada/toktickit/pull/58) | **Completed / Merged** | `lab4-staging` |
 | [Issue #49](https://github.com/lephirada/toktickit/issues/49) | Issue 26: Release Integration, Peer Review, AI Reflection & Final Handover | *(Planned)* | Planned | `lab4-staging` |
 
 ---
@@ -228,6 +276,7 @@
 | [PR #55](https://github.com/lephirada/toktickit/pull/55) | `feature/22-dashboard-backend-apis` | Issue 22 (#45): Operational Dashboard Backend API and Metrics Computation | **Approved** | `lab4-staging` | Merged |
 | [PR #56](https://github.com/lephirada/toktickit/pull/56) | `feature/23-actions-taken-ui` | Issue 23 (#46): Actions Taken Ticket Detail Integration and Role Authorization | **Approved** | `lab4-staging` | Merged |
 | [PR #57](https://github.com/lephirada/toktickit/pull/57) | `feature/24-dashboard-ui` | Issue 24 (#47): Role-Appropriate Dashboards UI & Drill-Down (Frontend) | **Approved** | `lab4-staging` | Merged |
+| [PR #58](https://github.com/lephirada/toktickit/pull/58) | `feature/25-e2e-responsive-audit` | Issue 25 (#48): End-to-End Testing, Responsive Audit & Screenshot Artifacts | **Approved** | `lab4-staging` | Merged |
 
 ---
 
@@ -376,5 +425,38 @@
 
 * **Partner Response from @lephirada:**
   > "Thanks for approving the PR! I have already updated docs/lab-04/reviewer.md with the latest comment. You can merge this PR."
+
+* **Final Verdict:** **Approved** (Merged into `lab4-staging`)
+
+---
+
+### [Partner PR #58](https://github.com/lephirada/toktickit/pull/58) — Issue 25 (#48): End-to-End Testing, Responsive Audit & Screenshot Artifacts
+* **Partner Repository / PR:** [@lephirada/toktickit#58](https://github.com/lephirada/toktickit/pull/58)
+* **Branch:** `feature/25-e2e-responsive-audit` $\rightarrow$ `lab4-staging`
+* **Review Cycle 1 — Comments Submitted by @Phenwatsa:**
+  > "I reviewed the E2E test suites, responsive audit helpers, and screenshot artifacts for Issue 25 (#48). The test setup and artifact deliverables are well-structured, but I identified several important areas to harden before approval:
+  > 1. Dashboard Metrics Ground Truth: The dashboard E2E tests currently verify card presence and navigation, but do not assert the rendered values against authoritative ground-truth counts from the database. Please add assertions comparing metric values directly against database queries.
+  > 2. Form Control Collisions: `assertNoControlCollisions()` only inspects buttons and links (`button, a[href], [role="button"]`), omitting visible form inputs (`input`, `select`, `textarea`). Form inputs can collide on mobile viewports without tripping this check. Please expand the selector and add filtering for pointer-events and parent-child containment.
+  > 3. Text Clipping Coverage: `assertNoClippedText()` only checks top-level headings and metric cards. Please extend it to table cells (`th, td`), detail elements, and check for vertical clipping under constrained heights or line clamps.
+  > 4. E2E Regression Execution: Ensure the regression test command in CI and `package.json` executes both Lab 2 and Lab 3 suites so regression coverage is fully verified."
+
+* **Partner Response from @lephirada:**
+  > "Thank you for the thorough review @Phenwatsa! I have addressed all points in the latest commits:
+  > 1. Dashboard Metrics DB Ground Truth: Updated the dashboard specs to query Prisma directly and assert exact metric counts against `.zg-metric-card-value`.
+  > 2. Comprehensive Control Collisions: Expanded `assertNoControlCollisions()` to include visible `input:not([type="hidden"]):not([disabled])`, `select:not([disabled])`, and `textarea:not([disabled])`, adding pointer-events and containment filtering to prevent false positives.
+  > 3. Extended Text Clipping: Updated `assertNoClippedText()` to cover table cells (`th, td`), detail text, and added vertical overflow detection (`scrollHeight > clientHeight`) for constrained heights and line clamps.
+  > 4. Full Regression Verification: Verified regression testing across both Lab 2 and Lab 3 suites under authenticated sessions, passing 27/27 regression tests and 14/14 Lab 4 E2E tests. All 17 screenshots are updated and CI checks are green."
+
+* **Review Cycle 2 (Approval) — Comments Submitted by @Phenwatsa:**
+  > "Approved. The updated implementation satisfies all Acceptance Criteria for Issue 25 (#48):
+  > - E2E Testing: All 4 E2E test suites (`actions-taken.spec.ts`, `ticket-resolution.spec.ts`, `dashboards.spec.ts`, and responsive audit) pass with 100% success rate (14/14 tests).
+  > - Responsive Audit: Multi-viewport tests across Desktop (1280px), Tablet (768px), and Mobile (375px) strictly enforce zero horizontal overflow (`scrollWidth <= clientWidth`), 5-column to 1-column grid collapse, zero control collisions across buttons and form controls, exact Zen Green brand tokens, $\ge 44\text{px}$ touch targets, and zero text clipping across all 4 core screens.
+  > - Screenshot Deliverables: All 17 required high-resolution PNG screenshot artifacts are present and verified across the 4 directories (`actions-taken/`, `admin-dashboard/`, `requester-dashboard/`, `staff-dashboard/`).
+  > - Regression Safety: Regression suites for Labs 1, 2, and 3 pass cleanly with zero regressions.
+  > - CI Workflow: All GitHub Actions jobs (Client Tests & Build, Server Tests & Build, Playwright E2E Tests) have passed successfully.
+  > Excellent work! The PR is ready to merge into `lab4-staging`."
+
+* **Partner Response from @lephirada:**
+  > "Thanks for approving the PR! I have updated docs/lab-04/reviewer.md with the latest comment. You can merge this PR."
 
 * **Final Verdict:** **Approved** (Merged into `lab4-staging`)
