@@ -1,8 +1,12 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
 import {
   ensureScreenshotsDir,
   captureScreenshot,
   assertNoHorizontalOverflow,
+  assertZenGreenTokens,
+  assertGridColumnCount,
+  assertNoControlCollisions,
+  assertNoClippedText,
   loginAs,
   logoutUser,
   getPrismaClient,
@@ -50,18 +54,62 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
   test("E2E-03a & E2E-03b Part 1: Requester Dashboard metrics, drill-downs, and quick actions", async ({
     page,
   }) => {
+    // 1. Query authoritative metrics from database for comparison
+    const prisma = await getPrismaClient();
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { email: "jennifer.a@toktickit.local" },
+    });
+    const reqTickets = await prisma.ticket.findMany({
+      where: { requesterId: user.id },
+    });
+    await prisma.$disconnect();
+
+    const expectedOpen = reqTickets.filter((t) =>
+      ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"].includes(t.currentStatus)
+    ).length;
+    const expectedInProgress = reqTickets.filter((t) => t.currentStatus === "IN_PROGRESS").length;
+    const expectedWaiting = reqTickets.filter(
+      (t) => t.currentStatus === "WAITING_FOR_REQUESTER"
+    ).length;
+    const expectedResolved = reqTickets.filter((t) => t.currentStatus === "RESOLVED").length;
+    const expectedClosed = reqTickets.filter((t) => t.currentStatus === "CLOSED").length;
+
+    // 2. Intercept API response during page load
+    const dashboardRespPromise = page.waitForResponse(
+      (r) => r.url().includes("/api/requester/dashboard") && r.status() === 200
+    );
+
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAs(page, "jennifer.a@toktickit.local", "Password123!");
 
     // Verify Requester Dashboard loads
     await expect(page.locator('[data-testid="requester-dashboard"]')).toBeVisible({ timeout: 15000 });
 
-    // Assert primary metric cards exist
-    await expect(page.locator('[data-testid="metric-card-open"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-in-progress"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-waiting-for-requester"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-resolved"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-closed"]')).toBeVisible();
+    const dashboardResp = await dashboardRespPromise;
+    const apiData = await dashboardResp.json();
+    const metrics = apiData.metrics || apiData;
+    expect(metrics.openTickets).toBe(expectedOpen);
+    expect(metrics.inProgressTickets).toBe(expectedInProgress);
+    expect(metrics.waitingForRequesterTickets).toBe(expectedWaiting);
+    expect(metrics.resolvedTickets).toBe(expectedResolved);
+    expect(metrics.closedTickets).toBe(expectedClosed);
+
+    // 3. Assert primary metric cards display authoritative calculated values
+    await expect(page.locator('[data-testid="metric-card-open"] .zg-metric-card-value')).toHaveText(
+      String(expectedOpen)
+    );
+    await expect(
+      page.locator('[data-testid="metric-card-in-progress"] .zg-metric-card-value')
+    ).toHaveText(String(expectedInProgress));
+    await expect(
+      page.locator('[data-testid="metric-card-waiting-for-requester"] .zg-metric-card-value')
+    ).toHaveText(String(expectedWaiting));
+    await expect(
+      page.locator('[data-testid="metric-card-resolved"] .zg-metric-card-value')
+    ).toHaveText(String(expectedResolved));
+    await expect(page.locator('[data-testid="metric-card-closed"] .zg-metric-card-value')).toHaveText(
+      String(expectedClosed)
+    );
 
     // Capture Requester Desktop Screenshot
     await captureScreenshot(page, "requester-dashboard", "01-requester-dashboard-desktop.png");
@@ -99,19 +147,70 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
   test("E2E-03a & E2E-03b Part 2: IT Staff Dashboard metrics, drill-downs, and quick actions", async ({
     page,
   }) => {
+    // 1. Query authoritative metrics from database
+    const prisma = await getPrismaClient();
+    const staffUser = await prisma.user.findUniqueOrThrow({
+      where: { email: "alice.staff@toktickit.local" },
+    });
+    const allTickets = await prisma.ticket.findMany();
+    await prisma.$disconnect();
+
+    const expectedNew = allTickets.filter((t) => t.currentStatus === "NEW").length;
+    const expectedOpen = allTickets.filter((t) => t.currentStatus === "OPEN").length;
+    const expectedInProgress = allTickets.filter((t) => t.currentStatus === "IN_PROGRESS").length;
+    const expectedWaiting = allTickets.filter(
+      (t) => t.currentStatus === "WAITING_FOR_REQUESTER"
+    ).length;
+    const expectedMyAssigned = allTickets.filter(
+      (t) =>
+        t.ticketOwnerId === staffUser.id &&
+        !["CLOSED", "CANCELLED"].includes(t.currentStatus)
+    ).length;
+    const expectedUnassigned = allTickets.filter(
+      (t) => !t.ticketOwnerId && !["CLOSED", "CANCELLED"].includes(t.currentStatus)
+    ).length;
+
+    // 2. Intercept API response
+    const staffRespPromise = page.waitForResponse(
+      (r) => r.url().includes("/api/staff/dashboard") && r.status() === 200
+    );
+
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAs(page, "alice.staff@toktickit.local", "Password123!");
 
     // Verify IT Staff Dashboard loads
     await expect(page.locator('[data-testid="staff-dashboard"]')).toBeVisible({ timeout: 15000 });
 
-    // Assert 5 primary cards + unassigned indicator
-    await expect(page.locator('[data-testid="metric-card-new"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-open"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-in-progress"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-waiting"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-my-assigned"]')).toBeVisible();
-    await expect(page.locator('[data-testid="metric-card-unassigned"]')).toBeVisible();
+    const staffResp = await staffRespPromise;
+    const staffApi = await staffResp.json();
+    const primary = staffApi.metrics?.primary || staffApi.primary;
+    const unassignedCount = staffApi.metrics?.unassignedTickets ?? staffApi.unassignedTickets;
+    expect(primary?.newTickets).toBe(expectedNew);
+    expect(primary?.openTickets).toBe(expectedOpen);
+    expect(primary?.inProgressTickets).toBe(expectedInProgress);
+    expect(primary?.waitingForRequesterTickets).toBe(expectedWaiting);
+    expect(primary?.myAssignedTickets).toBe(expectedMyAssigned);
+    expect(unassignedCount).toBe(expectedUnassigned);
+
+    // 3. Assert displayed card values match authoritative metrics
+    await expect(page.locator('[data-testid="metric-card-new"] .zg-metric-card-value')).toHaveText(
+      String(expectedNew)
+    );
+    await expect(page.locator('[data-testid="metric-card-open"] .zg-metric-card-value')).toHaveText(
+      String(expectedOpen)
+    );
+    await expect(
+      page.locator('[data-testid="metric-card-in-progress"] .zg-metric-card-value')
+    ).toHaveText(String(expectedInProgress));
+    await expect(
+      page.locator('[data-testid="metric-card-waiting"] .zg-metric-card-value')
+    ).toHaveText(String(expectedWaiting));
+    await expect(
+      page.locator('[data-testid="metric-card-my-assigned"] .zg-metric-card-value')
+    ).toHaveText(String(expectedMyAssigned));
+    await expect(
+      page.locator('[data-testid="metric-card-unassigned"]').locator("div").first()
+    ).toHaveText(String(expectedUnassigned));
 
     // Capture IT Staff Desktop Screenshot
     await captureScreenshot(page, "staff-dashboard", "01-staff-dashboard-desktop.png");
@@ -158,18 +257,57 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
   test("E2E-03a & E2E-03b Part 3: Administrator Dashboard operational & user metrics, drill-downs, and quick actions", async ({
     page,
   }) => {
+    // 1. Query authoritative metrics from database
+    const prisma = await getPrismaClient();
+    const allTickets = await prisma.ticket.findMany();
+    const allUsers = await prisma.user.findMany();
+    await prisma.$disconnect();
+
+    const expectedActiveTickets = allTickets.filter(
+      (t) => !["CLOSED", "CANCELLED"].includes(t.currentStatus)
+    ).length;
+    const expectedUnassigned = allTickets.filter(
+      (t) => !t.ticketOwnerId && !["CLOSED", "CANCELLED"].includes(t.currentStatus)
+    ).length;
+    const expectedTotalUsers = allUsers.length;
+    const expectedActiveUsers = allUsers.filter((u) => u.isActive).length;
+    const expectedInactiveUsers = allUsers.filter((u) => !u.isActive).length;
+
+    // 2. Intercept API response
+    const adminRespPromise = page.waitForResponse(
+      (r) => r.url().includes("/api/admin/dashboard") && r.status() === 200
+    );
+
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAs(page, "admin@toktickit.local", "Password123!");
 
     // Verify Admin Dashboard loads
     await expect(page.locator('[data-testid="admin-dashboard"]')).toBeVisible({ timeout: 15000 });
 
-    // Assert 5 operational and user cards
-    await expect(page.locator('[data-testid="admin-card-active-tickets"]')).toBeVisible();
-    await expect(page.locator('[data-testid="admin-card-unassigned"]')).toBeVisible();
-    await expect(page.locator('[data-testid="admin-card-total-users"]')).toBeVisible();
-    await expect(page.locator('[data-testid="admin-card-active-users"]')).toBeVisible();
-    await expect(page.locator('[data-testid="admin-card-inactive-users"]')).toBeVisible();
+    const adminResp = await adminRespPromise;
+    const adminApi = await adminResp.json();
+    expect(adminApi.operational?.totalActiveTickets).toBe(expectedActiveTickets);
+    expect(adminApi.operational?.unassignedTickets).toBe(expectedUnassigned);
+    expect(adminApi.users?.totalUsers).toBe(expectedTotalUsers);
+    expect(adminApi.users?.activeUsers).toBe(expectedActiveUsers);
+    expect(adminApi.users?.inactiveUsers).toBe(expectedInactiveUsers);
+
+    // 3. Assert 5 operational and user cards display authoritative metric values
+    await expect(
+      page.locator('[data-testid="admin-card-active-tickets"] .zg-metric-card-value')
+    ).toHaveText(String(expectedActiveTickets));
+    await expect(
+      page.locator('[data-testid="admin-card-unassigned"] .zg-metric-card-value')
+    ).toHaveText(String(expectedUnassigned));
+    await expect(
+      page.locator('[data-testid="admin-card-total-users"] .zg-metric-card-value')
+    ).toHaveText(String(expectedTotalUsers));
+    await expect(
+      page.locator('[data-testid="admin-card-active-users"] .zg-metric-card-value')
+    ).toHaveText(String(expectedActiveUsers));
+    await expect(
+      page.locator('[data-testid="admin-card-inactive-users"] .zg-metric-card-value')
+    ).toHaveText(String(expectedInactiveUsers));
 
     // Capture Admin Desktop Screenshot
     await captureScreenshot(page, "admin-dashboard", "01-admin-dashboard-desktop.png");
@@ -219,23 +357,46 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
   test("E2E-04: Multi-viewport audit across Requester, Staff, Admin dashboards and Ticket Detail", async ({
     page,
   }) => {
+    // Helper to run comprehensive responsive audit on a given screen & viewport
+    async function runResponsiveAudit(
+      p: Page,
+      vp: { name: string; width: number; height: number },
+      options?: { isDashboard?: boolean }
+    ) {
+      await p.setViewportSize({ width: vp.width, height: vp.height });
+      await p.waitForTimeout(300);
+
+      // 1. Zero horizontal overflow (scrollWidth === clientWidth and scrollX === 0)
+      await assertNoHorizontalOverflow(p);
+
+      // 2. All 4 Zen Green tokens present and computed
+      await assertZenGreenTokens(p);
+
+      // 3. Grid restructuring (Desktop: 5 cols, Tablet: 2-3 cols, Mobile: 1 col)
+      if (options?.isDashboard) {
+        if (vp.width >= 1200) {
+          await assertGridColumnCount(p, 5);
+        } else if (vp.width >= 768) {
+          await assertGridColumnCount(p, [2, 3]);
+        } else {
+          await assertGridColumnCount(p, 1);
+        }
+      }
+
+      // 4. Zero interactive control collisions
+      await assertNoControlCollisions(p);
+
+      // 5. Zero clipped text
+      await assertNoClippedText(p);
+    }
+
     // 4.1 Requester Dashboard Responsive Audit (Desktop, Tablet, Mobile)
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAs(page, "jennifer.a@toktickit.local", "Password123!");
     await page.waitForSelector('[data-testid="requester-dashboard"]', { timeout: 15000 });
 
     for (const vp of VIEWPORTS) {
-      await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.waitForTimeout(300);
-
-      // Assert zero horizontal overflow
-      await assertNoHorizontalOverflow(page);
-
-      // Verify Zen Green tokens are applied
-      const zgPrimary = await page.evaluate(() => {
-        return getComputedStyle(document.documentElement).getPropertyValue("--zg-primary").trim();
-      });
-      expect(zgPrimary).toBeTruthy();
+      await runResponsiveAudit(page, vp, { isDashboard: true });
 
       // Capture screenshots for tablet and mobile
       if (vp.name === "tablet") {
@@ -252,9 +413,7 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
     await page.waitForSelector('[data-testid="staff-dashboard"]', { timeout: 15000 });
 
     for (const vp of VIEWPORTS) {
-      await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.waitForTimeout(300);
-      await assertNoHorizontalOverflow(page);
+      await runResponsiveAudit(page, vp, { isDashboard: true });
 
       if (vp.name === "tablet") {
         await captureScreenshot(page, "staff-dashboard", "02-staff-dashboard-tablet.png");
@@ -270,9 +429,7 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
     await page.waitForSelector('[data-testid="admin-dashboard"]', { timeout: 15000 });
 
     for (const vp of VIEWPORTS) {
-      await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.waitForTimeout(300);
-      await assertNoHorizontalOverflow(page);
+      await runResponsiveAudit(page, vp, { isDashboard: true });
 
       if (vp.name === "tablet") {
         await captureScreenshot(page, "admin-dashboard", "02-admin-dashboard-tablet.png");
@@ -290,11 +447,9 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
     await page.waitForSelector('[data-testid="actions-taken-section"]', { timeout: 15000 });
 
     for (const vp of VIEWPORTS) {
-      await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.waitForTimeout(300);
-      await assertNoHorizontalOverflow(page);
+      await runResponsiveAudit(page, vp, { isDashboard: false });
 
-      // On mobile viewports, verify that responsive card or table layout does not collide or overflow
+      // On mobile viewports, verify that responsive card or table layout is present
       if (vp.width <= 768) {
         const hasMobileCards = await page.locator(".actions-taken-mobile-cards").isVisible();
         const hasTable = await page.locator(".actions-taken-table-wrap").isVisible();
