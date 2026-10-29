@@ -7,6 +7,7 @@ import {
   assertGridColumnCount,
   assertNoControlCollisions,
   assertNoClippedText,
+  assertAccessibleTouchTargets,
   loginAs,
   logoutUser,
   getPrismaClient,
@@ -388,6 +389,11 @@ test.describe("Lab 4 E2E-03 & E2E-04: Dashboards & Responsive Audit", () => {
 
       // 5. Zero clipped text
       await assertNoClippedText(p);
+
+      // 6. Accessible touch targets (>= 44px min-height per Apple HIG / WCAG 2.1 AAA)
+      if (options?.isDashboard && vp.width <= 768) {
+        await assertAccessibleTouchTargets(p);
+      }
     }
 
     // 4.1 Requester Dashboard Responsive Audit (Desktop, Tablet, Mobile)

@@ -333,3 +333,37 @@ export async function assertNoClippedText(page: Page): Promise<void> {
 
   expect(clipped, clipped ?? undefined).toBeNull();
 }
+
+/**
+ * Assert that interactive buttons and touch controls satisfy the minimum 44px height requirement
+ * (Apple HIG / WCAG 2.1 AAA accessible touch targets)
+ */
+export async function assertAccessibleTouchTargets(page: Page): Promise<void> {
+  const violations = await page.evaluate(() => {
+    const controls = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.zg-quick-action-btn, [data-testid^="quick-action-"], [data-testid^="admin-action-"]'
+      )
+    ).filter((el) => {
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden"
+      );
+    });
+
+    for (const el of controls) {
+      const rect = el.getBoundingClientRect();
+      if (rect.height < 43.5) {
+        const id = el.getAttribute("data-testid") || el.className;
+        return `Control [${id}] touch target height is ${rect.height}px, expected >= 44px`;
+      }
+    }
+    return null;
+  });
+
+  expect(violations, violations ?? undefined).toBeNull();
+}
