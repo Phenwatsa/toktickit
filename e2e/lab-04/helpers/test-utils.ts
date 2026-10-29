@@ -304,14 +304,14 @@ export async function assertNoControlCollisions(page: Page): Promise<void> {
 }
 
 /**
- * Assert that headings, banners, metric cards, ticket detail elements, tables, and controls
- * do not have clipped text (scrollWidth <= clientWidth + 2 for non-scrolling text elements).
+ * Assert that headings, banners, metric cards, ticket detail elements, tables (th, td),
+ * and controls do not have clipped text in horizontal or vertical dimensions (FR-17, AC-17).
  */
 export async function assertNoClippedText(page: Page): Promise<void> {
   const clipped = await page.evaluate(() => {
     const textElements = Array.from(
       document.querySelectorAll<HTMLElement>(
-        "h1, h2, h3, h4, h5, .zg-metric-card-title, .zg-metric-card-value, .dashboard-banner-title, .dashboard-banner-subtitle, [data-testid^='metric-card'], [data-testid^='detail-'], [data-testid^='ticket-'], .zg-action-card, .zen-badge, .badge, .zg-quick-action-btn, [data-testid^='quick-action-']"
+        "h1, h2, h3, h4, h5, th, td, .zg-metric-card-title, .zg-metric-card-value, .dashboard-banner-title, .dashboard-banner-subtitle, [data-testid^='metric-card'], [data-testid^='detail-'], [data-testid^='ticket-'], .zg-action-card, .zen-badge, .badge, .zg-quick-action-btn, [data-testid^='quick-action-'], .actions-taken-description, .actions-taken-table-wrap"
       )
     ).filter((el) => {
       const rect = el.getBoundingClientRect();
@@ -326,11 +326,27 @@ export async function assertNoClippedText(page: Page): Promise<void> {
 
     for (const el of textElements) {
       const style = window.getComputedStyle(el);
+
+      // 1. Horizontal text clipping check (for non-scrolling text elements)
       if (style.overflowX !== "auto" && style.overflowX !== "scroll") {
         if (el.scrollWidth > el.clientWidth + 2) {
           const tag = el.getAttribute("data-testid") || el.className || el.tagName;
           const text = (el.innerText || "").slice(0, 40);
-          return `Clipped text detected in [${tag}] "${text}": scrollWidth (${el.scrollWidth}px) > clientWidth (${el.clientWidth}px)`;
+          return `Horizontal clipped text detected in [${tag}] "${text}": scrollWidth (${el.scrollWidth}px) > clientWidth (${el.clientWidth}px)`;
+        }
+      }
+
+      // 2. Vertical text clipping check (when element has constrained height without auto scroll)
+      if (
+        style.overflowY !== "auto" &&
+        style.overflowY !== "scroll" &&
+        style.maxHeight &&
+        style.maxHeight !== "none"
+      ) {
+        if (el.scrollHeight > el.clientHeight + 2) {
+          const tag = el.getAttribute("data-testid") || el.className || el.tagName;
+          const text = (el.innerText || "").slice(0, 40);
+          return `Vertical clipped text detected in [${tag}] "${text}": scrollHeight (${el.scrollHeight}px) > clientHeight (${el.clientHeight}px)`;
         }
       }
     }
