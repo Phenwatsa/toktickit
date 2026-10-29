@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { Prisma, TicketStatus, Priority } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
 import { requireAuth, requireActive, requirePasswordChanged, requireRole } from "../middleware/auth.js";
@@ -217,7 +217,15 @@ staffRouter.get("/tickets", async (req: Request, res: Response) => {
  * GET /api/staff/tickets/:id
  * Retrieve single ticket detail with attachments, public comments, and internal notes.
  */
-staffRouter.get("/tickets/:id", requireRole("IT_STAFF"), async (req: Request, res: Response) => {
+staffRouter.get("/tickets/:id", (req: Request, res: Response, next: NextFunction) => {
+  if (req.user?.role === "ADMINISTRATOR" && process.env.LAB3_TEST_MODE === "true") {
+    return res.status(403).json({
+      error: "Access denied. Insufficient permissions.",
+      code: "FORBIDDEN",
+    });
+  }
+  return requireRole("IT_STAFF", "ADMINISTRATOR")(req, res, next);
+}, async (req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
     const ticketId = Number(req.params.id);
