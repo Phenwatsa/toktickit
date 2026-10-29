@@ -154,7 +154,7 @@ jobs:
           DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public
         run: npm run prisma:seed
 
-      - name: Run Regression E2E Tests (Playwright Lab 3 - REG-03)
+      - name: Run Regression E2E Tests (Playwright Labs 2 & 3 - REG-03)
         env:
           CI: true
           DATABASE_URL: postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public

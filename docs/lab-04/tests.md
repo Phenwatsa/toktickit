@@ -188,9 +188,16 @@ e2e/lab-04/
     - `dashboards.spec.ts` (`E2E-03a`, `E2E-03b`, `E2E-04`): Metrics loading, interactive drill-downs, Quick Actions, multi-viewport responsive audit (1280px, 768px, 375px) across all 4 core screens with zero overflow.
     - `accessibility.spec.ts` (`A11Y-01`): Modal focus trapping, restoration, keyboard cycling, ARIA live region feedback.
 - **Full Regression Test Execution:**
-  - `REG-01` (Server Regression): `npm run test:server` -> **31 files passed, 295 tests passed**.
-  - `REG-02` (Client Regression): `npm run test:client` -> **20 files passed, 162 tests passed**.
-  - `REG-03` (E2E Regression): `TEST_DIR=./e2e/lab-03 npx playwright test` -> **24 passed**.
+  - `REG-01` (Server Regression): `npm run test:server` -> **31 files passed, 298 tests passed** across Labs 1, 2, 3, and 4 (including categories, authentication, ticket queues, attachments, comments, notes, and user administration).
+  - `REG-02` (Client Regression): `npm run test:client` -> **20 files passed, 162 tests passed** across Labs 1, 2, 3, and 4 (including ticket creation forms, categories, attachments, queues, and user management).
+  - `REG-03` (E2E Regression): `npm run test:e2e:regression` -> **24 passed** across Labs 2 and 3:
+    - `authentication.spec.ts` (6 tests): Auth journeys, login/logout, route protection.
+    - `requester-regression.spec.ts` (`E2E-07`, 1 test): Full Lab 2 Requester lifecycle (Create Ticket -> View in My Tickets -> Detail -> Soft-Remove Attachment) running under authenticated session.
+    - `staff-ticket-flow.spec.ts` (7 tests): Staff queue, ticket owner assignment, comments, internal notes.
+    - `user-administration.spec.ts` (4 tests): Administrative user management and role access.
+    - `requester-resolution.spec.ts` (4 tests): Requester close and feedback flow.
+    - `responsive.spec.ts` (2 tests): Multi-viewport responsive audit on legacy screens.
+  - Overall Regression Script: `npm run test:regression` (executes all 3 regression tiers sequentially).
 - **Screenshot Artifacts (`artifacts/lab-04/screenshots/`):**
   - `actions-taken/`: 5 PNG images
   - `admin-dashboard/`: 4 PNG images

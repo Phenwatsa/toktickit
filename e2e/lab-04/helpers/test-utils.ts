@@ -194,24 +194,25 @@ export async function getPrismaClient() {
 }
 
 /**
- * Assert that all 4 Zen Green design tokens are declared and have valid computed values
+ * Assert that all 4 Zen Green design tokens are declared and match authoritative design tokens
  * (--zg-primary, --zg-bg-page, --zg-surface, --zg-border) per FR-17 and AC-17.
  */
 export async function assertZenGreenTokens(page: Page): Promise<void> {
   const tokens = await page.evaluate(() => {
     const style = window.getComputedStyle(document.documentElement);
     return {
-      primary: style.getPropertyValue("--zg-primary").trim(),
-      bgPage: style.getPropertyValue("--zg-bg-page").trim(),
-      surface: style.getPropertyValue("--zg-surface").trim(),
-      border: style.getPropertyValue("--zg-border").trim(),
+      primary: style.getPropertyValue("--zg-primary").trim().toUpperCase(),
+      bgPage: style.getPropertyValue("--zg-bg-page").trim().toUpperCase(),
+      surface: style.getPropertyValue("--zg-surface").trim().toUpperCase(),
+      border: style.getPropertyValue("--zg-border").trim().toUpperCase(),
     };
   });
 
-  expect(tokens.primary, "Missing or empty --zg-primary token").toBeTruthy();
-  expect(tokens.bgPage, "Missing or empty --zg-bg-page token").toBeTruthy();
-  expect(tokens.surface, "Missing or empty --zg-surface token").toBeTruthy();
-  expect(tokens.border, "Missing or empty --zg-border token").toBeTruthy();
+  // Verify presence and exact authoritative brand values from ui-spec.md & zen-green.css
+  expect(tokens.primary, "--zg-primary should equal #006B3C").toBe("#006B3C");
+  expect(tokens.bgPage, "--zg-bg-page should equal #F5F7F6").toBe("#F5F7F6");
+  expect(tokens.surface, "--zg-surface should equal #FFFFFF").toBe("#FFFFFF");
+  expect(tokens.border, "--zg-border should equal #E2E8F0").toBe("#E2E8F0");
 }
 
 /**
@@ -298,14 +299,14 @@ export async function assertNoControlCollisions(page: Page): Promise<void> {
 }
 
 /**
- * Assert that headings, banners, and metric cards do not have clipped text
- * (scrollWidth <= clientWidth + 2 for non-scrolling text elements)
+ * Assert that headings, banners, metric cards, ticket detail elements, tables, and controls
+ * do not have clipped text (scrollWidth <= clientWidth + 2 for non-scrolling text elements).
  */
 export async function assertNoClippedText(page: Page): Promise<void> {
   const clipped = await page.evaluate(() => {
     const textElements = Array.from(
       document.querySelectorAll<HTMLElement>(
-        "h1, h2, h3, h4, .zg-metric-card-title, .zg-metric-card-value, .dashboard-banner-title, .dashboard-banner-subtitle, [data-testid^='metric-card']"
+        "h1, h2, h3, h4, h5, .zg-metric-card-title, .zg-metric-card-value, .dashboard-banner-title, .dashboard-banner-subtitle, [data-testid^='metric-card'], [data-testid^='detail-'], [data-testid^='ticket-'], .zg-action-card, .zen-badge, .badge, .zg-quick-action-btn, [data-testid^='quick-action-']"
       )
     ).filter((el) => {
       const rect = el.getBoundingClientRect();
