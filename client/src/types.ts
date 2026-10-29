@@ -315,4 +315,116 @@ export interface UpdateActionTakenPayload {
   attachmentNotes?: string | null;
 }
 
+// ---------------------------------------------------------------------------
+// Lab 4 — Role-Appropriate Dashboard Types
+// ---------------------------------------------------------------------------
+
+export interface RequesterRecentTicket {
+  id: number;
+  ticketNumber: string;
+  title?: string;
+  summary?: string;
+  description: string;
+  currentStatus: TicketStatus;
+  requestedPriority: Priority;
+  itPriority?: Priority | null;
+  createdAt: string;
+  updatedAt: string;
+  category: { id: number; name: string };
+}
+
+export interface RequesterDashboardData {
+  openTickets: number;
+  inProgressTickets: number;
+  waitingForRequesterTickets: number;
+  resolvedTickets: number;
+  closedTickets: number;
+  recentTickets: RequesterRecentTicket[];
+  metrics?: {
+    openTickets: number;
+    inProgressTickets: number;
+    waitingForRequesterTickets: number;
+    resolvedTickets: number;
+    closedTickets: number;
+  };
+}
+
+export interface StaffDashboardPrimaryMetrics {
+  newTickets: number;
+  openTickets: number;
+  inProgressTickets: number;
+  waitingForRequesterTickets: number;
+  myAssignedTickets: number;
+}
+
+export interface StaffDashboardStatusBreakdown {
+  new: number;
+  open: number;
+  inProgress: number;
+  waitingForRequester: number;
+  resolved: number;
+  closed: number;
+  reopened: number;
+  cancelled: number;
+}
+
+export interface StaffDashboardPriorityBreakdown {
+  low: number;
+  medium: number;
+  high: number;
+  urgent: number;
+}
+
+export interface StaffRecentTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: TicketStatus;
+  itPriority?: Priority | null;
+  ticketOwner?: { id: number; name: string } | null;
+  requester: { id: number; name: string };
+  updatedAt: string;
+}
+
+export interface StaffDashboardData {
+  metrics: {
+    primary: StaffDashboardPrimaryMetrics;
+    unassignedTickets: number;
+    byStatus: StaffDashboardStatusBreakdown;
+    byPriority: StaffDashboardPriorityBreakdown;
+  };
+  recentTickets: StaffRecentTicket[];
+}
+
+export interface AdminRecentTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: TicketStatus;
+  requestedPriority: Priority;
+  itPriority?: Priority | null;
+  ticketOwner?: { id: number; name: string } | null;
+  requester: { id: number; name: string };
+  updatedAt: string;
+}
+
+export interface AdminDashboardData {
+  operational: {
+    unassignedTickets: number;
+    totalActiveTickets: number;
+  };
+  users: {
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+    byRole: {
+      requester: number;
+      itStaff: number;
+      administrator: number;
+    };
+  };
+  recentTickets: AdminRecentTicket[];
+}
+
+
 

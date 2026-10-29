@@ -28,14 +28,47 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
     totalPages: 1,
   });
 
+  const getInitialFiltersFromHash = useCallback(() => {
+    if (typeof window === "undefined") return { status: "ALL", ownerId: "ALL", itPriority: "ALL" };
+    const hash = window.location.hash || "";
+    const queryIndex = hash.indexOf("?");
+    let s = "ALL";
+    let o = "ALL";
+    let p = "ALL";
+    if (queryIndex !== -1) {
+      const searchParams = new URLSearchParams(hash.slice(queryIndex));
+      const paramStatus = searchParams.get("status");
+      const paramOwner = searchParams.get("owner");
+      const paramPriority = searchParams.get("priority") || searchParams.get("itPriority");
+      if (paramStatus) s = paramStatus;
+      if (paramOwner) {
+        if (paramOwner === "me" && user?.id) {
+          o = String(user.id);
+        } else if (paramOwner === "unassigned") {
+          o = "unassigned";
+        } else {
+          o = paramOwner;
+        }
+      }
+      if (paramPriority) {
+        const upper = paramPriority.toUpperCase();
+        if (["URGENT", "HIGH", "MEDIUM", "LOW"].includes(upper)) {
+          p = upper;
+        }
+      }
+    }
+    return { status: s, ownerId: o, itPriority: p };
+  }, [user?.id]);
+
   // Filter & Search State
+  const initialFilters = getInitialFiltersFromHash();
   const [search, setSearch] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
-  const [status, setStatus] = useState<string>("ALL");
+  const [status, setStatus] = useState<string>(initialFilters.status);
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [requestedPriority, setRequestedPriority] = useState<string>("ALL");
-  const [itPriority, setItPriority] = useState<string>("ALL");
-  const [ownerId, setOwnerId] = useState<string>("ALL");
+  const [itPriority, setItPriority] = useState<string>(initialFilters.itPriority);
+  const [ownerId, setOwnerId] = useState<string>(initialFilters.ownerId);
   const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt" | "ticketNumber" | "itPriority">("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -136,6 +169,19 @@ export function StaffTicketQueue({ onSelectTicket }: StaffTicketQueueProps) {
   useEffect(() => {
     loadTickets();
   }, [loadTickets]);
+
+  // Sync filters on hashchange (e.g. drill-down from Staff or Admin Dashboard)
+  useEffect(() => {
+    const handleHash = () => {
+      const { status: s, ownerId: o, itPriority: p } = getInitialFiltersFromHash();
+      setStatus(s);
+      setOwnerId(o);
+      setItPriority(p);
+      setCurrentPage(1);
+    };
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, [getInitialFiltersFromHash]);
 
   function handleResetFilters() {
     setSearch("");
