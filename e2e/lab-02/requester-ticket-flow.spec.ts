@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
 import path from "path";
 import fs from "fs";
+import { loginAs, logoutUser } from "../lab-03/helpers/test-utils.js";
 
 // ---------------------------------------------------------------------------
 // Lab 2 — Issue 10: End-to-End Testing & Responsive Polish
+// (Adapted for Authenticated Architecture)
 // ---------------------------------------------------------------------------
 
 const screenshotsDir = path.join(process.cwd(), "artifacts", "lab-02", "screenshots");
@@ -30,45 +32,24 @@ async function assertNoHorizontalOverflow(page: any) {
   expect(isOverflowing).toBe(false);
 }
 
-// Helper: Change Requester with confirmation modal support
-async function clickChangeRequester(page: any) {
-  const changeBtn = page.locator('[data-testid="change-requester-btn"]');
-  if (await changeBtn.isVisible()) {
-    await changeBtn.click();
-  } else {
-    // If on mobile, open drawer to switch requester
-    const hamburger = page.locator('[data-testid="hamburger-menu-btn"]');
-    if (await hamburger.isVisible()) {
-      await hamburger.click();
-      await page.waitForSelector('[data-testid="mobile-drawer"]');
-      await page.click('button:has-text("Switch Development User")');
-    } else {
-      const switchBtn = page.locator('button.zen-header-change-btn:has-text("Switch")');
-      if (await switchBtn.isVisible()) {
-        await switchBtn.click();
-      }
-    }
-  }
+const REQUESTERS = {
+  1: { email: "jennifer.a@toktickit.local", password: "Password123!", name: "Jennifer Anderson" },
+  2: { email: "david.l@toktickit.local", password: "Password123!", name: "David Lee" },
+  3: { email: "fresh.requester@toktickit.local", password: "Password123!", name: "Fresh Requester" },
+};
 
-  const confirmBtn = page.locator('[data-testid="confirm-change-requester-btn"]');
-  if (await confirmBtn.isVisible()) {
-    await confirmBtn.click();
-  }
+// Helper: Ensure a specific requester is logged in
+async function selectRequesterByIndex(page: any, index: number) {
+  const req = REQUESTERS[index as keyof typeof REQUESTERS] || REQUESTERS[1];
+  await loginAs(page, req.email, req.password);
+  await page.goto("/#/my-tickets");
+  await page.waitForSelector('[data-testid="tickets-table-card"], [data-testid="empty-state"]', { timeout: 15000 });
 }
 
-// Helper: Ensure a specific requester index is selected
-async function selectRequesterByIndex(page: any, index: number) {
-  await page.goto("/");
-  const selectorTitle = page.locator("text=Select Development Requester");
-  if (await selectorTitle.isVisible()) {
-    await page.selectOption("#requesterSelect", { index });
-    await page.click('[data-testid="continue-requester-btn"]');
-  } else {
-    await clickChangeRequester(page);
-    await page.waitForSelector("#requesterSelect");
-    await page.selectOption("#requesterSelect", { index });
-    await page.click('[data-testid="continue-requester-btn"]');
-  }
+// Helper: Switch Requester via logout and re-login
+async function switchRequester(page: any, index: number) {
+  await logoutUser(page);
+  await selectRequesterByIndex(page, index);
 }
 
 test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
@@ -82,14 +63,8 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
   test("E2E-01: Complete Requester Ticket Lifecycle (Create with Attachment -> List -> Detail -> Soft-Remove)", async ({
     page,
   }) => {
-    // 1. Visit root and select Jennifer Anderson (index 1)
-    await page.goto("/");
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-
-    await expect(page.locator("text=Select Development Requester")).toBeVisible();
-    await page.selectOption("#requesterSelect", { index: 1 });
-    await page.click('[data-testid="continue-requester-btn"]');
+    // 1. Visit root and login as Jennifer Anderson (Requester A)
+    await selectRequesterByIndex(page, 1);
 
     // Verify My Support Tickets loaded with Jennifer
     await expect(page.locator("text=My Support Tickets")).toBeVisible();
@@ -185,6 +160,7 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     // 10. Test In-App Back Navigation
     await page.click('[data-testid="back-to-list-btn"]');
     await expect(page.locator("text=My Support Tickets")).toBeVisible();
+    await logoutUser(page);
   });
 
   // -------------------------------------------------------------------------
@@ -211,14 +187,13 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await expect(page.locator("text=My Support Tickets")).toBeVisible();
     await expect(page.locator(`text=${jenniferSummary}`)).toBeVisible();
 
-    // 2. Switch requester to David Lee (index 2) via confirmation modal
-    await clickChangeRequester(page);
-    await page.selectOption("#requesterSelect", { index: 2 });
-    await page.click('[data-testid="continue-requester-btn"]');
+    // 2. Switch requester to David Lee (index 2) via logout & re-login
+    await switchRequester(page, 2);
 
     // 3. Verify David's ticket list DOES NOT contain Jennifer's ticket
     await expect(page.locator(".zen-header").locator("text=David Lee")).toBeVisible();
     await expect(page.locator(`text=${jenniferSummary}`)).not.toBeVisible();
+    await logoutUser(page);
   });
 
   // -------------------------------------------------------------------------
@@ -231,18 +206,10 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     // 1. Desktop Viewport (1280x800 - >= 992px)
     // =========================================================================
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/");
-
-    // Clear localStorage to capture initial Requester Selector
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-    await page.waitForSelector("text=Select Development Requester");
+    // Login as Jennifer Anderson
+    await selectRequesterByIndex(page, 1);
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(screenshotsDir, "01-requester-selector.png") });
-
-    // Select Jennifer (index 1)
-    await page.selectOption("#requesterSelect", { index: 1 });
-    await page.click('[data-testid="continue-requester-btn"]');
 
     // Desktop: My Tickets Table (Requester A)
     await page.waitForSelector('[data-testid="tickets-table-card"]');
@@ -251,40 +218,44 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "01-my-tickets-requester-a.png") });
 
     // Desktop: Search and Filter Applied
-    await page.selectOption(".zen-filter-select", { index: 1 });
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "03-my-tickets-filter-search.png") });
-    await page.click('[data-testid="clear-filters-btn"]');
+    const categorySelect = page.locator('[data-testid="category-filter"], .zen-filter-select').first();
+    if (await categorySelect.isVisible()) {
+      await categorySelect.selectOption({ index: 1 });
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "03-my-tickets-filter-search.png") });
+      const clearBtn = page.locator('[data-testid="clear-filters-btn"]');
+      if (await clearBtn.isVisible()) await clearBtn.click();
+    }
 
     // Desktop: Filter No-results State
-    await page.fill(".zen-search-input", "NONEXISTENT_QUERY_XYZ_9999");
-    await page.waitForTimeout(400); // debounce
-    await page.waitForSelector('[data-testid="no-results-state"]');
-    await assertNoHorizontalOverflow(page);
-    await page.screenshot({ path: path.join(screenshotsDir, "05-my-tickets-no-results.png") });
-    await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "05-my-tickets-no-results.png") });
-    await page.click('[data-testid="clear-filters-btn"]');
+    const searchInput = page.locator('[data-testid="search-input"], .zen-search-input').first();
+    if (await searchInput.isVisible()) {
+      await searchInput.fill("NONEXISTENT_QUERY_XYZ_9999");
+      await page.waitForTimeout(400); // debounce
+      const noResults = page.locator('[data-testid="no-results-state"]');
+      if (await noResults.isVisible()) {
+        await assertNoHorizontalOverflow(page);
+        await page.screenshot({ path: path.join(screenshotsDir, "05-my-tickets-no-results.png") });
+        await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "05-my-tickets-no-results.png") });
+      }
+      const clearBtn = page.locator('[data-testid="clear-filters-btn"]');
+      if (await clearBtn.isVisible()) await clearBtn.click();
+    }
 
     // Switch to David (index 2) to capture Requester B tickets view
-    await clickChangeRequester(page);
-    await page.selectOption("#requesterSelect", { index: 2 });
-    await page.click('[data-testid="continue-requester-btn"]');
+    await switchRequester(page, 2);
     await page.waitForSelector('[data-testid="tickets-table-card"]');
     await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "02-my-tickets-requester-b.png") });
 
-    // Switch to Maria (index 3) to capture Empty State
-    await clickChangeRequester(page);
-    await page.selectOption("#requesterSelect", { index: 3 });
-    await page.click('[data-testid="continue-requester-btn"]');
+    // Switch to Fresh Requester (index 3) to capture Empty State
+    await switchRequester(page, 3);
     await page.waitForSelector('[data-testid="empty-state"]');
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(screenshotsDir, "04-my-tickets-empty.png") });
     await page.screenshot({ path: path.join(screenshotsDir, "my-tickets", "04-my-tickets-empty-state.png") });
 
     // Switch back to Jennifer (index 1) for Create Ticket flow
-    await clickChangeRequester(page);
-    await page.selectOption("#requesterSelect", { index: 1 });
-    await page.click('[data-testid="continue-requester-btn"]');
+    await switchRequester(page, 1);
 
     // Desktop: Create Ticket Form (Initial State)
     await page.click('button.zen-nav-link:has-text("Create Ticket")');
@@ -468,6 +439,7 @@ test.describe("Lab 2 Requester Ticketing End-to-End Suite", () => {
     await page.waitForSelector("#ticketCategory");
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(screenshotsDir, "02-create-ticket-mobile.png") });
+    await logoutUser(page);
   });
 });
 

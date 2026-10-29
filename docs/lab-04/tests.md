@@ -51,7 +51,7 @@ The test plan enforces comprehensive multi-tier quality assurance covering all s
    Continuous test runs ensuring that legacy features from Labs 1–3 remain functional with zero regressions (3 planned test suites):
    - `REG-01` (Server Regression): All server API and unit test suites across Labs 1, 2, and 3 (`server/tests/lab-01/*`, `server/tests/lab-02/*`, `server/tests/lab-03/*`), directly safeguarding categories (`server/tests/lab-01/categories.test.ts`), authentication, ticket creation, ticket queues, attachments, public comments, internal notes, and administrative user management.
    - `REG-02` (Client Regression): All client UI component test suites across Labs 1, 2, and 3 (`client/tests/lab-01/*`, `client/tests/lab-02/*`, `client/tests/lab-03/*`), safeguarding category selection in ticket creation forms (`client/tests/lab-02/CreateTicket.test.tsx`), authentication, forms, navigation, and modal components.
-   - `REG-03` (E2E Regression): Authoritative Playwright end-to-end regression test suite (`e2e/lab-03/*`, 24 tests), safeguarding complete cross-role browser journeys including authentication, ticket lifecycle workflows, and Lab 2 requester flows (`e2e/lab-03/requester-regression.spec.ts` `E2E-07` adapting pre-auth Lab 2 flows to the authenticated architecture).
+   - `REG-03` (E2E Regression): Authoritative Playwright end-to-end regression test suite (`e2e/lab-02/*` and `e2e/lab-03/*`, 27 tests total), safeguarding complete cross-role browser journeys including authentication, ticket lifecycle workflows, multi-user tenant isolation, and Lab 2 requester flows running under the authenticated architecture.
 
 ---
 
@@ -190,13 +190,19 @@ e2e/lab-04/
 - **Full Regression Test Execution:**
   - `REG-01` (Server Regression): `npm run test:server` -> **31 files passed, 298 tests passed** across Labs 1, 2, 3, and 4 (including categories, authentication, ticket queues, attachments, comments, notes, and user administration).
   - `REG-02` (Client Regression): `npm run test:client` -> **20 files passed, 162 tests passed** across Labs 1, 2, 3, and 4 (including ticket creation forms, categories, attachments, queues, and user management).
-  - `REG-03` (E2E Regression): `npm run test:e2e:regression` -> **24 passed** across Labs 2 and 3:
-    - `authentication.spec.ts` (6 tests): Auth journeys, login/logout, route protection.
-    - `requester-regression.spec.ts` (`E2E-07`, 1 test): Full Lab 2 Requester lifecycle (Create Ticket -> View in My Tickets -> Detail -> Soft-Remove Attachment) running under authenticated session.
-    - `staff-ticket-flow.spec.ts` (7 tests): Staff queue, ticket owner assignment, comments, internal notes.
-    - `user-administration.spec.ts` (4 tests): Administrative user management and role access.
-    - `requester-resolution.spec.ts` (4 tests): Requester close and feedback flow.
-    - `responsive.spec.ts` (2 tests): Multi-viewport responsive audit on legacy screens.
+  - `REG-03` (E2E Regression): `npm run test:e2e:regression` -> **27 passed** across Labs 2 and 3:
+    - **Lab 2 Suite (`npm run test:e2e:regression:lab2` - 3 passed):**
+      - `E2E-01`: Complete Requester Ticket Lifecycle (Create Ticket with Attachment -> List in My Tickets -> Detail -> Soft-Remove Attachment -> Upload Supplementary).
+      - `E2E-02`: Multi-User Ownership Isolation & Unauthorized Access Protection (Jennifer creates private ticket -> David logs in -> verifies David cannot see Jennifer's ticket).
+      - `E2E-03`: Multi-Viewport Responsive Layout Verification across Desktop (1280px), Tablet (820px), and Mobile (375px) with zero horizontal overflow.
+    - **Lab 3 Suite (`npm run test:e2e:regression:lab3` - 24 passed):**
+      - `authentication.spec.ts` (6 tests): Auth journeys, login/logout, route protection.
+      - `requester-regression.spec.ts` (`E2E-07`, 1 test): Requester lifecycle under real session.
+      - `staff-ticket-flow.spec.ts` (7 tests): Staff queue, ticket owner assignment, comments, internal notes.
+      - `user-administration.spec.ts` (4 tests): Administrative user management and role access.
+      - `requester-resolution.spec.ts` (4 tests): Requester close and feedback flow.
+      - `responsive.spec.ts` (2 tests): Multi-viewport responsive audit on legacy screens.
+    - *Note on Lab 1:* Sprint 1 was strictly Backend API and Schema with zero frontend UI; its 100% regression is verified under `REG-01` (`server/tests/lab-01/`).
   - Overall Regression Script: `npm run test:regression` (executes all 3 regression tiers sequentially).
 - **Screenshot Artifacts (`artifacts/lab-04/screenshots/`):**
   - `actions-taken/`: 5 PNG images
