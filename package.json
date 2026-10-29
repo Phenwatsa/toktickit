@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
+    "test:e2e:regression:lab2": "TEST_DIR=./e2e/lab-02 playwright test",
+    "test:e2e:regression:lab3": "TEST_DIR=./e2e/lab-03 LAB3_TEST_MODE=true playwright test",
+    "test:e2e:regression": "npm run test:e2e:regression:lab2 && npm run test:e2e:regression:lab3",
+    "test:regression": "npm run test:server && npm run test:client && npm run test:e2e:regression",
     "test:server": "npm --prefix server test",
     "test:client": "npm --prefix client test",
     "test": "npm run test:server && npm run test:client && npm run test:e2e"

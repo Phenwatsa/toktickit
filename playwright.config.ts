@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./e2e/lab-03",
+  testDir: process.env.TEST_DIR || "./e2e/lab-04",
   fullyParallel: false,
   workers: 1, // Single worker to preserve database test state
   reporter: [["list"]],

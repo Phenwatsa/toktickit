@@ -792,5 +792,39 @@ describe("Lab 4 Ticket Workflow API Tests (ticket-workflow.api.test.ts)", () => 
       const inDb = await prisma.ticket.findUnique({ where: { id: ticket.id } });
       expect(inDb?.currentStatus).toBe("OPEN");
     });
+
+    it("allows Administrator supervisory read access to Ticket Detail (GET /api/staff/tickets/:id -> 200 OK)", async () => {
+      const ticket = await createTestTicket("OPEN");
+
+      const res = await request(app)
+        .get(`/api/staff/tickets/${ticket.id}`)
+        .set("Authorization", `Bearer ${tokenAdmin}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.ticket).toHaveProperty("id", ticket.id);
+      expect(res.body.ticket).toHaveProperty("ticketNumber", ticket.ticketNumber);
+      expect(res.body.ticket).toHaveProperty("currentStatus", "OPEN");
+    });
+
+    it("strictly blocks Requester from accessing Staff Ticket Detail (GET /api/staff/tickets/:id -> 403 Forbidden)", async () => {
+      const ticket = await createTestTicket("OPEN");
+
+      const res = await request(app)
+        .get(`/api/staff/tickets/${ticket.id}`)
+        .set("Authorization", `Bearer ${tokenRequester1}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe("FORBIDDEN");
+    });
+
+    it("blocks unauthenticated requests to Staff Ticket Detail (GET /api/staff/tickets/:id -> 401 Unauthorized)", async () => {
+      const ticket = await createTestTicket("OPEN");
+
+      const res = await request(app)
+        .get(`/api/staff/tickets/${ticket.id}`);
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe("UNAUTHORIZED");
+    });
   });
 });
