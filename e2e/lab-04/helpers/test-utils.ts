@@ -254,11 +254,15 @@ export async function assertGridColumnCount(
  * Assert that visible interactive controls (buttons, links, inputs) in the page
  * do not have overlapping bounding boxes (zero control collisions)
  */
+/**
+ * Assert zero interactive control collisions (buttons, interactive links, inputs, selects, textareas).
+ * Ensures interactive elements do not overlap or collide across viewports (FR-17, AC-17).
+ */
 export async function assertNoControlCollisions(page: Page): Promise<void> {
   const collision = await page.evaluate(() => {
     const candidates = Array.from(
       document.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), a[href]:not([tabindex="-1"]), [role="button"]:not([aria-hidden="true"])'
+        'button:not([disabled]), a[href]:not([tabindex="-1"]), [role="button"]:not([aria-hidden="true"]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
       )
     ).filter((el) => {
       if (el.closest('[aria-hidden="true"]')) return false;
@@ -269,7 +273,8 @@ export async function assertNoControlCollisions(page: Page): Promise<void> {
         rect.height > 8 &&
         style.display !== "none" &&
         style.visibility !== "hidden" &&
-        style.opacity !== "0"
+        style.opacity !== "0" &&
+        style.pointerEvents !== "none"
       );
     });
 
