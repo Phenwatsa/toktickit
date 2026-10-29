@@ -336,12 +336,16 @@ export async function assertNoClippedText(page: Page): Promise<void> {
         }
       }
 
-      // 2. Vertical text clipping check (when element has constrained height without auto scroll)
+      // 2. Vertical text clipping check (covers max-height, fixed height with hidden overflow, and line-clamp)
+      const hasConstrainedHeight =
+        (style.maxHeight && style.maxHeight !== "none") ||
+        (style.overflowY === "hidden" && style.height && style.height !== "auto") ||
+        (style.webkitLineClamp && style.webkitLineClamp !== "none");
+
       if (
         style.overflowY !== "auto" &&
         style.overflowY !== "scroll" &&
-        style.maxHeight &&
-        style.maxHeight !== "none"
+        hasConstrainedHeight
       ) {
         if (el.scrollHeight > el.clientHeight + 2) {
           const tag = el.getAttribute("data-testid") || el.className || el.tagName;
