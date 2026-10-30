@@ -25,10 +25,10 @@ This document provides the definitive planning specification for GitHub Issues (
   - Writing or modifying runtime production code (`client/src/`, `server/src/`) (deferred to Issues 21–25 (#52–#56)).
   - Authoring executable test files (deferred to Issues 21–26 (#52–#57)).
 * **Acceptance Criteria:**
-  - [ ] All four core specification files (`specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`) are complete and committed.
-  - [ ] Every Functional Requirement maps directly to governing Business Rules and testable Acceptance Criteria without gaps.
-  - [ ] Planned test IDs in `tests.md` cover 100% of defined Acceptance Criteria across all 53 planned tests.
-  - [ ] PR is opened targeting `lab4-staging` before any implementation code is written.
+  - [x] All four core specification files (`specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`) are complete and committed.
+  - [x] Every Functional Requirement maps directly to governing Business Rules and testable Acceptance Criteria without gaps.
+  - [x] Planned test IDs in `tests.md` cover 100% of defined Acceptance Criteria across all 53 planned tests.
+  - [x] PR is opened targeting `lab4-staging` before any implementation code is written.
 * **AI Verification Note:**
   > When verifying this issue, verify strictly the presence, completeness, and mutual consistency of documentation files in `docs/lab-04/`. Do not check for runtime application code, and do not fail verification on pending PR review/merge status.
 
@@ -62,16 +62,16 @@ This document provides the definitive planning specification for GitHub Issues (
   - Status transition matrix and resolution gate enforcement (deferred to Issue 22 (#53)).
   - Dashboard aggregation APIs (deferred to Issue 24 (#55)).
 * **Acceptance Criteria:**
-  - [ ] Prisma migration executes cleanly without losing data from earlier labs (`AC-21`, `MIG-01`).
-  - [ ] Migration rollback recovery simulation resolves cleanly via schema rollback cleanup and `prisma migrate resolve --rolled-back` (`AC-21`, `MIG-02`).
-  - [ ] Seed script runs idempotently across 2 consecutive runs and populates all 5 required scenario dimensions (`AC-22`, `SEED-01`).
-  - [ ] Requesters are blocked from creating or modifying Actions Taken (HTTP 403 Forbidden); IT Staff and Administrators are permitted (`AC-03`, `API-03a/b`).
-  - [ ] Submitting an Action Taken with `isFollowUpRequired = true` without a note (< 3 non-whitespace characters) returns HTTP 400 validation error (`AC-02`, `API-02`).
-  - [ ] Field boundary violations return HTTP 400 validation error (`AC-26`, `API-16`).
-  - [ ] Actions Taken listing returns records in deterministic order (`actionDateTime ASC, id ASC`) and DELETE route is unhandled (`AC-27`, `API-04`, `API-17`).
-  - [ ] Modifying an Action Taken belonging to another ticket returns HTTP 404 Not Found (`AC-06`, `API-06`).
-  - [ ] Attempting to add or modify Actions Taken on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`, `API-14a`).
-  - [ ] 100% of tests in `actions-taken.api.test.ts`, `migration-recovery.test.ts`, and `seed-data.test.ts` pass.
+  - [x] Prisma migration executes cleanly without losing data from earlier labs (`AC-21`, `MIG-01`).
+  - [x] Migration rollback recovery simulation resolves cleanly via schema rollback cleanup and `prisma migrate resolve --rolled-back` (`AC-21`, `MIG-02`).
+  - [x] Seed script runs idempotently across 2 consecutive runs and populates all 5 required scenario dimensions (`AC-22`, `SEED-01`).
+  - [x] Requesters are blocked from creating or modifying Actions Taken (HTTP 403 Forbidden); IT Staff and Administrators are permitted (`AC-03`, `API-03a/b`).
+  - [x] Submitting an Action Taken with `isFollowUpRequired = true` without a note (< 3 non-whitespace characters) returns HTTP 400 validation error (`AC-02`, `API-02`).
+  - [x] Field boundary violations return HTTP 400 validation error (`AC-26`, `API-16`).
+  - [x] Actions Taken listing returns records in deterministic order (`actionDateTime ASC, id ASC`) and DELETE route is unhandled (`AC-27`, `API-04`, `API-17`).
+  - [x] Modifying an Action Taken belonging to another ticket returns HTTP 404 Not Found (`AC-06`, `API-06`).
+  - [x] Attempting to add or modify Actions Taken on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`, `API-14a`).
+  - [x] 100% of tests in `actions-taken.api.test.ts`, `migration-recovery.test.ts`, and `seed-data.test.ts` pass.
 * **AI Verification Note:**
   > Verify only backend migration, seed, route handlers, and test suites in `server/tests/lab-04/`. Do not fail verification due to missing UI elements or unmerged PR status.
 
@@ -105,14 +105,14 @@ This document provides the definitive planning specification for GitHub Issues (
   - Frontend status dropdown adjustments (deferred to Issue 23 (#54)).
   - Dashboard metric calculations (deferred to Issue 24 (#55)).
 * **Acceptance Criteria:**
-  - [ ] Direct API attempts by Requesters to set status to `RESOLVED` or `CLOSED` are strictly blocked (HTTP 403); IT Staff and Administrators are permitted (`AC-07`, `WF-01`).
-  - [ ] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400 (`AC-09`, `UNIT-02`, `WF-03`).
-  - [ ] Ticket reassignment validations strictly enforced (`API-15`, `AC-25`, `BR-18`): (1) assigning to non-existent, inactive, or non-IT Staff targets returns HTTP 400 Bad Request (`INVALID_OWNER`), verifying existing ticket owner remains unchanged; (2) attempting reassignment on a `CLOSED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged; (3) attempting reassignment on a `CANCELLED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged.
-  - [ ] Administrator possesses authorized supervisory access to retrieve the Staff Ticket Queue (`GET /api/staff/tickets`) and execute ticket status transitions (`PATCH /api/staff/tickets/:id/status`) (`AC-07`, `AC-09`, `API-10b`).
-  - [ ] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`, `AC-10`, `API-07`).
-  - [ ] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes (`AC-11`, `API-08`).
-  - [ ] Attempting to transition status or indicate resolution on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`, `API-14b`).
-  - [ ] 100% of tests in `server/tests/lab-04/ticket-workflow.api.test.ts` and unit test suites pass.
+  - [x] Direct API attempts by Requesters to set status to `RESOLVED` or `CLOSED` are strictly blocked (HTTP 403); IT Staff and Administrators are permitted (`AC-07`, `WF-01`).
+  - [x] Status transitions follow the authorized transition matrix; invalid transitions return HTTP 400 (`AC-09`, `UNIT-02`, `WF-03`).
+  - [x] Ticket reassignment validations strictly enforced (`API-15`, `AC-25`, `BR-18`): (1) assigning to non-existent, inactive, or non-IT Staff targets returns HTTP 400 Bad Request (`INVALID_OWNER`), verifying existing ticket owner remains unchanged; (2) attempting reassignment on a `CLOSED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged; (3) attempting reassignment on a `CANCELLED` ticket returns HTTP 400 Bad Request (`INVALID_STATE`), verifying ticket attributes remain unchanged.
+  - [x] Administrator possesses authorized supervisory access to retrieve the Staff Ticket Queue (`GET /api/staff/tickets`) and execute ticket status transitions (`PATCH /api/staff/tickets/:id/status`) (`AC-07`, `AC-09`, `API-10b`).
+  - [x] Missing or malformed `expectedUpdatedAt` returns HTTP 400 Bad Request (`VALIDATION_ERROR`, `AC-10`, `API-07`).
+  - [x] Concurrent or stale status updates return HTTP 409 Conflict without overwriting unread changes (`AC-11`, `API-08`).
+  - [x] Attempting to transition status or indicate resolution on a CANCELLED ticket returns HTTP 400 Bad Request (`TICKET_CANCELLED`, `AC-23`, `API-14b`).
+  - [x] 100% of tests in `server/tests/lab-04/ticket-workflow.api.test.ts` and unit test suites pass.
 * **AI Verification Note:**
   > Verify backend status validation, reassignment checks, and concurrency handling in `ticket-workflow.api.test.ts`. Do not fail verification due to missing frontend UI integration or unmerged PR status.
 
@@ -146,12 +146,12 @@ This document provides the definitive planning specification for GitHub Issues (
   - Dashboard views and navigation (deferred to Issue 25 (#56)).
   - Playwright E2E browser tests (deferred to Issue 26 (#57)).
 * **Acceptance Criteria:**
-  - [ ] IT Staff and Administrators can create and edit Actions Taken on `#/ticket/:id` with immediate list refresh (`AC-01`, `AC-06`).
-  - [ ] Requesters can view Actions Taken on owned tickets with zero edit controls available (`AC-04`, `UI-03`).
-  - [ ] Form prevents submission if Follow-Up is checked without note text (< 3 non-whitespace chars) (`AC-02`, `UI-02`).
-  - [ ] 409 Conflict alert preserves uncommitted status transition input and provides state refresh button (`AC-28`, `UI-04b`).
-  - [ ] Layout conforms to Zen Green design standards with zero horizontal overflow on mobile viewports.
-  - [ ] 100% of Vitest tests in `ActionsTaken.test.tsx`, `TicketWorkflow.test.tsx`, and `UIStates.test.tsx` pass.
+  - [x] IT Staff and Administrators can create and edit Actions Taken on `#/ticket/:id` with immediate list refresh (`AC-01`, `AC-06`).
+  - [x] Requesters can view Actions Taken on owned tickets with zero edit controls available (`AC-04`, `UI-03`).
+  - [x] Form prevents submission if Follow-Up is checked without note text (< 3 non-whitespace chars) (`AC-02`, `UI-02`).
+  - [x] 409 Conflict alert preserves uncommitted status transition input and provides state refresh button (`AC-28`, `UI-04b`).
+  - [x] Layout conforms to Zen Green design standards with zero horizontal overflow on mobile viewports.
+  - [x] 100% of Vitest tests in `ActionsTaken.test.tsx`, `TicketWorkflow.test.tsx`, and `UIStates.test.tsx` pass.
 * **AI Verification Note:**
   > Verify frontend components and Vitest tests for Actions Taken and Ticket Detail. Do not check for Dashboard views or fail due to unmerged PR status.
 
@@ -181,12 +181,12 @@ This document provides the definitive planning specification for GitHub Issues (
   - Client-side Dashboard UI rendering (deferred to Issue 25 (#56)).
   - Playwright E2E browser verification (deferred to Issue 26 (#57)).
 * **Acceptance Criteria:**
-  - [ ] Requester dashboard metrics match database counts and never expose tickets belonging to other users (`AC-12`, `API-09`).
-  - [ ] IT Staff users receive HTTP 200 OK with accurate counts for primary cards (including `myAssignedTickets` scoped to staff user), unassigned queue, 8-status distribution, priorities, and recent queue tickets on `GET /api/staff/dashboard` (`AC-13`, `API-10`).
-  - [ ] Administrator dashboard endpoint returns accurate operational queue, user account distribution metrics, and recent system tickets (`AC-19a`, `API-12`).
-  - [ ] Non-permitted roles receive HTTP 403 Forbidden on role-restricted dashboard endpoints (`AC-14`, `AC-19b`, `API-11`, `API-13`).
-  - [ ] Performance smoke benchmarks verify response latency under thresholds (< 300ms dashboard, < 200ms actions list) (`PERF-SMOKE-01`).
-  - [ ] 100% of tests in `requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts`, and `performance-smoke.test.ts` pass.
+  - [x] Requester dashboard metrics match database counts and never expose tickets belonging to other users (`AC-12`, `API-09`).
+  - [x] IT Staff users receive HTTP 200 OK with accurate counts for primary cards (including `myAssignedTickets` scoped to staff user), unassigned queue, 8-status distribution, priorities, and recent queue tickets on `GET /api/staff/dashboard` (`AC-13`, `API-10`).
+  - [x] Administrator dashboard endpoint returns accurate operational queue, user account distribution metrics, and recent system tickets (`AC-19a`, `API-12`).
+  - [x] Non-permitted roles receive HTTP 403 Forbidden on role-restricted dashboard endpoints (`AC-14`, `AC-19b`, `API-11`, `API-13`).
+  - [x] Performance smoke benchmarks verify response latency under thresholds (< 300ms dashboard, < 200ms actions list) (`PERF-SMOKE-01`).
+  - [x] 100% of tests in `requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts`, and `performance-smoke.test.ts` pass.
 * **AI Verification Note:**
   > Verify backend dashboard routes, performance benchmarks, and tests. Do not check for Dashboard UI rendering or fail due to unmerged PR status.
 
@@ -226,12 +226,12 @@ This document provides the definitive planning specification for GitHub Issues (
   - Playwright E2E browser testing (deferred to Issue 26 (#57)).
   - Final release documentation (deferred to Issue 27 (#58)).
 * **Acceptance Criteria:**
-  - [ ] Requester, Staff, and Administrator Dashboards load authoritative metrics and handle empty/loading states gracefully (`AC-15a`, `AC-15b`, `AC-20`, `AC-24`).
-  - [ ] Clicking metric cards on Requester and Staff Dashboards drills down into pre-filtered views; clicking Admin operational cards (`Total Active Tickets`, `Unassigned Queue`) drills down into `#/staff-queue` (with owner filter where applicable), and clicking User metric cards (`Total Users`, `Active Users`, `Inactive Users`) drills down into `#/admin-users` (`AC-15a`, `AC-15b`, `AC-20`).
-  - [ ] Header navigation bar correctly highlights the active Dashboard tab.
-  - [ ] Design System token test verifies computed CSS variables and component styling (`AC-17`, `UI-STYLE-01`).
-  - [ ] Layout is fully responsive across Desktop, Tablet, and Mobile with zero clipping.
-  - [ ] 100% of Vitest tests in `RequesterDashboard.test.tsx`, `StaffDashboard.test.tsx`, `AdminDashboard.test.tsx`, and `DesignSystemTokens.test.tsx` pass.
+  - [x] Requester, Staff, and Administrator Dashboards load authoritative metrics and handle empty/loading states gracefully (`AC-15a`, `AC-15b`, `AC-20`, `AC-24`).
+  - [x] Clicking metric cards on Requester and Staff Dashboards drills down into pre-filtered views; clicking Admin operational cards (`Total Active Tickets`, `Unassigned Queue`) drills down into `#/staff-queue` (with owner filter where applicable), and clicking User metric cards (`Total Users`, `Active Users`, `Inactive Users`) drills down into `#/admin-users` (`AC-15a`, `AC-15b`, `AC-20`).
+  - [x] Header navigation bar correctly highlights the active Dashboard tab.
+  - [x] Design System token test verifies computed CSS variables and component styling (`AC-17`, `UI-STYLE-01`).
+  - [x] Layout is fully responsive across Desktop, Tablet, and Mobile with zero clipping.
+  - [x] 100% of Vitest tests in `RequesterDashboard.test.tsx`, `StaffDashboard.test.tsx`, `AdminDashboard.test.tsx`, and `DesignSystemTokens.test.tsx` pass.
 * **AI Verification Note:**
   > Verify Dashboard components, navigation routing, and Vitest test files. Do not fail verification on pending PR merge or missing Playwright E2E files.
 
@@ -259,11 +259,11 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Out-of-Scope & Deferred Dependencies:**
   - Final PDF compiling and report submission (deferred to Issue 27 (#58)).
 * **Acceptance Criteria:**
-  - [ ] All Lab 4 Playwright E2E specs pass 100% in headless mode (`E2E-01`, `E2E-02`, `E2E-03a`, `E2E-03b`, `E2E-04`, `A11Y-01`).
-  - [ ] Zero regression errors across Labs 1, 2, and 3 test suites (`REG-01`, `REG-02`, `REG-03`).
-  - [ ] Responsive audit confirms zero horizontal overflow (`scrollWidth === clientWidth`), zero control collisions, no text clipping, and valid Zen Green tokens across all four core screens (Requester Dashboard, IT Staff Dashboard, Administrator Dashboard, Ticket Detail `#/ticket/:id`) on Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) viewports (`AC-17`, `E2E-04`).
-  - [ ] Accessibility suite verifies focus trapping, restoration, keyboard cycling, and ARIA live regions (`A11Y-01`).
-  - [ ] All required screenshots are captured clearly at standard viewports and stored in the artifacts directory.
+  - [x] All Lab 4 Playwright E2E specs pass 100% in headless mode (`E2E-01`, `E2E-02`, `E2E-03a`, `E2E-03b`, `E2E-04`, `A11Y-01`).
+  - [x] Zero regression errors across Labs 1, 2, and 3 test suites (`REG-01`, `REG-02`, `REG-03`).
+  - [x] Responsive audit confirms zero horizontal overflow (`scrollWidth === clientWidth`), zero control collisions, no text clipping, and valid Zen Green tokens across all four core screens (Requester Dashboard, IT Staff Dashboard, Administrator Dashboard, Ticket Detail `#/ticket/:id`) on Desktop ($1280\text{px}$), Tablet ($768\text{px}$), and Mobile ($375\text{px}$) viewports (`AC-17`, `E2E-04`).
+  - [x] Accessibility suite verifies focus trapping, restoration, keyboard cycling, and ARIA live regions (`A11Y-01`).
+  - [x] All required screenshots are captured clearly at standard viewports and stored in the artifacts directory.
 * **AI Verification Note:**
   > Verify E2E test files, passing execution results, and presence of generated screenshot files. Do not fail on unmerged PR status.
 
@@ -292,9 +292,9 @@ This document provides the definitive planning specification for GitHub Issues (
 * **Out-of-Scope & Deferred Dependencies:**
   - Post-Sprint 4 features.
 * **Acceptance Criteria:**
-  - [ ] `reviewer.md`, `ai-use.md`, and `tests.md` are completely finalized and verified.
-  - [ ] All 53 tests pass on the final `main` branch.
-  - [ ] Clean Git commit graph demonstrating feature branches $\to$ `lab4-staging` $\to$ `main`.
-  - [ ] Repository contains all artifacts and evidence required to compile the 9-part submission PDF.
+  - [x] `reviewer.md`, `ai-use.md`, and `tests.md` are completely finalized and verified.
+  - [x] All 53 tests pass on the final `main` branch.
+  - [x] Clean Git commit graph demonstrating feature branches $\to$ `lab4-staging` $\to$ `main`.
+  - [x] Repository contains all artifacts and evidence required to compile the 9-part submission PDF.
 * **AI Verification Note:**
   > Verify completion of all documentation, test logs, and release readiness.
