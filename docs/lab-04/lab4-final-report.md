@@ -114,7 +114,7 @@ toktickit/
 *(5 Points — Evidence: Link to & rendered `docs/lab-04/specification.md`, Numbered FRs/BRs/ACs, Transition rules, DB decisions, DoD, Evidence spec existed before code)*
 
 ## 2.1 Specification Baseline Link & Pre-Implementation Evidence
-- **File Link:** [`docs/lab-04/specification.md`](file:///Users/penwatsasaengyenpan/[3]%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-04/specification.md)
+- **File Link:** [`docs/lab-04/specification.md`](specification.md)
 - **Pre-Implementation Evidence:** สัญญาวิศวกรรมซอฟต์แวร์ทั้งหมดถูกสร้างและ Commit บน branch `docs/lab4-spec-and-test-plan` และ Merge ผ่าน [PR #59](https://github.com/Phenwatsa/toktickit/pull/59) เข้าสู่ `lab4-staging` ที่ Commit `a873bf9` ก่อนหน้า Commit แรกของโค้ด Implementation ใน [PR #60](https://github.com/Phenwatsa/toktickit/pull/60)
 
 ## 2.2 Numbered Functional Requirements (FR) & Business Rules (BR)
@@ -137,7 +137,7 @@ toktickit/
 *(10 Points — Evidence: Link to & rendered `docs/lab-04/tests.md`, 53 planned tests matrix, Actual paths, 100% passing test outputs across Unit/API/UI/Workflow/Regression/E2E)*
 
 ## 3.1 Test Plan Link & Requirements Traceability Matrix (RTM)
-- **File Link:** [`docs/lab-04/tests.md`](file:///Users/penwatsasaengyenpan/[3]%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-04/tests.md)
+- **File Link:** [`docs/lab-04/tests.md`](tests.md)
 - **Traceability Summary:** ครอบคลุม 53 Planned Tests ทั่วทั้ง 7 Testing Tiers เชื่อมโยง 100% สู่ 28 Parent Acceptance Criteria (30 Distinct Criteria Identifiers: `AC-01` ถึง `AC-28`):
 
 | Testing Tier | Count | Test IDs | Test Files | Status |
@@ -213,7 +213,7 @@ Running Regression Suite (npm run test:e2e:regression)
 # Answer Part 4: AI Use with Reflection
 *(5 Points — Evidence: Rendered `docs/lab-04/ai-use.md`, LLM model named, 10 key prompts, Brief "My Reflection" on Spec-Agent & Coding-Agent)*
 
-- **File Link:** [`docs/lab-04/ai-use.md`](file:///Users/penwatsasaengyenpan/[3]%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-04/ai-use.md)
+- **File Link:** [`docs/lab-04/ai-use.md`](ai-use.md)
 - **LLM / Agent Used:** `Antigravity AI Coding Agent (Gemini 3.8 Flash)`
 
 ## 4.1 Ten Key Prompts Summary
@@ -345,7 +345,7 @@ if (targetStatus === "RESOLVED") {
 # Answer Part 9: Zen Green UI, Responsive, Accessibility, and Final Polish
 *(5 Points — Evidence: Rendered `ui-spec.md`, Desktop/Tablet/Mobile screenshots across all major screens, Visual & accessibility checklist, Keyboard focus, Zero clipping, Zero overlap, Zero horizontal overflow)*
 
-- **File Link:** [`docs/lab-04/ui-spec.md`](file:///Users/penwatsasaengyenpan/[3]%20Junior_Work/1_CPE334/Lab/toktickit/docs/lab-04/ui-spec.md)
+- **File Link:** [`docs/lab-04/ui-spec.md`](ui-spec.md)
 
 ## 9.1 Visual & Accessibility Verification Checklist
 - [x] **Zero Horizontal Overflow:** ยืนยันผ่านการทดสอบอัตโนมัติใน Playwright ว่า `scrollWidth === clientWidth` ($scrollX = 0$) ในทุกหน้าจอและทุก Viewport (1280px, 768px, 375px)

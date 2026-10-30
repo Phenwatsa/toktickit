@@ -146,6 +146,7 @@ toktickit/
    JWT_SECRET="toktickit-super-secret-jwt-key-2026"
    PORT=3000
    ```
+   > **Note:** The `JWT_SECRET` string above is a development placeholder for local evaluation. In staging or production environments, always generate a secure random secret (e.g. `openssl rand -base64 32`).
 4. Run Prisma database migrations & seed initial data:
    ```bash
    npx prisma migrate dev

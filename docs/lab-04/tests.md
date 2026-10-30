@@ -210,3 +210,231 @@ e2e/lab-04/
   - `requester-dashboard/`: 4 PNG images
   - `staff-dashboard/`: 4 PNG images
   - Total: **17 high-resolution artifacts captured and stored**.
+
+---
+
+## 4. Authoritative Raw Test Execution Logs
+
+Below are the verbatim terminal execution outputs from the automated test commands demonstrating a 100% pass rate across the full stack (Unit, Integration, API, UI Components, E2E, and Regression suites):
+
+### 4.1 Backend Server & API Test Suite (`npm run test:server`)
+- **Command:** `npm run test:server`
+- **Scope:** 31 test files across Labs 1, 2, 3, and 4 (including Unit tests, Actions Taken API, Ticket Workflow API, Dashboards API, Migrations & Seed data).
+- **Result:** **31 passed (31 files), 298 passed (298 tests)**
+
+```text
+> toktickit-monorepo@1.0.0 test:server
+> npm --prefix server test
+
+
+> toktickit-server@1.0.0 test
+> vitest run
+
+
+ RUN  v2.1.9 /Users/penwatsasaengyenpan/[3] Junior_Work/1_CPE334/Lab/toktickit/server
+
+ ✓ tests/lab-01/categories.test.ts (1)
+ ✓ tests/lab-01/health.test.ts (1)
+ ✓ tests/lab-02/attachments.api.test.ts (9)
+ ✓ tests/lab-02/create-ticket.api.test.ts (8)
+ ✓ tests/lab-02/my-tickets.api.test.ts (7)
+ ✓ tests/lab-02/requesters.api.test.ts (2)
+ ✓ tests/lab-02/ticket-detail.api.test.ts (4)
+ ✓ tests/lab-04/actions-taken.api.test.ts (36) 323ms
+ ✓ tests/lab-04/migration-recovery.test.ts (2) 2321ms
+ ✓ tests/lab-04/performance-smoke.test.ts (4)
+ ✓ tests/lab-04/requester-dashboard.api.test.ts (6)
+ ✓ tests/lab-04/seed-data.test.ts (6) 677ms
+ ✓ tests/lab-04/staff-dashboard.api.test.ts (10)
+ ✓ tests/lab-04/ticket-workflow.api.test.ts (32)
+ ✓ tests/lab-03/auth.api.test.ts (8) 1061ms
+ ✓ tests/lab-03/authorization.api.test.ts (7) 581ms
+ ✓ tests/lab-03/comments-notes.api.test.ts (11)
+ ✓ tests/lab-03/requester-resolution.api.test.ts (6)
+ ✓ tests/lab-03/staff-queue.api.test.ts (17)
+ ✓ tests/lab-03/staff-ticket-detail.api.test.ts (16)
+ ✓ tests/lab-03/users-admin.api.test.ts (15)
+ ✓ tests/lab-04/unit/concurrency-check.unit.test.ts (14)
+ ✓ tests/lab-04/unit/dashboard-calculator.unit.test.ts (9)
+ ✓ tests/lab-04/unit/follow-up-validation.unit.test.ts (11)
+ ✓ tests/lab-04/unit/status-transition-matrix.unit.test.ts (16)
+ ✓ tests/lab-03/unit/admin-guard.unit.test.ts (9)
+ ✓ tests/lab-03/unit/password-policy.unit.test.ts (7)
+ ✓ tests/lab-03/unit/priority-init.unit.test.ts (2)
+ ✓ tests/lab-03/unit/role-auth.unit.test.ts (5)
+ ✓ tests/lab-03/unit/status-transition.unit.test.ts (12)
+ ✓ tests/lab-03/unit/token-version.unit.test.ts (5)
+
+ Test Files  31 passed (31)
+      Tests  298 passed (298)
+   Start at  22:10:49
+   Duration  13.11s (transform 229ms, setup 86ms, collect 2.23s, tests 7.22s, environment 3ms, prepare 921ms)
+```
+
+### 4.2 Frontend Client UI Component Test Suite (`npm run test:client`)
+- **Command:** `npm run test:client`
+- **Scope:** 20 test files across Labs 1, 2, 3, and 4 (including React component render tests, Actions Taken forms, Dashboards, Design System Tokens, UI States).
+- **Result:** **20 passed (20 files), 162 passed (162 tests)**
+
+```text
+> toktickit-monorepo@1.0.0 test:client
+> npm --prefix client test
+
+
+> toktickit-client@1.0.0 test
+> vitest run
+
+
+ RUN  v2.1.9 /Users/penwatsasaengyenpan/[3] Junior_Work/1_CPE334/Lab/toktickit/client
+
+ ✓ tests/lab-01/App.test.tsx (4)
+ ✓ tests/lab-02/AttachmentSection.test.tsx (6) 337ms
+ ✓ tests/lab-02/CreateTicket.test.tsx (8) 792ms
+ ✓ tests/lab-02/MyTickets.test.tsx (7) 1044ms
+ ✓ tests/lab-02/RequesterSelector.test.tsx (3)
+ ✓ tests/lab-02/RequesterTicketDetail.test.tsx (2)
+ ✓ tests/lab-03/ChangePassword.test.tsx (6) 1271ms
+ ✓ tests/lab-03/Login.test.tsx (5) 568ms
+ ✓ tests/lab-03/Navigation.test.tsx (6)
+ ✓ tests/lab-03/RequesterTicketDetail.test.tsx (4) 571ms
+ ✓ tests/lab-03/StaffTicketDetail.test.tsx (8) 801ms
+ ✓ tests/lab-03/StaffTicketQueue.test.tsx (9) 1010ms
+ ✓ tests/lab-03/UserManagement.test.tsx (9) 1719ms
+ ✓ tests/lab-04/ActionsTaken.test.tsx (15) 1299ms
+ ✓ tests/lab-04/AdminDashboard.test.tsx (8) 343ms
+ ✓ tests/lab-04/DesignSystemTokens.test.tsx (33) 300ms
+ ✓ tests/lab-04/RequesterDashboard.test.tsx (8)
+ ✓ tests/lab-04/StaffDashboard.test.tsx (12) 601ms
+ ✓ tests/lab-04/TicketWorkflow.test.tsx (5) 418ms
+ ✓ tests/lab-04/UIStates.test.tsx (4)
+
+ Test Files  20 passed (20)
+      Tests  162 passed (162)
+   Start at  22:11:25
+   Duration  5.01s (transform 1.19s, setup 1.42s, collect 4.59s, tests 12.10s, environment 9.01s, prepare 1.47s)
+```
+
+### 4.3 Lab 4 End-to-End Playwright Suite (`npm run test:e2e`)
+- **Command:** `npm run test:e2e`
+- **Scope:** 4 spec files in `e2e/lab-04/` (Actions Taken lifecycle, Ticket Resolution gate, Dashboards & Multi-viewport audit, Accessibility & focus trapping).
+- **Result:** **14 passed (14 tests)**
+
+```text
+> toktickit-monorepo@1.0.0 test:e2e
+> playwright test
+
+
+Running 14 tests using 1 worker
+
+      1 …-01 Part 1: ActionTakenModal traps focus within modal and wraps cycling
+  ✓   1 …t 1: ActionTakenModal traps focus within modal and wraps cycling (1.5s)
+      2 …01 Part 2: Focus restoration back to triggering button upon modal close
+  ✓   2 …2: Focus restoration back to triggering button upon modal close (761ms)
+      3 …1Y-01 Part 3: ARIA feedback, live regions and keyboard form interaction
+  ✓   3 …rt 3: ARIA feedback, live regions and keyboard form interaction (578ms)
+      4 …t 1: IT Staff creates Action Taken with validation and auto-attribution
+  ✓   4 … Staff creates Action Taken with validation and auto-attribution (3.1s)
+      5 … Role Permissions › E2E-01 Part 2: IT Staff edits existing Action Taken
+  ✓   5 …ermissions › E2E-01 Part 2: IT Staff edits existing Action Taken (1.3s)
+      6 … Part 3: Administrator has full authority to add and edit Actions Taken
+  ✓   6 … Administrator has full authority to add and edit Actions Taken (554ms)
+      7 …Requester views Actions Taken in read-only mode with zero edit controls
+  ✓   7 …er views Actions Taken in read-only mode with zero edit controls (1.2s)
+      8 …03b Part 1: Requester Dashboard metrics, drill-downs, and quick actions
+  ✓   8 …t 1: Requester Dashboard metrics, drill-downs, and quick actions (2.1s)
+      9 …-03b Part 2: IT Staff Dashboard metrics, drill-downs, and quick actions
+  ✓   9 …rt 2: IT Staff Dashboard metrics, drill-downs, and quick actions (2.2s)
+     10 …or Dashboard operational & user metrics, drill-downs, and quick actions
+  ✓  10 …board operational & user metrics, drill-downs, and quick actions (3.7s)
+     11 …wport audit across Requester, Staff, Admin dashboards and Ticket Detail
+  ✓  11 …dit across Requester, Staff, Admin dashboards and Ticket Detail (10.5s)
+     12 …› E2E-02 Part 1: Requester advisory indication enforces resolution gate
+  ✓  12 … Part 1: Requester advisory indication enforces resolution gate (487ms)
+     13 …art 2: IT Staff sees advisory indication and executes formal resolution
+  ✓  13 …T Staff sees advisory indication and executes formal resolution (521ms)
+     14 …Part 3: Stale update 409 conflict detection and form state preservation
+  ✓  14 …Stale update 409 conflict detection and form state preservation (685ms)
+
+  14 passed (32.4s)
+```
+
+### 4.4 Full Regression E2E Suite (`npm run test:e2e:regression`)
+- **Command:** `npm run test:e2e:regression`
+- **Scope:** Lab 2 regression suite (3 tests) + Lab 3 regression suite (24 tests) under authenticated sessions.
+- **Result:** **27 passed (27 tests)**
+
+```text
+> toktickit-monorepo@1.0.0 test:e2e:regression
+> npm run test:e2e:regression:lab2 && npm run test:e2e:regression:lab3
+
+
+> toktickit-monorepo@1.0.0 test:e2e:regression:lab2
+> TEST_DIR=./e2e/lab-02 playwright test
+
+
+Running 3 tests using 1 worker
+
+     1 …cket Lifecycle (Create with Attachment -> List -> Detail -> Soft-Remove)
+  ✓  1 …fecycle (Create with Attachment -> List -> Detail -> Soft-Remove) (1.2s)
+     2 … E2E-02: Multi-User Ownership Isolation & Unauthorized Access Protection
+  ✓  2 … Multi-User Ownership Isolation & Unauthorized Access Protection (839ms)
+     3 …iewport Verification (Desktop, Tablet, Mobile) & Deliverable Screenshots
+  ✓  3 … Verification (Desktop, Tablet, Mobile) & Deliverable Screenshots (7.0s)
+  3 passed (11.7s)
+
+> toktickit-monorepo@1.0.0 test:e2e:regression:lab3
+> TEST_DIR=./e2e/lab-03 LAB3_TEST_MODE=true playwright test
+
+
+Running 24 tests using 1 worker
+
+      1 …d Login Across All 3 Roles, Role-Based Landing Views & Navigation State
+  ✓   1 … Across All 3 Roles, Role-Based Landing Views & Navigation State (1.7s)
+      2 …te › E2E-01: Logout Session Invalidation & Protected Route Interception
+  ✓   2 …-01: Logout Session Invalidation & Protected Route Interception (433ms)
+      3 …-02: Inactive Account Blockage, Invalid Credentials & Mobile Login View
+  ✓   3 …active Account Blockage, Invalid Credentials & Mobile Login View (2.4s)
+      4 … E2E-02: Mandatory First-Login Password Change Flow & Policy Validation
+  ✓   4 …: Mandatory First-Login Password Change Flow & Policy Validation (1.3s)
+      5 …r Ticket Lifecycle (Create -> List -> Detail -> Soft-Remove Attachment)
+  ✓   5 …t Lifecycle (Create -> List -> Detail -> Soft-Remove Attachment) (1.4s)
+      6 …09: Mark Problem Appears Resolved, State Persistence & Staff Visibility
+  ✓   6 …k Problem Appears Resolved, State Persistence & Staff Visibility (1.0s)
+      7 …ow Audit › Login View - Desktop (1280x800) has zero horizontal overflow
+  ✓   7 … › Login View - Desktop (1280x800) has zero horizontal overflow (144ms)
+      8 …low Audit › Login View - Tablet (768x1024) has zero horizontal overflow
+  ✓   8 …t › Login View - Tablet (768x1024) has zero horizontal overflow (143ms)
+      9 …flow Audit › Login View - Mobile (375x667) has zero horizontal overflow
+  ✓   9 …it › Login View - Mobile (375x667) has zero horizontal overflow (145ms)
+     10 … Change Password View - Desktop (1280x800) has zero horizontal overflow
+  ✓  10 …Password View - Desktop (1280x800) has zero horizontal overflow (351ms)
+     11 …› Change Password View - Tablet (768x1024) has zero horizontal overflow
+  ✓  11 … Password View - Tablet (768x1024) has zero horizontal overflow (345ms)
+     12 … › Change Password View - Mobile (375x667) has zero horizontal overflow
+  ✓  12 …e Password View - Mobile (375x667) has zero horizontal overflow (345ms)
+     13 …dit › Requester Views - Desktop (1280x800) has zero horizontal overflow
+  ✓  13 …quester Views - Desktop (1280x800) has zero horizontal overflow (507ms)
+     14 …udit › Requester Views - Tablet (768x1024) has zero horizontal overflow
+  ✓  14 …Requester Views - Tablet (768x1024) has zero horizontal overflow (1.1s)
+     15 …Audit › Requester Views - Mobile (375x667) has zero horizontal overflow
+  ✓  15 … Requester Views - Mobile (375x667) has zero horizontal overflow (1.2s)
+     16 …udit › IT Staff Views - Desktop (1280x800) has zero horizontal overflow
+  ✓  16 …T Staff Views - Desktop (1280x800) has zero horizontal overflow (507ms)
+     17 …Audit › IT Staff Views - Tablet (768x1024) has zero horizontal overflow
+  ✓  17 … IT Staff Views - Tablet (768x1024) has zero horizontal overflow (1.3s)
+     18 … Audit › IT Staff Views - Mobile (375x667) has zero horizontal overflow
+  ✓  18 …› IT Staff Views - Mobile (375x667) has zero horizontal overflow (1.4s)
+     19 …› Administrator Views - Desktop (1280x800) has zero horizontal overflow
+  ✓  19 …strator Views - Desktop (1280x800) has zero horizontal overflow (614ms)
+     20 … › Administrator Views - Tablet (768x1024) has zero horizontal overflow
+  ✓  20 …nistrator Views - Tablet (768x1024) has zero horizontal overflow (1.0s)
+     21 …t › Administrator Views - Mobile (375x667) has zero horizontal overflow
+  ✓  21 …inistrator Views - Mobile (375x667) has zero horizontal overflow (1.0s)
+     22 …Staff Queue Multi-Device Responsiveness, Search, Filters & Empty States
+  ✓  22 …ueue Multi-Device Responsiveness, Search, Filters & Empty States (7.3s)
+     23 …f Operations (Claim, Priority, Status) & Comments/Notes Confidentiality
+  ✓  23 …tions (Claim, Priority, Status) & Comments/Notes Confidentiality (7.1s)
+     24 …2E-06: Admin User Management, Creation, Constraints, and Password Reset
+  ✓  24 …Admin User Management, Creation, Constraints, and Password Reset (5.9s)
+  24 passed (41.7s)
+```
