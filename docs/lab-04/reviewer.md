@@ -16,7 +16,7 @@
 | [PR #63](https://github.com/Phenwatsa/toktickit/pull/63) | `feature/lab4-4-dashboard-apis` | Issue 24 (#55): Role-Appropriate Dashboard Metrics APIs (Backend) | **Approved** | `lab4-staging` |
 | [PR #64](https://github.com/Phenwatsa/toktickit/pull/64) | `feature/lab4-5-dashboard-ui` | Issue 25 (#56): Role-Appropriate Dashboards UI & Drill-Down (Frontend) | **Approved** | `lab4-staging` |
 | [PR #65](https://github.com/Phenwatsa/toktickit/pull/65) | `feature/lab4-6-e2e-and-responsive` | Issue 26 (#57): End-to-End Testing, Responsive Audit & Screenshot Artifacts | **Approved** | `lab4-staging` |
-| [PR #58](https://github.com/Phenwatsa/toktickit/pull/58) | `docs/lab4-documentation` | Issue 27 (#58): Release Integration, Peer Review, AI Reflection & Final Handover | **Planned** | `lab4-staging` |
+| *(Planned)* | `docs/lab4-documentation` | Issue 27 (#58): Release Integration, Peer Review, AI Reflection & Final Handover | **Planned** | `lab4-staging` |
 
 ---
 
