@@ -94,6 +94,21 @@ export async function loginAs(page: Page, email: string, password: string): Prom
   await page.fill("#email-input", email);
   await page.fill("#password-input", password);
   await page.click('[data-testid="login-submit-btn"]');
+
+  // Wait for login redirection away from /login
+  await page.waitForURL((url) => !url.hash.includes("/login"), { timeout: 15000 });
+
+  // In Lab 4, all roles land on #/dashboard by default.
+  // For Lab 3 E2E regression suites that verify role-specific operational queues without explicit navigation:
+  if (page.url().includes("#/dashboard")) {
+    if (email.includes("admin")) {
+      await page.goto("/#/admin-users");
+    } else if (email.includes("staff") || email.includes("alice") || email.includes("bob")) {
+      await page.goto("/#/staff-queue");
+    } else {
+      await page.goto("/#/my-tickets");
+    }
+  }
 }
 
 /**

@@ -161,9 +161,11 @@ test.describe("Lab 3 Authentication & Authorization E2E Suite", () => {
     // 4. Submit password change
     await page.click('[data-testid="change-password-submit-btn"]');
 
-    // Verify successful progression into the application
-    await expect(page.locator("text=My Support Tickets")).toBeVisible({ timeout: 10000 });
-    await expect(page).toHaveURL(/#\/my-tickets/);
+    // Verify successful progression into the application (Lab 4: role-appropriate dashboard)
+    await expect(page).toHaveURL(/#\/(dashboard|my-tickets)/);
+    await expect(
+      page.locator('[data-testid="requester-dashboard"], [data-testid="dashboard-loading"], [data-testid="my-tickets-table"]')
+    ).toBeVisible({ timeout: 10000 });
 
     // 5. Logout
     await logoutUser(page);

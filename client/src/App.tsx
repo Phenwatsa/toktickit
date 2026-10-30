@@ -10,42 +10,57 @@ import { UserManagement } from "./pages/UserManagement";
 import { CreateTicket } from "./components/CreateTicket";
 import { MyTickets } from "./components/MyTickets";
 import { RequesterTicketDetail } from "./components/RequesterTicketDetail";
+import { RequesterDashboard } from "./pages/RequesterDashboard";
+import { StaffDashboard } from "./pages/StaffDashboard";
+import { AdminDashboard } from "./pages/AdminDashboard";
 import { checkSystem, Category } from "./api";
 import { Role } from "./types";
 import "./styles/zen-green.css";
 
 function MainApp() {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<AppView>("my-tickets");
+  const [currentView, setCurrentView] = useState<AppView>("dashboard");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [isForbidden, setIsForbidden] = useState<boolean>(false);
 
   // Legacy Lab 1 state
   const [legacyState, setLegacyState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [categories, setCategories] = useState<Category[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // Role-based route guard helpers
-  const getDefaultViewForRole = useCallback((role?: Role): AppView => {
-    if (role === "IT_STAFF") return "staff-queue";
-    if (role === "ADMINISTRATOR") return "admin-users";
-    return "my-tickets";
+  // Role-based route guard helpers (Lab 4: Default landing view is role-appropriate Dashboard)
+  const getDefaultViewForRole = useCallback((_role?: Role): AppView => {
+    return "dashboard";
   }, []);
 
-  const getDefaultHashForRole = useCallback((role?: Role): string => {
-    if (role === "IT_STAFF") return "#/staff-queue";
-    if (role === "ADMINISTRATOR") return "#/admin-users";
-    return "#/my-tickets";
+  const getDefaultHashForRole = useCallback((_role?: Role): string => {
+    return "#/dashboard";
   }, []);
 
   const isViewPermittedForRole = useCallback((view: AppView, role?: Role): boolean => {
     if (view === "legacy-check") return true;
+    if (view === "dashboard") return true;
     if (role === "ADMINISTRATOR") {
-      return view === "admin-users";
+      return (
+        view === "admin-users" ||
+        view === "staff-queue" ||
+        view === "ticket-detail" ||
+        view === "create-ticket"
+      );
     }
     if (role === "IT_STAFF") {
-      return view === "staff-queue" || view === "ticket-detail";
+      return (
+        view === "staff-queue" ||
+        view === "ticket-detail" ||
+        view === "create-ticket"
+      );
     }
-    return view === "my-tickets" || view === "ticket-detail" || view === "create-ticket";
+    // REQUESTER
+    return (
+      view === "my-tickets" ||
+      view === "ticket-detail" ||
+      view === "create-ticket"
+    );
   }, []);
 
   // Sync initial view based on role
@@ -54,7 +69,7 @@ function MainApp() {
       const defaultHash = getDefaultHashForRole(user.role);
       const defaultView = getDefaultViewForRole(user.role);
       const hash = window.location.hash || "";
-      if (hash === "#/login" || hash === "" || !isViewPermittedForRole(currentView, user.role)) {
+      if (hash === "#/login" || hash === "" || hash === "#" || hash === "#/" || !isViewPermittedForRole(currentView, user.role)) {
         setCurrentView(defaultView);
         window.history.replaceState(null, "", defaultHash);
       }
@@ -64,8 +79,9 @@ function MainApp() {
   // Hash-based Browser Back/Forward Navigation Handler with Route Guards
   const syncViewFromHash = useCallback(() => {
     const hash = window.location.hash || "";
-    let requestedView: AppView = getDefaultViewForRole(user?.role);
+    let requestedView: AppView = "dashboard";
     let ticketId: number | null = null;
+    let forbidden = false;
 
     if (hash.startsWith("#/ticket/")) {
       const idStr = hash.replace("#/ticket/", "");
@@ -74,32 +90,65 @@ function MainApp() {
         ticketId = id;
         requestedView = "ticket-detail";
       }
-    } else if (hash === "#/create-ticket") {
+    } else if (hash === "#/dashboard" || hash.startsWith("#/dashboard")) {
+      requestedView = "dashboard";
+    } else if (hash.startsWith("#/staff-dashboard")) {
+      if (user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR") {
+        requestedView = "dashboard";
+      } else {
+        forbidden = true;
+      }
+    } else if (hash.startsWith("#/admin-dashboard")) {
+      if (user?.role === "ADMINISTRATOR") {
+        requestedView = "dashboard";
+      } else {
+        forbidden = true;
+      }
+    } else if (hash.startsWith("#/requester-dashboard")) {
+      if (user?.role === "REQUESTER" || !user?.role) {
+        requestedView = "dashboard";
+      } else {
+        forbidden = true;
+      }
+    } else if (hash.startsWith("#/create-ticket")) {
       requestedView = "create-ticket";
-    } else if (hash === "#/legacy-check") {
+    } else if (hash.startsWith("#/legacy-check")) {
       requestedView = "legacy-check";
-    } else if (hash === "#/staff-queue") {
-      requestedView = "staff-queue";
-    } else if (hash === "#/admin-users") {
-      requestedView = "admin-users";
-    } else if (hash === "#/my-tickets") {
-      requestedView = "my-tickets";
+    } else if (hash.startsWith("#/staff-queue")) {
+      if (user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR") {
+        requestedView = "staff-queue";
+      } else {
+        forbidden = true;
+      }
+    } else if (hash.startsWith("#/admin-users")) {
+      if (user?.role === "ADMINISTRATOR") {
+        requestedView = "admin-users";
+      } else {
+        forbidden = true;
+      }
+    } else if (hash.startsWith("#/my-tickets")) {
+      if (user?.role === "REQUESTER" || !user?.role) {
+        requestedView = "my-tickets";
+      } else {
+        forbidden = true;
+      }
+    } else if (hash === "" || hash === "#" || hash === "#/") {
+      requestedView = "dashboard";
+    } else {
+      requestedView = "dashboard";
     }
 
-    // Route Guard: verify requestedView is strictly permitted for user's role
-    if (!isViewPermittedForRole(requestedView, user?.role)) {
-      const fallbackView = getDefaultViewForRole(user?.role);
-      const fallbackHash = getDefaultHashForRole(user?.role);
-      setCurrentView(fallbackView);
-      window.history.replaceState(null, "", fallbackHash);
+    if (forbidden) {
+      setIsForbidden(true);
       return;
     }
 
+    setIsForbidden(false);
     if (ticketId !== null) {
       setSelectedTicketId(ticketId);
     }
     setCurrentView(requestedView);
-  }, [user?.role, getDefaultHashForRole, getDefaultViewForRole, isViewPermittedForRole]);
+  }, [user?.role]);
 
   useEffect(() => {
     syncViewFromHash();
@@ -108,6 +157,7 @@ function MainApp() {
   }, [syncViewFromHash]);
 
   function navigateTo(view: AppView, ticketId?: number) {
+    setIsForbidden(false);
     if (!isViewPermittedForRole(view, user?.role)) {
       const fallback = getDefaultViewForRole(user?.role);
       setCurrentView(fallback);
@@ -124,11 +174,21 @@ function MainApp() {
     } else if (view === "legacy-check") {
       window.location.hash = "#/legacy-check";
     } else if (view === "staff-queue") {
-      window.location.hash = "#/staff-queue";
+      if (!window.location.hash.startsWith("#/staff-queue")) {
+        window.location.hash = "#/staff-queue";
+      }
     } else if (view === "admin-users") {
-      window.location.hash = "#/admin-users";
+      if (!window.location.hash.startsWith("#/admin-users")) {
+        window.location.hash = "#/admin-users";
+      }
+    } else if (view === "my-tickets") {
+      if (!window.location.hash.startsWith("#/my-tickets")) {
+        window.location.hash = "#/my-tickets";
+      }
     } else {
-      window.location.hash = "#/my-tickets";
+      if (!window.location.hash.startsWith("#/dashboard")) {
+        window.location.hash = "#/dashboard";
+      }
     }
   }
 
@@ -181,34 +241,73 @@ function MainApp() {
       <Header currentView={currentView} onNavigate={(view) => navigateTo(view)} />
 
       {/* Main Content Area */}
-      <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1560, margin: "0 auto", width: "100%" }}>
+      <main className="container-fluid px-3 px-lg-4 flex-grow-1 py-3" style={{ maxWidth: 1560, margin: "0 auto", width: "100%", overflowX: "hidden" }}>
+        {/* 403 Forbidden State (ui-spec.md §6.3) */}
+        {isForbidden && (
+          <div className="zg-forbidden-container" role="alert" data-testid="forbidden-banner">
+            <div style={{ color: "var(--zg-danger, #DC2626)", marginBottom: "1rem" }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </div>
+            <h2 className="h4 fw-bold mb-2">403 Forbidden</h2>
+            <p className="text-muted mb-4">
+              You do not have permission to access this page.
+            </p>
+            <button
+              type="button"
+              className="zen-btn-primary"
+              onClick={() => navigateTo("dashboard")}
+              data-testid="return-to-dashboard-btn"
+            >
+              Return to My Dashboard
+            </button>
+          </div>
+        )}
+
+        {/* Role-Appropriate Dashboards (Guarded) */}
+        {!isForbidden && currentView === "dashboard" && (
+          <>
+            {(user?.role === "REQUESTER" || !user?.role) && (
+              <RequesterDashboard onNavigate={navigateTo} />
+            )}
+            {user?.role === "IT_STAFF" && (
+              <StaffDashboard onNavigate={navigateTo} />
+            )}
+            {user?.role === "ADMINISTRATOR" && (
+              <AdminDashboard onNavigate={navigateTo} />
+            )}
+          </>
+        )}
+
         {/* Requester Views (Guarded) */}
-        {(user?.role === "REQUESTER" || !user?.role) && currentView === "my-tickets" && (
+        {!isForbidden && (user?.role === "REQUESTER" || !user?.role) && currentView === "my-tickets" && (
           <MyTickets
             onNavigateToCreate={() => navigateTo("create-ticket")}
             onSelectTicket={(ticketId) => navigateTo("ticket-detail", ticketId)}
           />
         )}
 
-        {(user?.role === "REQUESTER" || !user?.role) && currentView === "ticket-detail" && selectedTicketId !== null && (
+        {!isForbidden && (user?.role === "REQUESTER" || !user?.role) && currentView === "ticket-detail" && selectedTicketId !== null && (
           <RequesterTicketDetail
             ticketId={selectedTicketId}
             onBack={() => navigateTo("my-tickets")}
           />
         )}
 
-        {(user?.role === "REQUESTER" || !user?.role) && currentView === "create-ticket" && (
-          <CreateTicket onCancel={() => navigateTo("my-tickets")} />
+        {!isForbidden && currentView === "create-ticket" && (
+          <CreateTicket onCancel={() => navigateTo(user?.role === "REQUESTER" || !user?.role ? "my-tickets" : "dashboard")} />
         )}
 
-        {/* IT Staff Views (Guarded) */}
-        {user?.role === "IT_STAFF" && currentView === "staff-queue" && (
+        {/* IT Staff & Admin Shared Queue Views (Guarded) */}
+        {!isForbidden && (user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR") && currentView === "staff-queue" && (
           <StaffTicketQueue
             onSelectTicket={(ticketId) => navigateTo("ticket-detail", ticketId)}
           />
         )}
 
-        {user?.role === "IT_STAFF" && currentView === "ticket-detail" && selectedTicketId !== null && (
+        {!isForbidden && (user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR") && currentView === "ticket-detail" && selectedTicketId !== null && (
           <StaffTicketDetail
             ticketId={selectedTicketId}
             onBack={() => navigateTo("staff-queue")}
@@ -216,7 +315,7 @@ function MainApp() {
         )}
 
         {/* Administrator Views (Guarded) */}
-        {user?.role === "ADMINISTRATOR" && currentView === "admin-users" && (
+        {!isForbidden && user?.role === "ADMINISTRATOR" && currentView === "admin-users" && (
           <UserManagement />
         )}
 

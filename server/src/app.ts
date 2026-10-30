@@ -10,6 +10,8 @@ import { staffRouter } from "./routes/staff.js";
 import { commentsNotesRouter } from "./routes/commentsNotes.js";
 import { requesterOpsRouter } from "./routes/requesterOps.js";
 import { adminRouter } from "./routes/admin.js";
+import { adminDashboardRouter } from "./routes/adminDashboard.js";
+import { actionsTakenRouter } from "./routes/actionsTaken.js";
 import { requireAuth, requirePasswordChanged } from "./middleware/auth.js";
 import { initializeTicketPriority } from "./utils/priorityInit.js";
 
@@ -59,8 +61,10 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/staff", staffRouter);
 app.use("/api/tickets", commentsNotesRouter);
+app.use("/api/tickets", actionsTakenRouter);
 app.use("/api/requester", requesterOpsRouter);
 app.use("/api/admin/users", adminRouter);
+app.use("/api/admin", adminDashboardRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
@@ -343,7 +347,11 @@ app.get("/api/tickets", requireAuth, requirePasswordChanged, async (req: Request
 
     // Status filter
     if (status && typeof status === "string" && status !== "ALL") {
-      where.currentStatus = status;
+      if (status === "OPEN_GROUP") {
+        where.currentStatus = { in: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"] };
+      } else {
+        where.currentStatus = status;
+      }
     }
 
     // Pagination calculations

@@ -45,12 +45,24 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     hasPrevPage: false,
   });
 
+  const getInitialStatusFromHash = useCallback((): string => {
+    if (typeof window === "undefined") return "ALL";
+    const hash = window.location.hash || "";
+    const queryIndex = hash.indexOf("?");
+    if (queryIndex !== -1) {
+      const searchParams = new URLSearchParams(hash.slice(queryIndex));
+      const s = searchParams.get("status");
+      if (s) return s;
+    }
+    return "ALL";
+  }, []);
+
   // Filter & Search State
   const [search, setSearch] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [priority, setPriority] = useState<string>("ALL");
-  const [status, setStatus] = useState<string>("ALL");
+  const [status, setStatus] = useState<string>(() => getInitialStatusFromHash());
   const [sortOption, setSortOption] = useState<string>("createdAt_desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -100,6 +112,17 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Sync filter from URL hash parameters (e.g. drill-down from Dashboard)
+  useEffect(() => {
+    const handleHash = () => {
+      const s = getInitialStatusFromHash();
+      setStatus(s);
+      setCurrentPage(1);
+    };
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, [getInitialStatusFromHash]);
 
   // Load Categories on mount
   useEffect(() => {
@@ -552,6 +575,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                 }}
               >
                 <option value="ALL">All Statuses</option>
+                <option value="OPEN_GROUP">Open / Active</option>
                 <option value="NEW">New</option>
                 <option value="OPEN">Open</option>
                 <option value="IN_PROGRESS">In Progress</option>
@@ -847,6 +871,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                   }}
                 >
                   <option value="ALL">All Statuses</option>
+                  <option value="OPEN_GROUP">Open / Active</option>
                   <option value="NEW">New</option>
                   <option value="OPEN">Open</option>
                   <option value="IN_PROGRESS">In Progress</option>
@@ -1021,13 +1046,13 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                 data-testid="tickets-table"
               >
                 <colgroup>
-                  <col style={{ width: 150 }} /> {/* Ticket # */}
+                  <col style={{ width: 140 }} /> {/* Ticket # */}
                   <col style={{ width: 110 }} /> {/* Created */}
                   <col style={{ minWidth: 200 }} /> {/* Summary */}
-                  <col style={{ width: 160 }} /> {/* Category */}
-                  <col style={{ width: 95 }} />   {/* Priority */}
-                  <col style={{ width: 85 }} />   {/* Status */}
-                  <col style={{ width: 85 }} />   {/* Action */}
+                  <col style={{ width: 150 }} /> {/* Category */}
+                  <col style={{ width: 105 }} /> {/* Priority */}
+                  <col style={{ width: 135 }} /> {/* Status */}
+                  <col style={{ width: 95 }} />  {/* Action */}
                 </colgroup>
                 <thead>
                   <tr>
@@ -1116,6 +1141,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                         backgroundColor: "#F8FAFC",
                         boxShadow: "0 1px 0 var(--color-border)",
                         whiteSpace: "nowrap",
+                        padding: "0.75rem 0.75rem",
                       }}
                     >
                       Status
@@ -1129,7 +1155,7 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                         backgroundColor: "#F8FAFC",
                         boxShadow: "0 1px 0 var(--color-border)",
                         whiteSpace: "nowrap",
-                        paddingRight: "1.25rem",
+                        padding: "0.75rem 0.75rem",
                       }}
                     >
                       Action
@@ -1203,12 +1229,12 @@ export function MyTickets({ onNavigateToCreate, onSelectTicket }: MyTicketsProps
                       </td>
 
                       {/* Current Status */}
-                      <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <td style={{ textAlign: "center", verticalAlign: "middle", padding: "0.75rem 0.75rem", whiteSpace: "nowrap" }}>
                         {renderStatusBadge(t.currentStatus)}
                       </td>
 
                       {/* Action Button */}
-                      <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.75rem 1.25rem 0.75rem 0.5rem" }}>
+                      <td style={{ textAlign: "center", whiteSpace: "nowrap", verticalAlign: "middle", padding: "0.75rem 0.75rem" }}>
                         <button
                           type="button"
                           className="zen-btn-view"
